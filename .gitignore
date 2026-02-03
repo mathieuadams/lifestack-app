@@ -1,0 +1,11 @@
+node_modules/
+.DS_Store
+*.log
+*.ipa
+*.aab
+*.apk
+release.keystore
+ios/App/Pods/
+android/.gradle/
+android/app/build/
+android/local.properties
