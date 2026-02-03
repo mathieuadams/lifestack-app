@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  
+  <!-- PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LifeStack">
+  <meta name="theme-color" content="#637a6b">
+  <meta name="description" content="Life by Design - Plan adventures, capture memories, build habits">
+  
+  <!-- Manifest -->
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- App Icons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167.png">
+  
+  <!-- Splash Screens for iOS -->
+  <link rel="apple-touch-startup-image" href="icons/splash-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)">
+  <link rel="apple-touch-startup-image" href="icons/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
+  <link rel="apple-touch-startup-image" href="icons/splash-1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)">
+  <link rel="apple-touch-startup-image" href="icons/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+  <link rel="apple-touch-startup-image" href="icons/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
+  <link rel="apple-touch-startup-image" href="icons/splash-1284x2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)">
+  
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>LifeStack - Life by Design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <link rel="stylesheet" href="styles.css?v=20260128">
+  <link rel="stylesheet" href="styles-additions.css">
+</head>
+<body>
+  <script>
+    const CONFIG = {
+      API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.com/prod"
+    };
+  </script>
+
+  <!-- Loading Screen -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Loading LifeStack...</p>
+  </div>
+
+  <!-- Landing Page -->
+  <div id="landing" class="landing hidden">
+    <div class="landing-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+    </div>
+    <h1>Life by Design</h1>
+    <p class="landing-subtitle">Most people don't plan their lives. They just let them happen. You're different.</p>
+    <div class="landing-features">
+      <div class="landing-feature">
+        <div class="landing-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg></div>
+        <span>See your life as 80 years</span>
+      </div>
+      <div class="landing-feature">
+        <div class="landing-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+        <span>Set your Misogi - one defining challenge</span>
+      </div>
+      <div class="landing-feature">
+        <div class="landing-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+        <span>Capture memories & photos</span>
+      </div>
+    </div>
+    <div class="landing-buttons">
+      <button class="btn btn-primary" onclick="showSignInModal()">Sign In</button>
+      <button class="btn btn-secondary" onclick="showSignUpModal()">Create Account</button>
+    </div>
+    <div class="landing-footer-links">
+      <a href="#" onclick="showTermsModal(); return false;">Terms of Service</a>
+      <span>·</span>
+      <a href="#" onclick="showPrivacyModal(); return false;">Privacy Policy</a>
+    </div>
+  </div>
+
+  <!-- Sign In Modal -->
+  <div id="signInModal" class="modal-overlay">
+    <div class="modal"><div class="modal-content">
+      <button class="modal-close" onclick="closeAllModals()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header"><h2>Welcome Back</h2><p>Sign in to your LifeStack account</p></div>
+      <div class="modal-body">
+        <div id="signInError" class="alert alert-error hidden"></div>
+        <form id="signInForm" onsubmit="handleSignIn(event)">
+          <div class="form-group"><label for="signInEmail">Email</label><input type="email" id="signInEmail" placeholder="you@example.com" required></div>
+          <div class="form-group"><label for="signInPassword">Password</label><input type="password" id="signInPassword" placeholder="Your password" required></div>
+          <button type="submit" id="signInBtn" class="btn btn-primary" style="width: 100%;">Sign In</button>
+        </form>
+        <div class="form-divider">Don't have an account?</div>
+        <button class="btn btn-secondary" style="width: 100%;" onclick="showSignUpModal()">Create Account</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Sign Up Modal (Updated with Terms Consent) -->
+  <div id="signUpModal" class="modal-overlay">
+    <div class="modal"><div class="modal-content">
+      <button class="modal-close" onclick="closeAllModals()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header"><h2>Create Account</h2><p>Start your Life by Design journey</p></div>
+      <div class="modal-body">
+        <div id="signUpError" class="alert alert-error hidden"></div>
+        <form id="signUpForm" onsubmit="handleSignUp(event)">
+          <div class="form-row">
+            <div class="form-group"><label for="signUpFirstName">First Name</label><input type="text" id="signUpFirstName" placeholder="John" required></div>
+            <div class="form-group"><label for="signUpLastName">Last Name</label><input type="text" id="signUpLastName" placeholder="Doe" required></div>
+          </div>
+          <div class="form-group"><label for="signUpEmail">Email</label><input type="email" id="signUpEmail" placeholder="you@example.com" required></div>
+          <div class="form-group"><label for="signUpPassword">Password</label><input type="password" id="signUpPassword" placeholder="Min 8 chars, uppercase, number, symbol" required minlength="8"></div>
+          
+          <!-- Terms & Privacy Consent -->
+          <div class="form-group consent-group">
+            <label class="consent-label">
+              <input type="checkbox" id="termsConsent" required>
+              <span class="consent-text">
+                I agree to the <a href="#" onclick="showTermsModal(); return false;">Terms of Service</a> and 
+                <a href="#" onclick="showPrivacyModal(); return false;">Privacy Policy</a>, including 
+                automated content scanning for safety.
+              </span>
+            </label>
+          </div>
+          
+          <button type="submit" id="signUpBtn" class="btn btn-primary" style="width: 100%;">Create Account</button>
+        </form>
+        <div class="form-divider">Already have an account?</div>
+        <button class="btn btn-secondary" style="width: 100%;" onclick="showSignInModal()">Sign In</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Verify Email Modal -->
+  <div id="verifyModal" class="modal-overlay">
+    <div class="modal"><div class="modal-content">
+      <button class="modal-close" onclick="closeAllModals()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header"><h2>Verify Your Email</h2><p>We sent a code to <strong id="verifyEmailDisplay"></strong></p></div>
+      <div class="modal-body">
+        <div id="verifyError" class="alert alert-error hidden"></div>
+        <div id="verifySuccess" class="alert alert-success hidden"></div>
+        <form id="verifyForm" onsubmit="handleVerify(event)">
+          <div class="code-input-container">
+            <input type="text" class="code-input" maxlength="1" data-index="0" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" oninput="handleCodeInput(this)" onkeydown="handleCodeKeydown(event, this)">
+            <input type="text" class="code-input" maxlength="1" data-index="1" inputmode="numeric" pattern="[0-9]*" oninput="handleCodeInput(this)" onkeydown="handleCodeKeydown(event, this)">
+            <input type="text" class="code-input" maxlength="1" data-index="2" inputmode="numeric" pattern="[0-9]*" oninput="handleCodeInput(this)" onkeydown="handleCodeKeydown(event, this)">
+            <input type="text" class="code-input" maxlength="1" data-index="3" inputmode="numeric" pattern="[0-9]*" oninput="handleCodeInput(this)" onkeydown="handleCodeKeydown(event, this)">
+            <input type="text" class="code-input" maxlength="1" data-index="4" inputmode="numeric" pattern="[0-9]*" oninput="handleCodeInput(this)" onkeydown="handleCodeKeydown(event, this)">
+            <input type="text" class="code-input" maxlength="1" data-index="5" inputmode="numeric" pattern="[0-9]*" oninput="handleCodeInput(this)" onkeydown="handleCodeKeydown(event, this)">
+          </div>
+          <button type="submit" id="verifyBtn" class="btn btn-primary" style="width: 100%;">Verify Email</button>
+        </form>
+        <div style="text-align: center; margin-top: 1rem;"><button class="btn-link" onclick="resendCode()">Didn't receive a code? Resend</button></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- TERMS OF SERVICE MODAL -->
+  <!-- ============================================= -->
+  <div id="termsModal" class="modal-overlay">
+    <div class="modal modal-large modal-legal">
+      <div class="modal-content">
+        <button class="modal-close" onclick="closeTermsModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        
+        <div class="modal-header">
+          <h2>📜 Terms of Service</h2>
+          <p>Last updated: January 28, 2026</p>
+        </div>
+        
+        <div class="modal-body legal-content">
+          <section>
+            <h3>1. Acceptance of Terms</h3>
+            <p>By accessing or using LifeStack ("the Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.</p>
+          </section>
+
+          <section>
+            <h3>2. Description of Service</h3>
+            <p>LifeStack is a personal life planning application that allows you to:</p>
+            <ul>
+              <li>Visualize your life timeline</li>
+              <li>Plan adventures and track goals</li>
+              <li>Capture and store memories including photos</li>
+              <li>Track habits and personal challenges</li>
+              <li>Create and manage bucket lists</li>
+              <li>Share experiences with friends and family</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>3. Account Registration</h3>
+            <p>To use LifeStack, you must:</p>
+            <ul>
+              <li>Be at least 18 years of age</li>
+              <li>Provide accurate and complete registration information</li>
+              <li>Maintain the security of your password</li>
+              <li>Accept responsibility for all activities under your account</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>4. Subscription Plans and Payment</h3>
+            <p>LifeStack offers the following plans:</p>
+            <ul>
+              <li><strong>Free:</strong> Limited features with usage caps</li>
+              <li><strong>Plus ($4.99/month):</strong> Expanded features and limits</li>
+              <li><strong>Pro ($9.99/month):</strong> Full access to all features</li>
+            </ul>
+            <p>Subscriptions are billed monthly or annually. You may cancel at any time, and access continues until the end of your billing period.</p>
+          </section>
+
+          <section class="highlight-section">
+            <h3>5. Content Policy</h3>
+            <h4>5.1 Prohibited Content</h4>
+            <p>You may NOT upload, share, or distribute any content that:</p>
+            <ul>
+              <li><strong>Sexually exploits or endangers minors</strong> in any way, including child sexual abuse material (CSAM)</li>
+              <li><strong>Contains explicit sexual content</strong> including nudity, sexual acts, or pornography</li>
+              <li><strong>Depicts graphic violence</strong>, gore, or promotes violence against individuals or groups</li>
+              <li><strong>Contains hate speech</strong> or symbols associated with hate groups</li>
+              <li><strong>Promotes illegal drug use</strong> or drug trafficking</li>
+              <li><strong>Violates any applicable laws</strong> in your jurisdiction</li>
+            </ul>
+
+            <h4>5.2 Content Moderation</h4>
+            <p>To maintain a safe environment:</p>
+            <ul>
+              <li><strong>All uploaded images are automatically scanned</strong> for prohibited content using industry-standard content moderation technology</li>
+              <li><strong>Flagged content may be reviewed</strong> by our trust and safety team</li>
+              <li><strong>Prohibited content will be removed</strong> and may result in account termination</li>
+              <li><strong>We are legally required to report</strong> child sexual abuse material (CSAM) to the National Center for Missing & Exploited Children (NCMEC) and may report other illegal content to law enforcement</li>
+            </ul>
+
+            <h4>5.3 Consequences of Violations</h4>
+            <p>Violations of this content policy may result in:</p>
+            <ul>
+              <li>Immediate removal of the violating content</li>
+              <li>Temporary or permanent suspension of your account</li>
+              <li>Reporting to law enforcement authorities</li>
+              <li>Civil or criminal liability</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>6. User Responsibilities</h3>
+            <p>You are solely responsible for:</p>
+            <ul>
+              <li>All content you upload to the Service</li>
+              <li>Ensuring you have the right to share any content you upload</li>
+              <li>Compliance with all applicable laws and regulations</li>
+              <li>Maintaining the confidentiality of your account credentials</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>7. Intellectual Property</h3>
+            <p>You retain ownership of content you upload. By uploading content, you grant LifeStack a limited license to store, display, and process your content solely to provide the Service.</p>
+          </section>
+
+          <section>
+            <h3>8. Data and Privacy</h3>
+            <p>Your use of the Service is also governed by our <a href="#" onclick="closeTermsModal(); showPrivacyModal(); return false;">Privacy Policy</a>, which describes how we collect, use, and protect your personal information.</p>
+          </section>
+
+          <section>
+            <h3>9. Termination</h3>
+            <p>We may terminate or suspend your account at any time for violations of these Terms. You may delete your account at any time through the app settings.</p>
+          </section>
+
+          <section>
+            <h3>10. Disclaimers</h3>
+            <p>THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND. WE DO NOT GUARANTEE UNINTERRUPTED OR ERROR-FREE SERVICE.</p>
+          </section>
+
+          <section>
+            <h3>11. Limitation of Liability</h3>
+            <p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, LIFESTACK SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING FROM YOUR USE OF THE SERVICE.</p>
+          </section>
+
+          <section>
+            <h3>12. Changes to Terms</h3>
+            <p>We may update these Terms from time to time. We will notify you of material changes via email or in-app notification. Continued use after changes constitutes acceptance.</p>
+          </section>
+
+          <section>
+            <h3>13. Contact</h3>
+            <p>For questions about these Terms, contact us at: <a href="mailto:legal@lifestack.app">legal@lifestack.app</a></p>
+          </section>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-primary" onclick="closeTermsModal()">I Understand</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- PRIVACY POLICY MODAL -->
+  <!-- ============================================= -->
+  <div id="privacyModal" class="modal-overlay">
+    <div class="modal modal-large modal-legal">
+      <div class="modal-content">
+        <button class="modal-close" onclick="closePrivacyModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        
+        <div class="modal-header">
+          <h2>🔒 Privacy Policy</h2>
+          <p>Last updated: January 28, 2026</p>
+        </div>
+        
+        <div class="modal-body legal-content">
+          <section>
+            <h3>1. Information We Collect</h3>
+            
+            <h4>1.1 Information You Provide</h4>
+            <ul>
+              <li><strong>Account information:</strong> Email address, name, password</li>
+              <li><strong>Profile information:</strong> Birth year, life goals, preferences</li>
+              <li><strong>Content:</strong> Adventures, memories, photos, habits, bucket list items</li>
+              <li><strong>Communications:</strong> Support requests, feedback</li>
+            </ul>
+
+            <h4>1.2 Information Collected Automatically</h4>
+            <ul>
+              <li><strong>Device information:</strong> Device type, operating system, browser</li>
+              <li><strong>Usage data:</strong> Features used, time spent, interactions</li>
+              <li><strong>Log data:</strong> IP address, access times, error logs</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>2. How We Use Your Information</h3>
+            <p>We use your information to:</p>
+            <ul>
+              <li>Provide and improve the LifeStack service</li>
+              <li>Process your subscription and payments</li>
+              <li>Send you service-related notifications</li>
+              <li>Respond to your support requests</li>
+              <li>Ensure the safety and security of our platform</li>
+              <li>Comply with legal obligations</li>
+            </ul>
+          </section>
+
+          <section class="highlight-section">
+            <h3>3. Image Processing and Content Safety</h3>
+            
+            <h4>3.1 Automated Content Scanning</h4>
+            <p>To maintain a safe platform, we use automated content moderation technology (Amazon Rekognition) to scan uploaded images for prohibited content. This scanning:</p>
+            <ul>
+              <li>Occurs automatically when you upload images</li>
+              <li>Detects potentially prohibited content such as nudity, violence, or hate symbols</li>
+              <li>Does NOT use facial recognition to identify individuals</li>
+              <li>Does NOT share your images with third parties except as required by law</li>
+            </ul>
+
+            <h4>3.2 Content Review</h4>
+            <p>If our automated systems flag content as potentially prohibited:</p>
+            <ul>
+              <li>The content may be temporarily held for review</li>
+              <li>Our trust and safety team may review the flagged content</li>
+              <li>Content determined to violate our policies will be removed</li>
+              <li>You will be notified if content is removed (except in cases involving potential illegal activity)</li>
+            </ul>
+
+            <h4>3.3 Legal Reporting Obligations</h4>
+            <p>We are legally required to report child sexual abuse material (CSAM) to the National Center for Missing & Exploited Children (NCMEC). Such reports include:</p>
+            <ul>
+              <li>The content itself</li>
+              <li>Associated user account information</li>
+              <li>IP addresses and timestamps</li>
+              <li>Any other legally required information</li>
+            </ul>
+            <p>We may also report other illegal content to law enforcement as required or permitted by law.</p>
+          </section>
+
+          <section>
+            <h3>4. Data Sharing</h3>
+            <p>We do NOT sell your personal information. We may share information with:</p>
+            <ul>
+              <li><strong>Service providers:</strong> AWS (hosting), payment processors</li>
+              <li><strong>Friends:</strong> Only what you explicitly choose to share</li>
+              <li><strong>Legal authorities:</strong> When required by law or to report illegal content</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>5. Data Storage and Security</h3>
+            <ul>
+              <li>Your data is stored securely on Amazon Web Services (AWS)</li>
+              <li>All data is encrypted in transit (HTTPS) and at rest</li>
+              <li>We use industry-standard security practices</li>
+              <li>Access to user data is strictly limited and logged</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>6. Data Retention</h3>
+            <ul>
+              <li><strong>Active account data:</strong> Retained while your account is active</li>
+              <li><strong>Deleted account data:</strong> Removed within 30 days of account deletion</li>
+              <li><strong>Flagged content:</strong> May be retained for up to 90 days for review</li>
+              <li><strong>Violation records:</strong> Retained for 7 years for legal compliance</li>
+              <li><strong>Reported content:</strong> Preserved as required by law enforcement</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>7. Your Rights</h3>
+            <p>You have the right to:</p>
+            <ul>
+              <li><strong>Access:</strong> Request a copy of your data</li>
+              <li><strong>Correction:</strong> Update inaccurate information</li>
+              <li><strong>Deletion:</strong> Delete your account and data</li>
+              <li><strong>Export:</strong> Download your data (Plus/Pro plans)</li>
+              <li><strong>Opt-out:</strong> Unsubscribe from marketing communications</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>8. Children's Privacy</h3>
+            <p>LifeStack is not intended for users under 18 years of age. We do not knowingly collect information from children under 18. If we discover such information has been collected, we will delete it immediately.</p>
+          </section>
+
+          <section>
+            <h3>9. International Users</h3>
+            <p>Your data is processed and stored in the United States. By using LifeStack, you consent to the transfer of your data to the United States.</p>
+          </section>
+
+          <section>
+            <h3>10. Changes to This Policy</h3>
+            <p>We may update this Privacy Policy from time to time. We will notify you of material changes via email or in-app notification.</p>
+          </section>
+
+          <section>
+            <h3>11. Contact Us</h3>
+            <p>For privacy-related questions or requests, contact us at: <a href="mailto:privacy@lifestack.app">privacy@lifestack.app</a></p>
+          </section>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-primary" onclick="closePrivacyModal()">I Understand</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- UPGRADE MODAL -->
+  <!-- ============================================= -->
+  <div id="upgradeModal" class="modal-overlay">
+    <div class="modal modal-upgrade">
+      <div class="modal-content">
+        <button class="modal-close" onclick="closeUpgradeModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        
+        <div id="upgradeContent" class="upgrade-content">
+          <!-- Dynamic content inserted by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- COMPARE PLANS MODAL -->
+  <!-- ============================================= -->
+  <div id="comparePlansModal" class="modal-overlay">
+    <div class="modal modal-large">
+      <div class="modal-content">
+        <button class="modal-close" onclick="closeComparePlansModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        
+        <div class="modal-header">
+          <h2>Choose Your Plan</h2>
+          <p>Unlock more of LifeStack</p>
+        </div>
+        
+        <div class="modal-body">
+          <div class="plans-comparison">
+            <!-- Free Plan -->
+            <div class="plan-card plan-free">
+              <div class="plan-header">
+                <span class="plan-icon">🆓</span>
+                <h3>Free</h3>
+                <div class="plan-price">$0</div>
+                <div class="plan-period">forever</div>
+              </div>
+              <ul class="plan-features">
+                <li>✓ Life timeline</li>
+                <li>✓ 5 adventures</li>
+                <li>✓ 20 memories</li>
+                <li>✓ 3 habits</li>
+                <li>✓ 10 bucket list items</li>
+                <li>✓ 3 AI requests/month</li>
+                <li>✓ 50 MB photos</li>
+                <li>✓ 3 friends</li>
+                <li class="feature-disabled">✗ Year in Review</li>
+                <li class="feature-disabled">✗ Data export</li>
+                <li class="feature-disabled">✗ AI templates</li>
+              </ul>
+              <button class="btn btn-secondary plan-btn" disabled>Current Plan</button>
+            </div>
+            
+            <!-- Plus Plan -->
+            <div class="plan-card plan-plus">
+              <div class="plan-badge">POPULAR</div>
+              <div class="plan-header">
+                <span class="plan-icon">⭐</span>
+                <h3>Plus</h3>
+                <div class="plan-price">$4.99</div>
+                <div class="plan-period">/month</div>
+                <div class="plan-annual">or $39.99/year (save 33%)</div>
+              </div>
+              <ul class="plan-features">
+                <li>✓ Life timeline</li>
+                <li><strong>✓ Unlimited adventures</strong></li>
+                <li><strong>✓ Unlimited memories</strong></li>
+                <li><strong>✓ Unlimited habits</strong></li>
+                <li><strong>✓ Unlimited bucket list</strong></li>
+                <li><strong>✓ 20 AI requests/month</strong></li>
+                <li><strong>✓ 2 GB photos</strong></li>
+                <li><strong>✓ Unlimited friends</strong></li>
+                <li><strong>✓ Year in Review</strong></li>
+                <li><strong>✓ Data export</strong></li>
+                <li class="feature-disabled">✗ AI templates</li>
+              </ul>
+              <button class="btn btn-primary plan-btn" onclick="startUpgrade('plus')">Upgrade to Plus</button>
+            </div>
+            
+            <!-- Pro Plan -->
+            <div class="plan-card plan-pro">
+              <div class="plan-badge">BEST VALUE</div>
+              <div class="plan-header">
+                <span class="plan-icon">🚀</span>
+                <h3>Pro</h3>
+                <div class="plan-price">$9.99</div>
+                <div class="plan-period">/month</div>
+                <div class="plan-annual">or $79.99/year (save 33%)</div>
+              </div>
+              <ul class="plan-features">
+                <li>✓ Everything in Plus</li>
+                <li><strong>✓ Unlimited AI requests</strong></li>
+                <li><strong>✓ 10 GB photos</strong></li>
+                <li><strong>✓ AI idea templates</strong></li>
+                <li><strong>✓ Advanced analytics</strong></li>
+                <li><strong>✓ Multiple timelines</strong></li>
+                <li><strong>✓ Custom categories</strong></li>
+                <li><strong>✓ Home widgets</strong></li>
+                <li><strong>✓ API access</strong></li>
+                <li><strong>✓ Priority support</strong></li>
+                <li><strong>✓ Early access features</strong></li>
+              </ul>
+              <button class="btn btn-primary plan-btn btn-pro" onclick="startUpgrade('pro')">Upgrade to Pro</button>
+            </div>
+          </div>
+          
+          <p class="plans-note">All plans include 7-day free trial · Cancel anytime</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- PHOTO PROCESSING STATUS MODAL -->
+  <!-- ============================================= -->
+  <div id="photoProcessingModal" class="modal-overlay">
+    <div class="modal modal-small">
+      <div class="modal-content">
+        <div class="photo-processing-content">
+          <div class="processing-spinner"></div>
+          <h3>Processing Photo</h3>
+          <p id="photoProcessingStatus">Scanning for safety...</p>
+          <div class="processing-steps">
+            <div class="processing-step" id="step-upload">
+              <span class="step-icon">📤</span>
+              <span class="step-text">Uploading</span>
+              <span class="step-status">✓</span>
+            </div>
+            <div class="processing-step active" id="step-scan">
+              <span class="step-icon">🔍</span>
+              <span class="step-text">Safety scan</span>
+              <span class="step-status">...</span>
+            </div>
+            <div class="processing-step" id="step-save">
+              <span class="step-icon">💾</span>
+              <span class="step-text">Saving</span>
+              <span class="step-status"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- PHOTO REJECTED MODAL -->
+  <!-- ============================================= -->
+  <div id="photoRejectedModal" class="modal-overlay">
+    <div class="modal modal-small">
+      <div class="modal-content">
+        <button class="modal-close" onclick="closePhotoRejectedModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        
+        <div class="photo-rejected-content">
+          <div class="rejected-icon">⚠️</div>
+          <h3>Photo Not Allowed</h3>
+          <p>This photo couldn't be added because it may contain content that violates our <a href="#" onclick="showTermsModal(); return false;">content policy</a>.</p>
+          <p class="rejected-note">If you believe this is an error, please contact support.</p>
+          <button class="btn btn-primary" onclick="closePhotoRejectedModal()">I Understand</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- BUCKET LIST MODAL (Updated with AI counter and Pro features) -->
+  <!-- ============================================= -->
+  <div id="bucketListModal" class="modal-overlay">
+    <div class="modal modal-large"><div class="modal-content">
+      <button class="modal-close" onclick="closeBucketListModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      
+      <div class="modal-header">
+        <h2>🪣 My Bucket List</h2>
+        <p>Dreams and goals for your lifetime</p>
+        
+        <!-- AI Usage Counter -->
+        <div id="aiUsageCounter" class="usage-counter">
+          <span class="usage-icon">🤖</span>
+          <span id="aiUsageText">AI: 0 of 3 used</span>
+          <a href="#" id="aiUsageUpgrade" class="usage-upgrade hidden" onclick="showUpgradePrompt('ai_limit'); return false;">Get more</a>
+        </div>
+      </div>
+      
+      <div class="modal-body">
+        <!-- Voice Input Section -->
+        <div class="bucket-list-voice-section">
+          <div class="bucket-voice-prompt">
+            <h3>✨ What are your dreams?</h3>
+            <p>Tap the microphone and tell me what you want to experience in your lifetime</p>
+          </div>
+          
+          <button type="button" id="bucketListVoiceBtn" class="voice-record-btn" onclick="toggleBucketListRecording()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+            <span id="bucketListVoiceText">Tap to speak</span>
+          </button>
+          
+          <div id="bucketListVoiceStatus" class="voice-status"></div>
+          <div id="bucketListTranscript" class="bucket-transcript"></div>
+          <div id="bucketListAiMessage" class="bucket-ai-message hidden"></div>
+        </div>
+        
+        <!-- AI Templates Section (Pro Feature) -->
+        <div class="bucket-templates-section">
+          <button type="button" class="bucket-templates-btn" onclick="showBucketTemplates()">
+            <span class="templates-icon">✨</span>
+            <span class="templates-text">Get Ideas</span>
+            <span class="pro-badge">PRO</span>
+          </button>
+          <p class="templates-hint">Templates like "5 things to do in LA under $100"</p>
+        </div>
+        
+        <!-- Manual Add Section -->
+        <details class="bucket-manual-add">
+          <summary>➕ Or add manually</summary>
+          <div class="bucket-manual-form">
+            <input type="text" id="manualBucketTitle" placeholder="What do you want to do?">
+            <select id="manualBucketCategory">
+              <option value="travel">✈️ Travel</option>
+              <option value="adventure">🏔️ Adventure</option>
+              <option value="skills">🎯 Skills</option>
+              <option value="experiences">🎭 Experiences</option>
+              <option value="personal">💫 Personal</option>
+              <option value="health">💪 Health</option>
+              <option value="creative">🎨 Creative</option>
+              <option value="relationships">❤️ Relationships</option>
+              <option value="career">💼 Career</option>
+              <option value="other">📌 Other</option>
+            </select>
+            <button class="btn btn-primary" onclick="addManualBucketItem()">Add</button>
+          </div>
+        </details>
+        
+        <!-- Bucket List Items -->
+        <div id="bucketListItems" class="bucket-list-items">
+          <div class="bucket-list-empty">
+            <div class="bucket-list-empty-icon">🪣</div>
+            <h3>Your bucket list is empty</h3>
+            <p>Tap the microphone and tell me your dreams!</p>
+            <p class="bucket-list-hint">Try saying: "I want to travel to Japan, learn to surf, and write a book"</p>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- AI TEMPLATES MODAL (Pro Feature) -->
+  <!-- ============================================= -->
+  <div id="bucketTemplatesModal" class="modal-overlay">
+    <div class="modal modal-large">
+      <div class="modal-content">
+        <button class="modal-close" onclick="closeBucketTemplatesModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        
+        <div class="modal-header">
+          <h2>✨ Bucket List Ideas</h2>
+          <p>What kind of inspiration do you want?</p>
+        </div>
+        
+        <div class="modal-body">
+          <div id="templateCategories" class="template-categories">
+            <!-- Populated by JavaScript -->
+          </div>
+          
+          <div id="templateForm" class="template-form hidden">
+            <!-- Populated by JavaScript when template selected -->
+          </div>
+          
+          <div id="templateResults" class="template-results hidden">
+            <!-- Populated by JavaScript after generation -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- MAIN APP CONTAINER (add usage badges to nav) -->
+  <!-- ============================================= -->
+  <!-- This is a placeholder - your existing main app HTML goes here -->
+  <!-- I'm showing the key additions for the navigation -->
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- JavaScript -->
+  <script src="app.js?v=20260128"></script>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(registration => {
+            console.log('SW registered:', registration.scope);
+            
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New version available
+                  if (confirm('New version available! Reload to update?')) {
+                    window.location.reload();
+                  }
+                }
+              });
+            });
+          })
+          .catch(err => console.log('SW registration failed:', err));
+      });
+    }
+    
+    // Handle PWA install prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      
+      // Show install button if not already installed
+      const installBtn = document.getElementById('installAppBtn');
+      if (installBtn) {
+        installBtn.classList.remove('hidden');
+      }
+    });
+    
+    // Install app function
+    function installApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('User accepted install');
+          }
+          deferredPrompt = null;
+        });
+      }
+    }
+    
+    // Check if running as installed PWA
+    function isPWA() {
+      return window.matchMedia('(display-mode: standalone)').matches ||
+             window.navigator.standalone === true;
+    }
+    
+    // Handle app shortcuts
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+    if (action === 'new-memory') {
+      window.addEventListener('load', () => setTimeout(() => showMemoryModal(), 500));
+    } else if (action === 'new-adventure') {
+      window.addEventListener('load', () => setTimeout(() => showAddPlanModal('adventure'), 500));
+    }
+  </script>
+</body>
+</html>
