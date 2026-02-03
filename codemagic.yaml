@@ -22,6 +22,11 @@ workflows:
         script: npx cap sync ios
       - name: Install CocoaPods
         script: cd ios/App && pod install
+      - name: Fetch or create provisioning profile
+        script: |
+          app-store-connect fetch-signing-files com.lifestack.app \
+            --type IOS_APP_STORE \
+            --create
       - name: Set up code signing
         script: xcode-project use-profiles
       - name: Build iOS app
