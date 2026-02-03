@@ -1,0 +1,99 @@
+{
+  "TableName": "lifestack-bucketlist",
+  "KeySchema": [
+    {
+      "AttributeName": "userId",
+      "KeyType": "HASH"
+    }
+  ],
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "userId",
+      "AttributeType": "S"
+    }
+  ],
+  "BillingMode": "PAY_PER_REQUEST",
+  "Tags": [
+    {
+      "Key": "Project",
+      "Value": "LifeStack"
+    }
+  ]
+}
+
+/*
+ITEM STRUCTURE:
+{
+  "userId": "84882488-70c1-7012-c5ad-997123967576",
+  "items": [
+    {
+      "id": "bucket_1737224567890_abc123",
+      "title": "Visit the Northern Lights",
+      "description": "See the Aurora Borealis in Iceland or Norway",
+      "category": "travel",
+      "difficulty": "medium",
+      "timeframe": "year",
+      "status": "dream",
+      "createdAt": "2026-01-18T18:22:47.890Z",
+      "aiGenerated": true
+    },
+    {
+      "id": "bucket_1737224567891_def456",
+      "title": "Learn to surf",
+      "description": "Take surfing lessons and catch my first wave",
+      "category": "adventure",
+      "difficulty": "medium",
+      "timeframe": "month",
+      "status": "planned",
+      "plannedYear": 2026,
+      "linkedAdventureId": "plan_12345",
+      "createdAt": "2026-01-18T18:22:47.890Z",
+      "aiGenerated": true
+    },
+    {
+      "id": "bucket_1737224567892_ghi789",
+      "title": "Write a book",
+      "description": "Complete and publish my first novel",
+      "category": "creative",
+      "difficulty": "epic",
+      "timeframe": "multi-year",
+      "status": "completed",
+      "completedAt": "2026-06-15T10:30:00.000Z",
+      "completedYear": 2026,
+      "createdAt": "2026-01-18T18:22:47.890Z",
+      "aiGenerated": false
+    }
+  ],
+  "updatedAt": "2026-01-18T18:30:00.000Z"
+}
+
+STATUS VALUES:
+- dream: Not yet planned
+- planned: Scheduled as an adventure for a specific year
+- completed: Done!
+
+CATEGORY VALUES:
+- travel
+- adventure
+- skills
+- experiences
+- personal
+- health
+- creative
+- relationships
+- career
+- other
+
+DIFFICULTY VALUES:
+- easy: Can do in a weekend
+- medium: Requires some planning and effort
+- hard: Significant challenge
+- epic: Life-changing, might take years
+
+TIMEFRAME VALUES:
+- weekend: Quick win
+- month: Short-term goal
+- year: This year goal
+- multi-year: Long-term project
+- lifetime: Ultimate dream
+*/
