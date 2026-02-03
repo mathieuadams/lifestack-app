@@ -12,7 +12,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-      node: 18
+      node: 22
       xcode: latest
       cocoapods: default
     scripts:
@@ -53,7 +53,7 @@ workflows:
         - lifestack_keystore
       vars:
         PACKAGE_NAME: "com.lifestack.app"
-      node: 18
+      node: 22
       java: 17
     scripts:
       - name: Install npm dependencies
