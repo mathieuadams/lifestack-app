@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">LifeStack</string>
+    <string name="title_activity_main">LifeStack</string>
+    <string name="package_name">com.lifestack.app</string>
+    <string name="custom_url_scheme">com.lifestack.app</string>
+</resources>
