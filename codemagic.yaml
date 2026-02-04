@@ -1,4 +1,3 @@
-cat > codemagic.yaml << 'EOF'
 workflows:
   ios-workflow:
     name: iOS Build
@@ -62,4 +61,3 @@ workflows:
         script: cd android && ./gradlew bundleRelease
     artifacts:
       - android/app/build/outputs/**/*.aab
-EOF
