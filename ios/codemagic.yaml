@@ -21,16 +21,12 @@ workflows:
         script: npx cap sync ios
       - name: Set up code signing
         script: |
-          app-store-connect fetch-signing-files com.lifestack.app \
-            --type IOS_APP_STORE \
-            --create
+          app-store-connect fetch-signing-files com.lifestack.app --type IOS_APP_STORE --create
           keychain add-certificates
           xcode-project use-profiles
       - name: Build iOS app
         script: |
-          xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME"
+          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
