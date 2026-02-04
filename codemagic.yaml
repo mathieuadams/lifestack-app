@@ -6,6 +6,8 @@ workflows:
     integrations:
       app_store_connect: Lifestack
     environment:
+      groups:
+        - ios_signing
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.lifestack.app
@@ -19,8 +21,12 @@ workflows:
         script: npm install
       - name: Sync Capacitor
         script: npx cap sync ios
-      - name: Set up code signing
-        script: app-store-connect fetch-signing-files com.lifestack.app --type IOS_APP_STORE --create && keychain add-certificates && xcode-project use-profiles
+      - name: Fetch signing files
+        script: app-store-connect fetch-signing-files com.lifestack.app --type IOS_APP_STORE --create
+      - name: Add certs to keychain
+        script: keychain add-certificates --certificate-key "$CERTIFICATE_PRIVATE_KEY"
+      - name: Use profiles
+        script: xcode-project use-profiles
       - name: Build iOS app
         script: xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
     artifacts:
