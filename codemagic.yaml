@@ -4,15 +4,14 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2
     integrations:
-      app_store_connect: Lifestack
+      app_store_connect: Lifestack # Matches your App Store Connect integration name
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.lifestack.app
+      groups:
+        - ios_signing # Imports the group containing your CERTIFICATE_PRIVATE_KEY
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-        BUNDLE_ID: "com.lifestack.app" # Explicitly define for the script
+        BUNDLE_ID: "com.lifestack.app"
       node: 22
       xcode: latest
     scripts:
@@ -28,7 +27,7 @@ workflows:
             --type IOS_APP_STORE \
             --create
       - name: Add certificates to keychain
-        script: keychain add-certificates
+        script: keychain add-certificates --certificate-key "$CERTIFICATE_PRIVATE_KEY"
       - name: Set up code signing
         script: xcode-project use-profiles
       - name: Build iOS app
