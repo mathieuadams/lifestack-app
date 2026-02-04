@@ -774,11 +774,25 @@
 
   <!-- JavaScript -->
   <script src="app.js?v=20260128"></script>
-  
-  <!-- Service Worker Registration -->
-  <script>
-    // Register service worker for PWA
-    if ('serviceWorker' in navigator) {
+   <script>
+    // Check if running in native Capacitor app
+    const isNativeApp = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+    
+    // Debug logging
+    console.log('LifeStack starting...');
+    console.log('Is native app:', isNativeApp);
+    console.log('CONFIG:', typeof CONFIG !== 'undefined' ? CONFIG : 'NOT DEFINED');
+    
+    // Global error handler for debugging
+    window.onerror = function(msg, url, line, col, error) {
+      console.error('JS Error:', msg, 'at', url, 'line', line);
+      // Uncomment next line to see alerts for errors:
+      // alert('Error: ' + msg + '\nLine: ' + line);
+      return false;
+    };
+    
+    // Register service worker for PWA (skip for native app)
+    if ('serviceWorker' in navigator && !isNativeApp) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/service-worker.js')
           .then(registration => {
@@ -799,20 +813,24 @@
           })
           .catch(err => console.log('SW registration failed:', err));
       });
+    } else {
+      console.log('Service worker skipped (native app or not supported)');
     }
     
-    // Handle PWA install prompt
+    // Handle PWA install prompt (skip for native app)
     let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      
-      // Show install button if not already installed
-      const installBtn = document.getElementById('installAppBtn');
-      if (installBtn) {
-        installBtn.classList.remove('hidden');
-      }
-    });
+    if (!isNativeApp) {
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Show install button if not already installed
+        const installBtn = document.getElementById('installAppBtn');
+        if (installBtn) {
+          installBtn.classList.remove('hidden');
+        }
+      });
+    }
     
     // Install app function
     function installApp() {
@@ -833,14 +851,17 @@
              window.navigator.standalone === true;
     }
     
-    // Handle app shortcuts
-    const urlParams = new URLSearchParams(window.location.search);
-    const action = urlParams.get('action');
-    if (action === 'new-memory') {
-      window.addEventListener('load', () => setTimeout(() => showMemoryModal(), 500));
-    } else if (action === 'new-adventure') {
-      window.addEventListener('load', () => setTimeout(() => showAddPlanModal('adventure'), 500));
+    // Handle app shortcuts (skip for native app)
+    if (!isNativeApp) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const action = urlParams.get('action');
+      if (action === 'new-memory') {
+        window.addEventListener('load', () => setTimeout(() => showMemoryModal(), 500));
+      } else if (action === 'new-adventure') {
+        window.addEventListener('load', () => setTimeout(() => showAddPlanModal('adventure'), 500));
+      }
     }
-  </script>
+  </script> 
+
 </body>
 </html>
