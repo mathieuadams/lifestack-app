@@ -12,6 +12,7 @@ workflows:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
         BUNDLE_ID: "com.lifestack.app"
+        APP_STORE_CONNECT_ISSUER_ID: Lifestack
       node: 22
       xcode: latest
     scripts:
