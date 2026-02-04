@@ -19,15 +19,13 @@ workflows:
         script: npm install
       - name: Sync Capacitor
         script: npx cap sync ios
-      - name: Create certificate and profile
+      - name: Set up code signing
         script: |
           app-store-connect fetch-signing-files com.lifestack.app \
             --type IOS_APP_STORE \
             --create
-      - name: Add certificates to keychain
-        script: keychain add-certificates
-      - name: Set up code signing
-        script: xcode-project use-profiles
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Build iOS app
         script: |
           xcode-project build-ipa \
