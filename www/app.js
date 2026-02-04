@@ -211,16 +211,21 @@ async function getValidTokens() {
 }
 
 async function fetchPlans(year) {
+  alert('fetchPlans called for year: ' + year);
   const tokens = await getValidTokens();
-  
+  alert('fetchPlans - has tokens: ' + !!tokens?.idToken);
   // Try API first
   if (tokens?.idToken) {
     try {
+      const url = `${CONFIG.API_URL}/plans?year=${year}`;
+      alert('Fetching plans from: ' + url);
       const response = await fetch(`${CONFIG.API_URL}/plans?year=${year}`, {
+
         headers: { 'Authorization': `Bearer ${tokens.idToken}` }
       });
       if (response.ok) {
         const data = await response.json();
+        alert('Plans fetched: ' + (Array.isArray(data) ? data.length : 'not array'));
         const plansArray = ensureArray(data);
         console.log(`Fetched ${plansArray.length} plans for ${year}:`, 
           plansArray.map(p => `${p.type}: ${p.title}`));
@@ -3007,11 +3012,12 @@ function showOnboarding() {
 }
 
 function showApp() {
+  alert('showApp called');
   hideLoading();
   document.getElementById('landing').classList.add('hidden');
   document.getElementById('onboarding').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  
+  alert('About to call openCurrentYearDesign');
   // Update avatar display (header icon)
   updateAvatarDisplay();
   
@@ -3101,6 +3107,7 @@ function openCurrentYearDesign() {
 }
 
 async function showDesignView(year) {
+  alert('showDesignView called for year: ' + year);
   document.getElementById('designYear').textContent = year;
   document.getElementById('yearDesignView').classList.remove('hidden');
   
@@ -3108,7 +3115,9 @@ async function showDesignView(year) {
   document.querySelector('.nav-item[data-view="yearDesign"]')?.classList.add('active');
   
   // Fetch plans for this year
+  alert('About to fetchPlans');
   plans = await fetchPlans(year);
+  alert('Plans loaded: ' + (plans ? plans.length : 'null'));
   
   // Load theme (from plans or localStorage)
   loadYearTheme();
@@ -3166,9 +3175,10 @@ function goToCurrentYear() {
 // =====================================================
 
 async function loadUserData() {
+  alert('loadUserData started');
   const storedTokens = JSON.parse(localStorage.getItem('lifestack_tokens') || 'null');
   const auth = JSON.parse(localStorage.getItem('lifestack_auth') || 'null');
-  
+  alert('Has tokens: ' + !!storedTokens + ', Has auth: ' + !!auth);
   if (!storedTokens || !auth) { showLanding(); return; }
 
   const savedUser = localStorage.getItem('lifestack_user');
