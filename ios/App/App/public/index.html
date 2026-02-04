@@ -863,5 +863,18 @@
     }
   </script> 
 
+  <script>
+// EMERGENCY TIMEOUT - Force show app after 5 seconds if stuck
+setTimeout(function() {
+  var loading = document.getElementById('loadingScreen');
+  var landing = document.getElementById('landing');
+  if (loading && !loading.classList.contains('hidden')) {
+    console.log('TIMEOUT: Forcing app to show');
+    loading.classList.add('hidden');
+    if (landing) landing.classList.remove('hidden');
+  }
+}, 5000);
+</script>
+
 </body>
 </html>
