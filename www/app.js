@@ -3012,20 +3012,24 @@ function showOnboarding() {
 }
 
 function showApp() {
-  alert('showApp called');
+  alert('showApp: step 1 - starting');
   hideLoading();
+  
+  alert('showApp: step 2 - hiding screens');
   document.getElementById('landing').classList.add('hidden');
   document.getElementById('onboarding').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  alert('About to call openCurrentYearDesign');
-  // Update avatar display (header icon)
+  
+  alert('showApp: step 3 - updateAvatarDisplay');
   updateAvatarDisplay();
   
-  // Start inactivity monitor for auto logout
+  alert('showApp: step 4 - startInactivityMonitor');
   startInactivityMonitor();
   
-  // Open Plan view (current year design) instead of Home
+  alert('showApp: step 5 - calling openCurrentYearDesign');
   openCurrentYearDesign();
+  
+  alert('showApp: step 6 - done');
 }
 
 function switchView(view) {
@@ -3100,9 +3104,17 @@ async function openYearView(ageYear, calendarYear) {
 }
 
 function openCurrentYearDesign() {
+  alert('openCurrentYearDesign: starting');
+  
   const currentYear = new Date().getFullYear();
+  alert('openCurrentYearDesign: year = ' + currentYear);
+  
   const birthYear = new Date(currentUser.birthdate).getFullYear();
+  alert('openCurrentYearDesign: birthYear = ' + birthYear + ', currentUser = ' + (currentUser ? 'exists' : 'NULL'));
+  
   const age = currentYear - birthYear;
+  alert('openCurrentYearDesign: age = ' + age);
+  
   openYearView(age, currentYear);
 }
 
