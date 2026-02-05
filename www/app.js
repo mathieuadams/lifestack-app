@@ -124,15 +124,11 @@ async function apiSignIn(email, password) {
       body: JSON.stringify({ email, password })
     });
     
-    // DEBUG: Show response status
-    alert('API Response Status: ' + response.status);
-    
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Login failed');
     return data;
   } catch (error) {
-    // DEBUG: Show the actual error
-    alert('API Error: ' + error.message);
+    console.error('API Error:', error.message);
     throw error;
   }
 }
@@ -224,21 +220,17 @@ async function getValidTokens() {
 }
 
 async function fetchPlans(year) {
-  alert('fetchPlans called for year: ' + year);
   const tokens = await getValidTokens();
-  alert('fetchPlans - has tokens: ' + !!tokens?.idToken);
   // Try API first
   if (tokens?.idToken) {
     try {
       const url = `${CONFIG.API_URL}/plans?year=${year}`;
-      alert('Fetching plans from: ' + url);
       const response = await fetch(`${CONFIG.API_URL}/plans?year=${year}`, {
 
         headers: { 'Authorization': `Bearer ${tokens.idToken}` }
       });
       if (response.ok) {
         const data = await response.json();
-        alert('Plans fetched: ' + (Array.isArray(data) ? data.length : 'not array'));
         const plansArray = ensureArray(data);
         console.log(`Fetched ${plansArray.length} plans for ${year}:`, 
           plansArray.map(p => `${p.type}: ${p.title}`));
@@ -808,12 +800,14 @@ function updateFriendBadge() {
 // Show friends modal
 function showFriendsModal() {
   loadFriendships();
-  document.getElementById('friendsModal').classList.add('active');
+  const modal = document.getElementById('friendsModal');
+  if (modal) modal.classList.add('active');
 }
 
 // Close friends modal
 function closeFriendsModal() {
-  document.getElementById('friendsModal').classList.remove('active');
+  const modal = document.getElementById('friendsModal');
+  if (modal) modal.classList.remove('active');
 }
 
 // Load and render friendships
@@ -829,9 +823,10 @@ function renderFriendsList() {
   const pendingSection = document.getElementById('pendingRequestsSection');
   const pendingList = document.getElementById('pendingRequestsList');
   
-  if (friendships.pendingReceived?.length > 0) {
-    pendingSection.classList.remove('hidden');
-    pendingList.innerHTML = friendships.pendingReceived.map(req => `
+  if (pendingSection && pendingList) {
+    if (friendships.pendingReceived?.length > 0) {
+      pendingSection.classList.remove('hidden');
+      pendingList.innerHTML = friendships.pendingReceived.map(req => `
       <div class="friend-request-card">
         <div class="friend-avatar">${getInitials(req.requesterName)}</div>
         <div class="friend-info">
@@ -844,12 +839,14 @@ function renderFriendsList() {
         </div>
       </div>
     `).join('');
-  } else {
-    pendingSection.classList.add('hidden');
+    } else {
+      pendingSection.classList.add('hidden');
+    }
   }
   
   // Friends list
   const friendsList = document.getElementById('friendsList');
+  if (!friendsList) return;
   if (friendships.friends?.length > 0) {
     friendsList.innerHTML = friendships.friends.map(friend => `
       <div class="friend-card">
@@ -1223,7 +1220,6 @@ function formatFriendDate(dateStr) {
 
 async function handleSignIn(event) {
   event.preventDefault();
-  alert('Sign in started. API URL: ' + CONFIG.API_URL);
 
   const emailEl = document.getElementById('signInEmail');
   const passwordEl = document.getElementById('signInPassword');
@@ -1232,7 +1228,7 @@ async function handleSignIn(event) {
 
   // Guard (prevents iOS “silent halt” if an element is missing)
   if (!emailEl || !passwordEl || !btn || !errorDiv) {
-    alert('Sign-in UI is missing required elements (signInEmail/signInPassword/signInBtn/signInError).');
+    console.error('Sign-in UI is missing required elements');
     return;
   }
 
@@ -1296,11 +1292,10 @@ async function handleSignIn(event) {
       if (typeof loadUserData === 'function') {
         await loadUserData();
       } else {
-        alert('loadUserData() is not defined.');
+        console.error('loadUserData() is not defined.');
       }
     } catch (e) {
-      console.log('loadUserData error:', e);
-      alert('loadUserData failed: ' + (e?.message || e));
+      console.error('loadUserData error:', e);
     }
   } catch (error) {
     if (error?.message && error.message.includes('verify')) {
@@ -1586,7 +1581,8 @@ function showMemoryModal(memoryToEdit = null) {
   selectedPhotos = [];
   uploadedPhotos = [];
   selectedPeopleIds = [];
-  document.getElementById('photoPreview').innerHTML = '';
+  const photoPreview = document.getElementById('photoPreview');
+  if (photoPreview) photoPreview.innerHTML = '';
   
   // If an adventure is selected, pre-link it
   const planSelector = document.getElementById('memoryPlanId');
@@ -1744,10 +1740,13 @@ function removeExistingPhoto(index) {
 }
 
 function closeMemoryModal() {
-  document.getElementById('memoryModal').classList.remove('active');
-  document.getElementById('memoryForm').reset();
-  document.getElementById('memoryId').value = '';
-  clearLocationFields();
+  const modal = document.getElementById('memoryModal');
+  if (modal) modal.classList.remove('active');
+  const form = document.getElementById('memoryForm');
+  if (form) form.reset();
+  const memId = document.getElementById('memoryId');
+  if (memId) memId.value = '';
+  try { clearLocationFields(); } catch(e) { console.log('clearLocationFields error:', e); }
   selectedPhotos = [];
   uploadedPhotos = [];
   selectedPeopleIds = [];
@@ -1875,16 +1874,22 @@ function clearLocation() {
 }
 
 function clearLocationFields() {
-  document.getElementById('memoryLocation').value = '';
-  document.getElementById('memoryLat').value = '';
-  document.getElementById('memoryLng').value = '';
-  if (document.getElementById('memoryPlaceId')) {
-    document.getElementById('memoryPlaceId').value = '';
+  const locInput = document.getElementById('memoryLocation');
+  if (locInput) locInput.value = '';
+  const latInput = document.getElementById('memoryLat');
+  if (latInput) latInput.value = '';
+  const lngInput = document.getElementById('memoryLng');
+  if (lngInput) lngInput.value = '';
+  const placeInput = document.getElementById('memoryPlaceId');
+  if (placeInput) placeInput.value = '';
+  const clearBtn = document.getElementById('locationClearBtn');
+  if (clearBtn) clearBtn.style.display = 'none';
+  const status = document.getElementById('locationStatus');
+  if (status) {
+    status.textContent = '';
+    status.className = 'location-status';
   }
-  document.getElementById('locationClearBtn').style.display = 'none';
-  document.getElementById('locationStatus').textContent = '';
-  document.getElementById('locationStatus').className = 'location-status';
-  hideLocationDropdown();
+  try { hideLocationDropdown(); } catch(e) {}
 }
 
 function getLocationData() {
@@ -2724,16 +2729,16 @@ function showAddPlanModal(type, month = null) {
   const categoryGroup = document.getElementById('categoryPickerGroup');
   
   if (type === 'habit') {
-    dateGroup.classList.add('hidden');
-    peopleGroup.classList.add('hidden');
-    categoryGroup.classList.add('hidden');
+    if (dateGroup) dateGroup.classList.add('hidden');
+    if (peopleGroup) peopleGroup.classList.add('hidden');
+    if (categoryGroup) categoryGroup.classList.add('hidden');
     document.getElementById('planTargetQuarter').value = month || 1;
     document.getElementById('planTargetMonth').value = '';
     document.getElementById('planModalTitle').textContent = `Add Q${month} Habit`;
   } else {
-    dateGroup.classList.remove('hidden');
-    peopleGroup.classList.remove('hidden');
-    categoryGroup.classList.remove('hidden');
+    if (dateGroup) dateGroup.classList.remove('hidden');
+    if (peopleGroup) peopleGroup.classList.remove('hidden');
+    if (categoryGroup) categoryGroup.classList.remove('hidden');
     document.getElementById('planTargetQuarter').value = '';
     
     if (month) {
@@ -2804,13 +2809,13 @@ function showEditPlanModal(planId) {
   const categoryGroup = document.getElementById('categoryPickerGroup');
   
   if (plan.type === 'habit') {
-    dateGroup.classList.add('hidden');
-    peopleGroup.classList.add('hidden');
-    categoryGroup.classList.add('hidden');
+    if (dateGroup) dateGroup.classList.add('hidden');
+    if (peopleGroup) peopleGroup.classList.add('hidden');
+    if (categoryGroup) categoryGroup.classList.add('hidden');
   } else {
-    dateGroup.classList.remove('hidden');
-    peopleGroup.classList.remove('hidden');
-    categoryGroup.classList.remove('hidden');
+    if (dateGroup) dateGroup.classList.remove('hidden');
+    if (peopleGroup) peopleGroup.classList.remove('hidden');
+    if (categoryGroup) categoryGroup.classList.remove('hidden');
   }
   
   document.getElementById('planModalTitle').textContent = `Edit ${plan.type === 'misogi' ? 'Misogi' : plan.type === 'habit' ? 'Habit' : 'Adventure'}`;
@@ -2943,9 +2948,12 @@ function getCategoryIcon(categoryId) {
 }
 
 function closePlanModal() {
-  document.getElementById('planModal').classList.remove('active');
-  document.getElementById('planForm').reset();
-  document.getElementById('planEndDate').min = ''; // Clear end date minimum
+  const modal = document.getElementById('planModal');
+  if (modal) modal.classList.remove('active');
+  const form = document.getElementById('planForm');
+  if (form) form.reset();
+  const endDate = document.getElementById('planEndDate');
+  if (endDate) endDate.min = ''; // Clear end date minimum
   selectedCategory = null;
 }
 
@@ -3146,17 +3154,20 @@ async function openYearView(ageYear, calendarYear) {
 }
 
 function openCurrentYearDesign() {
-  alert('openCurrentYearDesign: starting');
+  if (!currentUser || !currentUser.birthdate) {
+    console.warn('openCurrentYearDesign: currentUser or birthdate is missing');
+    return;
+  }
   
   const currentYear = new Date().getFullYear();
-  alert('openCurrentYearDesign: year = ' + currentYear);
-  
   const birthYear = new Date(currentUser.birthdate).getFullYear();
-  alert('openCurrentYearDesign: birthYear = ' + birthYear + ', currentUser = ' + (currentUser ? 'exists' : 'NULL'));
+  
+  if (isNaN(birthYear)) {
+    console.warn('openCurrentYearDesign: invalid birthdate', currentUser.birthdate);
+    return;
+  }
   
   const age = currentYear - birthYear;
-  alert('openCurrentYearDesign: age = ' + age);
-  
   openYearView(age, currentYear);
 }
 
@@ -3169,13 +3180,11 @@ async function showDesignView(year) {
   
   plans = await fetchPlans(year);
   
-  try { loadYearTheme(); } catch(e) { alert('Theme error: ' + e.message); }
-  try { renderMisogis(); } catch(e) { alert('Misogi error: ' + e.message); }
-  try { renderHabits(); } catch(e) { alert('Habits error: ' + e.message); }
-  try { renderMonthGrid(); } catch(e) { alert('MonthGrid error: ' + e.message); }
-  try { renderYearMemories(year); } catch(e) { alert('Memories error: ' + e.message); }
-  
-  alert('showDesignView COMPLETE');
+  try { loadYearTheme(); } catch(e) { console.error('Theme error:', e); }
+  try { renderMisogis(); } catch(e) { console.error('Misogi error:', e); }
+  try { renderHabits(); } catch(e) { console.error('Habits error:', e); }
+  try { renderMonthGrid(); } catch(e) { console.error('MonthGrid error:', e); }
+  try { renderYearMemories(year); } catch(e) { console.error('Memories error:', e); }
 }
 
 async function showReviewView(year) {
@@ -3224,10 +3233,8 @@ function goToCurrentYear() {
 // =====================================================
 
 async function loadUserData() {
-  alert('loadUserData started');
   const storedTokens = JSON.parse(localStorage.getItem('lifestack_tokens') || 'null');
   const auth = JSON.parse(localStorage.getItem('lifestack_auth') || 'null');
-  alert('Has tokens: ' + !!storedTokens + ', Has auth: ' + !!auth);
   if (!storedTokens || !auth) { showLanding(); return; }
 
   const savedUser = localStorage.getItem('lifestack_user');
@@ -3365,7 +3372,9 @@ function loadLocalPeople() {
 // ONBOARDING
 // =====================================================
 
-document.getElementById('onboardingForm').addEventListener('submit', async function(e) {
+const onboardingFormEl = document.getElementById('onboardingForm');
+if (onboardingFormEl) {
+onboardingFormEl.addEventListener('submit', async function(e) {
   e.preventDefault();
   const tokens = await getValidTokens();
   const auth = JSON.parse(localStorage.getItem('lifestack_auth') || 'null');
@@ -3399,6 +3408,7 @@ document.getElementById('onboardingForm').addEventListener('submit', async funct
     showToast('Welcome! (Saved locally)');
   }
 });
+} // end onboardingForm null check
 
 // =====================================================
 // PLAN HANDLING
@@ -3485,8 +3495,10 @@ async function handlePlanSubmit(event) {
   };
   
   const btn = document.getElementById('planSubmitBtn');
-  btn.disabled = true;
-  btn.textContent = planId ? 'Updating...' : 'Saving...';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = planId ? 'Updating...' : 'Saving...';
+  }
   
   let result;
   if (planId) {
@@ -3534,8 +3546,10 @@ async function handlePlanSubmit(event) {
   renderHabits();
   renderMonthGrid();
   
-  btn.disabled = false;
-  btn.textContent = 'Save Plan';
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = 'Save Plan';
+  }
   selectedPeopleIds = [];
 }
 
@@ -3629,6 +3643,7 @@ async function saveMemory() {
   const tagsInput = document.getElementById('memoryTags').value;
   
   if (!title || !occurredAt) { showError('Please fill in title and date'); return; }
+  if (!currentUser || !currentUser.birthdate) { showError('User data not loaded. Please reload.'); return; }
 
   const birthYear = new Date(currentUser.birthdate).getFullYear();
   const memoryYear = new Date(occurredAt).getFullYear();
@@ -3840,12 +3855,15 @@ function loadYearTheme() {
 // =====================================================
 
 function renderDashboard() {
-  if (!currentUser) return;
+  if (!currentUser || !currentUser.birthdate) return;
   
   const birthDate = new Date(currentUser.birthdate);
+  if (isNaN(birthDate.getTime())) return;
+  
   const today = new Date();
   const age = Math.floor((today - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
-  const yearsLeft = currentUser.lifespanYears - age;
+  const lifespanYears = currentUser.lifespanYears || 80;
+  const yearsLeft = lifespanYears - age;
   const startOfYear = new Date(today.getFullYear(), 0, 1);
   const endOfYear = new Date(today.getFullYear() + 1, 0, 1);
   const yearProgress = ((today - startOfYear) / (endOfYear - startOfYear)) * 100;
@@ -3853,20 +3871,23 @@ function renderDashboard() {
   // Ensure memories is array for count
   const safeMemories = ensureArray(memories);
   
-  document.getElementById('currentYear').textContent = today.getFullYear();
-  document.getElementById('currentAge').textContent = age;
-  document.getElementById('lifespanDisplay').textContent = currentUser.lifespanYears;
-  document.getElementById('yearsLived').textContent = age;
-  document.getElementById('yearsLeft').textContent = Math.max(0, yearsLeft);
-  document.getElementById('memoriesCount').textContent = safeMemories.length;
-  document.getElementById('yearPercent').textContent = Math.round(yearProgress) + '%';
+  const el1 = document.getElementById('currentYear'); if (el1) el1.textContent = today.getFullYear();
+  const el2 = document.getElementById('currentAge'); if (el2) el2.textContent = age;
+  const el3 = document.getElementById('lifespanDisplay'); if (el3) el3.textContent = lifespanYears;
+  const el4 = document.getElementById('yearsLived'); if (el4) el4.textContent = age;
+  const el5 = document.getElementById('yearsLeft'); if (el5) el5.textContent = Math.max(0, yearsLeft);
+  const el6 = document.getElementById('memoriesCount'); if (el6) el6.textContent = safeMemories.length;
+  const el7 = document.getElementById('yearPercent'); if (el7) el7.textContent = Math.round(yearProgress) + '%';
   
   // Update avatar display (supports both initials and image)
   updateAvatarDisplay();
   
-  const circumference = 2 * Math.PI * 32;
-  const offset = circumference - (yearProgress / 100) * circumference;
-  document.getElementById('progressRing').style.strokeDashoffset = offset;
+  const progressRing = document.getElementById('progressRing');
+  if (progressRing) {
+    const circumference = 2 * Math.PI * 32;
+    const offset = circumference - (yearProgress / 100) * circumference;
+    progressRing.style.strokeDashoffset = offset;
+  }
   
   renderTimeline();
   renderMemories();
@@ -3874,17 +3895,21 @@ function renderDashboard() {
 
 function renderTimeline() {
   const grid = document.getElementById('timelineGrid');
+  if (!grid || !currentUser || !currentUser.birthdate) return;
   grid.innerHTML = '';
   
   const birthDate = new Date(currentUser.birthdate);
+  if (isNaN(birthDate.getTime())) return;
+  
   const today = new Date();
   const currentAge = Math.floor((today - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+  const lifespanYears = currentUser.lifespanYears || 80;
   
   // Ensure memories is an array before mapping
   const safeMemories = ensureArray(memories);
   const yearsWithMemories = new Set(safeMemories.map(m => m.year));
   
-  for (let year = 0; year < currentUser.lifespanYears; year++) {
+  for (let year = 0; year < lifespanYears; year++) {
     const div = document.createElement('div');
     div.className = 'timeline-year';
     
@@ -3964,6 +3989,7 @@ function renderMemories() {
 
 function renderMisogis() {
   const container = document.getElementById('misogiList');
+  if (!container) return;
   const misogis = plans.filter(p => p.type === 'misogi');
   
   if (misogis.length === 0) {
@@ -4385,6 +4411,7 @@ let currentCalendarMonth = null;
 
 function renderMonthGrid() {
   const container = document.getElementById('monthGrid');
+  if (!container) return;
   const today = new Date();
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
@@ -4673,6 +4700,7 @@ function renderMonthCalendarGrid(month) {
 
 function renderMonthPlansList(month) {
   const container = document.getElementById('monthPlansList');
+  if (!container) return;
   
   // Filter by actual startDate month, not just targetMonth
   // Include shared-adventure type!
@@ -5838,6 +5866,7 @@ function formatDateShort(dateStr) {
 
 function showToast(message) {
   const toast = document.getElementById('toast');
+  if (!toast) { console.log('Toast:', message); return; }
   toast.textContent = message;
   toast.classList.remove('error');
   toast.classList.add('show');
@@ -5846,6 +5875,7 @@ function showToast(message) {
 
 function showError(message) {
   const toast = document.getElementById('toast');
+  if (!toast) { console.error('Error:', message); return; }
   toast.textContent = message;
   toast.classList.add('error', 'show');
   setTimeout(() => toast.classList.remove('show'), 4000);
@@ -5989,11 +6019,14 @@ function renderSharesList() {
   
   if (!sentContainer || !receivedContainer) return;
   
+  const sentShares = ensureArray(shares.sent);
+  const receivedShares = ensureArray(shares.received);
+  
   // Render sent shares
-  if (shares.sent.length === 0) {
+  if (sentShares.length === 0) {
     sentContainer.innerHTML = '<p class="no-shares">No shares sent yet</p>';
   } else {
-    sentContainer.innerHTML = shares.sent.map(share => `
+    sentContainer.innerHTML = sentShares.map(share => `
       <div class="share-item ${share.status}">
         <div class="share-item-info">
           <span class="share-item-title">${escapeHtml(share.itemTitle || share.shareType)}</span>
@@ -6009,10 +6042,10 @@ function renderSharesList() {
   }
   
   // Render received shares
-  if (shares.received.length === 0) {
+  if (receivedShares.length === 0) {
     receivedContainer.innerHTML = '<p class="no-shares">No shares received yet</p>';
   } else {
-    receivedContainer.innerHTML = shares.received.map(share => `
+    receivedContainer.innerHTML = receivedShares.map(share => `
       <div class="share-item received ${share.status}">
         <div class="share-item-info">
           <span class="share-item-title">${escapeHtml(share.itemTitle || share.shareType)}</span>
