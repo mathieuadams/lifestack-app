@@ -3026,24 +3026,29 @@ function showOnboarding() {
 }
 
 function showApp() {
-  alert('showApp: step 1 - starting');
   hideLoading();
-  
-  alert('showApp: step 2 - hiding screens');
   document.getElementById('landing').classList.add('hidden');
   document.getElementById('onboarding').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   
-  alert('showApp: step 3 - updateAvatarDisplay');
-  updateAvatarDisplay();
+  // Wrap in try-catch so it doesn't block the app
+  try {
+    updateAvatarDisplay();
+  } catch(e) {
+    alert('Avatar error: ' + e.message);
+  }
   
-  alert('showApp: step 4 - startInactivityMonitor');
-  startInactivityMonitor();
+  try {
+    startInactivityMonitor();
+  } catch(e) {
+    alert('Inactivity error: ' + e.message);
+  }
   
-  alert('showApp: step 5 - calling openCurrentYearDesign');
-  openCurrentYearDesign();
-  
-  alert('showApp: step 6 - done');
+  try {
+    openCurrentYearDesign();
+  } catch(e) {
+    alert('YearDesign error: ' + e.message);
+  }
 }
 
 function switchView(view) {
