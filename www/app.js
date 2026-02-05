@@ -3079,29 +3079,25 @@ function showApp() {
 }
 
 function switchView(view) {
-  // Update nav
   document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.toggle('active', item.dataset.view === view);
   });
   
-  // Hide all views
-  document.getElementById('dashboardView').classList.add('hidden');
-  document.getElementById('yearDesignView').classList.add('hidden');
-  document.getElementById('yearReviewView').classList.add('hidden');
-  document.getElementById('yearLockedView').classList.add('hidden');
-  document.getElementById('settingsView').classList.add('hidden');
-  document.getElementById('journalView')?.classList.add('hidden');
+  var ids = ['dashboardView', 'yearDesignView', 'yearReviewView', 'yearLockedView', 'settingsView', 'journalView'];
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
   
-  // Show requested view
   if (view === 'dashboard') {
-    document.getElementById('dashboardView').classList.remove('hidden');
-    renderDashboard();
+    var el = document.getElementById('dashboardView'); if (el) el.classList.remove('hidden');
+    try { renderDashboard(); } catch(e) { console.log('Dashboard error:', e); }
   } else if (view === 'settings') {
-    document.getElementById('settingsView').classList.remove('hidden');
-    renderSettings();
+    var el = document.getElementById('settingsView'); if (el) el.classList.remove('hidden');
+    try { renderSettings(); } catch(e) { console.log('Settings error:', e); }
   } else if (view === 'journal') {
-    document.getElementById('journalView').classList.remove('hidden');
-    renderJournalEntries();
+    var el = document.getElementById('journalView'); if (el) el.classList.remove('hidden');
+    try { renderJournalEntries(); } catch(e) { console.log('Journal error:', e); }
   }
 }
 
@@ -3130,12 +3126,12 @@ async function openYearView(ageYear, calendarYear) {
   currentViewYear = calendarYear;
   const mode = getYearViewMode(calendarYear);
   
-  // Hide all views first
-  document.getElementById('dashboardView').classList.add('hidden');
-  document.getElementById('yearDesignView').classList.add('hidden');
-  document.getElementById('yearReviewView').classList.add('hidden');
-  document.getElementById('yearLockedView').classList.add('hidden');
-  document.getElementById('settingsView').classList.add('hidden');
+  // Hide all views first (with null checks)
+  var ids = ['dashboardView', 'yearDesignView', 'yearReviewView', 'yearLockedView', 'settingsView', 'journalView'];
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
   
   // Update nav
   document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
@@ -3165,63 +3161,56 @@ function openCurrentYearDesign() {
 }
 
 async function showDesignView(year) {
-  try {
-    alert('showDesignView: year=' + year);
-    document.getElementById('designYear').textContent = year;
-    document.getElementById('yearDesignView').classList.remove('hidden');
-    
-    alert('showDesignView: fetching plans...');
-    plans = await fetchPlans(year);
-    alert('showDesignView: got ' + (plans ? plans.length : 'null') + ' plans');
-    
-    loadYearTheme();
-    alert('showDesignView: rendering...');
-    renderMisogis();
-    renderHabits();
-    renderMonthGrid();
-    renderYearMemories(year);
-    alert('showDesignView: DONE');
-  } catch(e) {
-    alert('showDesignView ERROR: ' + e.message);
-  }
+  var el;
+  el = document.getElementById('designYear'); if (el) el.textContent = year;
+  el = document.getElementById('yearDesignView'); if (el) el.classList.remove('hidden');
+  
+  document.querySelector('.nav-item[data-view="yearDesign"]')?.classList.add('active');
+  
+  plans = await fetchPlans(year);
+  
+  try { loadYearTheme(); } catch(e) { console.log('Theme error:', e); }
+  try { renderMisogis(); } catch(e) { console.log('Misogi error:', e); }
+  try { renderHabits(); } catch(e) { console.log('Habits error:', e); }
+  try { renderMonthGrid(); } catch(e) { console.log('MonthGrid error:', e); }
+  try { renderYearMemories(year); } catch(e) { console.log('Memories error:', e); }
 }
 
 async function showReviewView(year) {
-  document.getElementById('reviewYear').textContent = year;
-  document.getElementById('reviewYearBtn').textContent = year;
-  document.getElementById('yearReviewView').classList.remove('hidden');
+  var el;
+  el = document.getElementById('reviewYear'); if (el) el.textContent = year;
+  el = document.getElementById('reviewYearBtn'); if (el) el.textContent = year;
+  el = document.getElementById('yearReviewView'); if (el) el.classList.remove('hidden');
   
-  // Fetch plans for this year
   plans = await fetchPlans(year);
   
-  // Get memories for this year
-  const yearMemories = memories.filter(m => {
+  const yearMemories = ensureArray(memories).filter(m => {
     const memYear = new Date(m.occurredAt).getFullYear();
     return memYear === year;
   });
   
-  // Calculate stats
   const completedMisogis = plans.filter(p => p.type === 'misogi' && p.status === 'completed').length;
   const totalAdventures = plans.filter(p => p.type === 'adventure').length;
   const completedAdventures = plans.filter(p => p.type === 'adventure' && p.status === 'completed').length;
   const totalHabits = plans.filter(p => p.type === 'habit').length;
   const completedHabits = plans.filter(p => p.type === 'habit' && p.status === 'completed').length;
   
-  document.getElementById('reviewMisogiCount').textContent = completedMisogis;
-  document.getElementById('reviewAdventureCount').textContent = `${completedAdventures}/${totalAdventures || 6}`;
-  document.getElementById('reviewHabitCount').textContent = `${completedHabits}/${totalHabits || 4}`;
-  document.getElementById('reviewMemoryCount').textContent = yearMemories.length;
+  el = document.getElementById('reviewMisogiCount'); if (el) el.textContent = completedMisogis;
+  el = document.getElementById('reviewAdventureCount'); if (el) el.textContent = `${completedAdventures}/${totalAdventures || 6}`;
+  el = document.getElementById('reviewHabitCount'); if (el) el.textContent = `${completedHabits}/${totalHabits || 4}`;
+  el = document.getElementById('reviewMemoryCount'); if (el) el.textContent = yearMemories.length;
   
-  renderReviewContent(year);
+  try { renderReviewContent(year); } catch(e) { console.log('Review content error:', e); }
 }
 
 function showLockedView(year) {
+  var el;
   const currentYear = new Date().getFullYear();
-  document.getElementById('lockedYear').textContent = year;
-  document.getElementById('lockedYearMsg').textContent = year;
-  document.getElementById('unlockDate').textContent = `December ${year - 1}`;
-  document.getElementById('currentYearBtn').textContent = currentYear;
-  document.getElementById('yearLockedView').classList.remove('hidden');
+  el = document.getElementById('lockedYear'); if (el) el.textContent = year;
+  el = document.getElementById('lockedYearMsg'); if (el) el.textContent = year;
+  el = document.getElementById('unlockDate'); if (el) el.textContent = `December ${year - 1}`;
+  el = document.getElementById('currentYearBtn'); if (el) el.textContent = currentYear;
+  el = document.getElementById('yearLockedView'); if (el) el.classList.remove('hidden');
 }
 
 function goToCurrentYear() {
