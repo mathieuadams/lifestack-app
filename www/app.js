@@ -114,14 +114,27 @@ async function apiSignUp(email, password) {
 }
 
 async function apiSignIn(email, password) {
-  const response = await fetch(`${CONFIG.API_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || 'Login failed');
-  return data;
+  // DEBUG: Log the request
+  console.log('apiSignIn called with:', email);
+  
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    
+    // DEBUG: Show response status
+    alert('API Response Status: ' + response.status);
+    
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Login failed');
+    return data;
+  } catch (error) {
+    // DEBUG: Show the actual error
+    alert('API Error: ' + error.message);
+    throw error;
+  }
 }
 
 async function apiVerify(email, code, password) {
@@ -1210,6 +1223,7 @@ function formatFriendDate(dateStr) {
 
 async function handleSignIn(event) {
   event.preventDefault();
+  alert('Sign in started. API URL: ' + CONFIG.API_URL);
   const email = document.getElementById('signInEmail').value;
   const password = document.getElementById('signInPassword').value;
   const btn = document.getElementById('signInBtn');
