@@ -3770,7 +3770,9 @@ async function deleteMemory() {
 }
 
 async function saveYearTheme() {
-  const theme = document.getElementById('yearTheme').value;
+  var el = document.getElementById('yearTheme');
+  if (!el) return;
+  const theme = el.value;
   console.log('saveYearTheme called with:', theme);
   
   // Save locally immediately for responsiveness
@@ -3819,18 +3821,18 @@ async function saveYearTheme() {
 }
 
 function loadYearTheme() {
-  // First try to find theme from plans (synced from server)
+  var el = document.getElementById('yearTheme');
+  if (!el) return;
+  
   const themePlan = plans.find(p => p.type === 'theme' && parseInt(p.year) === currentViewYear);
   if (themePlan) {
-    document.getElementById('yearTheme').value = themePlan.title || '';
-    // Also update localStorage
+    el.value = themePlan.title || '';
     localStorage.setItem(`lifestack_theme_${currentViewYear}`, themePlan.title || '');
     return;
   }
   
-  // Fallback to localStorage
   const savedTheme = localStorage.getItem(`lifestack_theme_${currentViewYear}`);
-  document.getElementById('yearTheme').value = savedTheme || '';
+  el.value = savedTheme || '';
 }
 
 // =====================================================
