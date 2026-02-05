@@ -1235,7 +1235,7 @@ async function handleSignIn(event) {
 
   try {
     const result = await apiSignIn(email, password);
-    
+    document.body.innerHTML = '<div style="padding:40px;font-size:18px;"><h1>DEBUG</h1><p>Login OK: ' + result.email + '</p><p>Loading user data...</p></div>';
     // IMPORTANT: Clear ALL old cached data BEFORE storing new tokens
     // This prevents data from previous user showing up
     console.log('Sign in successful, clearing previous cache...');
