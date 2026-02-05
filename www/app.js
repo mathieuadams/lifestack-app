@@ -3043,47 +3043,39 @@ function hideLoading() {
 
 function showLanding() {
   hideLoading();
-  document.getElementById('landing').classList.remove('hidden');
-  document.getElementById('onboarding').classList.add('hidden');
-  document.getElementById('app').classList.add('hidden');
+  var el;
+  el = document.getElementById('landing'); if (el) el.classList.remove('hidden');
+  el = document.getElementById('onboarding'); if (el) el.classList.add('hidden');
+  el = document.getElementById('app'); if (el) el.classList.add('hidden');
 }
 
 function showOnboarding() {
   hideLoading();
-  document.getElementById('landing').classList.add('hidden');
-  document.getElementById('onboarding').classList.remove('hidden');
-  document.getElementById('app').classList.add('hidden');
-  const savedName = localStorage.getItem('lifestack_pending_name');
-  if (savedName) {
-    document.getElementById('name').value = savedName;
-    localStorage.removeItem('lifestack_pending_name');
+  var el;
+  el = document.getElementById('landing'); if (el) el.classList.add('hidden');
+  el = document.getElementById('onboarding'); if (el) el.classList.remove('hidden');
+  el = document.getElementById('app'); if (el) el.classList.add('hidden');
+  var nameEl = document.getElementById('name');
+  if (nameEl) {
+    const savedName = localStorage.getItem('lifestack_pending_name');
+    if (savedName) {
+      nameEl.value = savedName;
+      localStorage.removeItem('lifestack_pending_name');
+    }
   }
 }
 
 function showApp() {
   hideLoading();
-  document.getElementById('landing').classList.add('hidden');
-  document.getElementById('onboarding').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
+  var el;
+  el = document.getElementById('landing'); if (el) el.classList.add('hidden');
+  el = document.getElementById('onboarding'); if (el) el.classList.add('hidden');
+  el = document.getElementById('app'); if (el) el.classList.remove('hidden');
   
-  // Wrap in try-catch so it doesn't block the app
-  try {
-    updateAvatarDisplay();
-  } catch(e) {
-    alert('Avatar error: ' + e.message);
-  }
+  try { updateAvatarDisplay(); } catch(e) { console.log('Avatar error:', e); }
   
-  try {
-    startInactivityMonitor();
-  } catch(e) {
-    alert('Inactivity error: ' + e.message);
-  }
-  
-  try {
-    openCurrentYearDesign();
-  } catch(e) {
-    alert('YearDesign error: ' + e.message);
-  }
+  startInactivityMonitor();
+  openCurrentYearDesign();
 }
 
 function switchView(view) {
