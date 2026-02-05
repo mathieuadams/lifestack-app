@@ -3138,25 +3138,25 @@ function openCurrentYearDesign() {
 }
 
 async function showDesignView(year) {
-  alert('showDesignView called for year: ' + year);
-  document.getElementById('designYear').textContent = year;
-  document.getElementById('yearDesignView').classList.remove('hidden');
-  
-  // Update nav
-  document.querySelector('.nav-item[data-view="yearDesign"]')?.classList.add('active');
-  
-  // Fetch plans for this year
-  alert('About to fetchPlans');
-  plans = await fetchPlans(year);
-  alert('Plans loaded: ' + (plans ? plans.length : 'null'));
-  
-  // Load theme (from plans or localStorage)
-  loadYearTheme();
-  
-  renderMisogis();
-  renderHabits();
-  renderMonthGrid();
-  renderYearMemories(year);
+  try {
+    alert('showDesignView: year=' + year);
+    document.getElementById('designYear').textContent = year;
+    document.getElementById('yearDesignView').classList.remove('hidden');
+    
+    alert('showDesignView: fetching plans...');
+    plans = await fetchPlans(year);
+    alert('showDesignView: got ' + (plans ? plans.length : 'null') + ' plans');
+    
+    loadYearTheme();
+    alert('showDesignView: rendering...');
+    renderMisogis();
+    renderHabits();
+    renderMonthGrid();
+    renderYearMemories(year);
+    alert('showDesignView: DONE');
+  } catch(e) {
+    alert('showDesignView ERROR: ' + e.message);
+  }
 }
 
 async function showReviewView(year) {
