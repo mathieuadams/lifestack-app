@@ -3169,11 +3169,13 @@ async function showDesignView(year) {
   
   plans = await fetchPlans(year);
   
-  try { loadYearTheme(); } catch(e) { console.log('Theme error:', e); }
-  try { renderMisogis(); } catch(e) { console.log('Misogi error:', e); }
-  try { renderHabits(); } catch(e) { console.log('Habits error:', e); }
-  try { renderMonthGrid(); } catch(e) { console.log('MonthGrid error:', e); }
-  try { renderYearMemories(year); } catch(e) { console.log('Memories error:', e); }
+  try { loadYearTheme(); } catch(e) { alert('Theme error: ' + e.message); }
+  try { renderMisogis(); } catch(e) { alert('Misogi error: ' + e.message); }
+  try { renderHabits(); } catch(e) { alert('Habits error: ' + e.message); }
+  try { renderMonthGrid(); } catch(e) { alert('MonthGrid error: ' + e.message); }
+  try { renderYearMemories(year); } catch(e) { alert('Memories error: ' + e.message); }
+  
+  alert('showDesignView COMPLETE');
 }
 
 async function showReviewView(year) {
