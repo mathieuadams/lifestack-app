@@ -3046,7 +3046,8 @@ function closeYearModal() {
 // =====================================================
 
 function hideLoading() {
-  document.getElementById('loadingScreen').classList.add('hidden');
+  const el = document.getElementById('loadingScreen');
+  if (el) el.classList.add('hidden');
 }
 
 function showLanding() {
@@ -3083,7 +3084,7 @@ function showApp() {
   try { updateAvatarDisplay(); } catch(e) { console.log('Avatar error:', e); }
   
   startInactivityMonitor();
-  openCurrentYearDesign();
+  try { openCurrentYearDesign(); } catch(e) { console.error('openCurrentYearDesign error:', e); }
 }
 
 function switchView(view) {
@@ -3233,51 +3234,56 @@ function goToCurrentYear() {
 // =====================================================
 
 async function loadUserData() {
-  const storedTokens = JSON.parse(localStorage.getItem('lifestack_tokens') || 'null');
-  const auth = JSON.parse(localStorage.getItem('lifestack_auth') || 'null');
-  if (!storedTokens || !auth) { showLanding(); return; }
+  try {
+    const storedTokens = JSON.parse(localStorage.getItem('lifestack_tokens') || 'null');
+    const auth = JSON.parse(localStorage.getItem('lifestack_auth') || 'null');
+    if (!storedTokens || !auth) { showLanding(); return; }
 
-  const savedUser = localStorage.getItem('lifestack_user');
-  if (savedUser) {
-    const cachedUser = JSON.parse(savedUser);
-    
-    // IMPORTANT: Verify cached user matches the logged-in Cognito user
-    if (cachedUser.email && auth.email && cachedUser.email.toLowerCase() !== auth.email.toLowerCase()) {
-      console.log('Cached user mismatch! Clearing cache. Cached:', cachedUser.email, 'Auth:', auth.email);
-      // Clear all user-specific cache - wrong user cached
-      localStorage.removeItem('lifestack_user');
-      localStorage.removeItem('lifestack_memories');
-      localStorage.removeItem('lifestack_people');
-      localStorage.removeItem('lifestack_friendships');
-      localStorage.removeItem('lifestack_plans');
-      // Clear year-specific plan caches
-      for (let year = 2020; year <= 2035; year++) {
-        localStorage.removeItem(`lifestack_plans_${year}`);
+    const savedUser = localStorage.getItem('lifestack_user');
+    if (savedUser) {
+      const cachedUser = JSON.parse(savedUser);
+      
+      // IMPORTANT: Verify cached user matches the logged-in Cognito user
+      if (cachedUser.email && auth.email && cachedUser.email.toLowerCase() !== auth.email.toLowerCase()) {
+        console.log('Cached user mismatch! Clearing cache. Cached:', cachedUser.email, 'Auth:', auth.email);
+        // Clear all user-specific cache - wrong user cached
+        localStorage.removeItem('lifestack_user');
+        localStorage.removeItem('lifestack_memories');
+        localStorage.removeItem('lifestack_people');
+        localStorage.removeItem('lifestack_friendships');
+        localStorage.removeItem('lifestack_plans');
+        // Clear year-specific plan caches
+        for (let year = 2020; year <= 2035; year++) {
+          localStorage.removeItem(`lifestack_plans_${year}`);
+        }
+        // Reset in-memory state
+        memories = [];
+        plans = [];
+        people = [];
+        friendships = { friends: [], pendingReceived: [], pendingSent: [] };
+        // Now fetch fresh data for the correct user
+        const tokens = await getValidTokens();
+        if (!tokens) { showLanding(); return; }
+        await fetchAndSetUserData(tokens);
+      } else {
+        // Cached user matches - use it
+        currentUser = cachedUser;
+        loadLocalMemories();
+        loadLocalPeople();
+        // Also load friendships
+        friendships = await fetchFriendships();
+        updateFriendBadge();
+        showApp();
       }
-      // Reset in-memory state
-      memories = [];
-      plans = [];
-      people = [];
-      friendships = { friends: [], pendingReceived: [], pendingSent: [] };
-      // Now fetch fresh data for the correct user
+    } else {
+      // No cached user - fetch from API
       const tokens = await getValidTokens();
       if (!tokens) { showLanding(); return; }
       await fetchAndSetUserData(tokens);
-    } else {
-      // Cached user matches - use it
-      currentUser = cachedUser;
-      loadLocalMemories();
-      loadLocalPeople();
-      // Also load friendships
-      friendships = await fetchFriendships();
-      updateFriendBadge();
-      showApp();
     }
-  } else {
-    // No cached user - fetch from API
-    const tokens = await getValidTokens();
-    if (!tokens) { showLanding(); return; }
-    await fetchAndSetUserData(tokens);
+  } catch (error) {
+    console.error('loadUserData fatal error:', error);
+    showLanding();
   }
 }
 
@@ -7293,14 +7299,26 @@ function renderJournalEntries() {
 // =====================================================
 
 document.addEventListener('DOMContentLoaded', async function() {
-  const tokens = localStorage.getItem('lifestack_tokens');
-  if (tokens) {
-    await loadUserData();
-    await processPendingInvite();
-    checkForInviteCode();
-  } else {
-    showLanding();
-    checkForInviteCode();
+  try {
+    const tokens = localStorage.getItem('lifestack_tokens');
+    if (tokens) {
+      await loadUserData();
+      await processPendingInvite();
+      checkForInviteCode();
+    } else {
+      showLanding();
+      checkForInviteCode();
+    }
+  } catch (error) {
+    console.error('Initialization error:', error);
+    // Guarantee the landing page shows even if something fails
+    try { showLanding(); } catch(e) {
+      // Last resort: manually unhide landing, hide loading
+      const loading = document.getElementById('loadingScreen');
+      if (loading) loading.classList.add('hidden');
+      const landing = document.getElementById('landing');
+      if (landing) landing.classList.remove('hidden');
+    }
   }
   
   // Click outside modal to close
