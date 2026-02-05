@@ -1224,57 +1224,91 @@ function formatFriendDate(dateStr) {
 async function handleSignIn(event) {
   event.preventDefault();
   alert('Sign in started. API URL: ' + CONFIG.API_URL);
-  const email = document.getElementById('signInEmail').value;
-  const password = document.getElementById('signInPassword').value;
+
+  const emailEl = document.getElementById('signInEmail');
+  const passwordEl = document.getElementById('signInPassword');
   const btn = document.getElementById('signInBtn');
   const errorDiv = document.getElementById('signInError');
-  
+
+  // Guard (prevents iOS “silent halt” if an element is missing)
+  if (!emailEl || !passwordEl || !btn || !errorDiv) {
+    alert('Sign-in UI is missing required elements (signInEmail/signInPassword/signInBtn/signInError).');
+    return;
+  }
+
+  const email = emailEl.value;
+  const password = passwordEl.value;
+
   btn.disabled = true;
   btn.textContent = 'Signing in...';
   errorDiv.classList.add('hidden');
 
   try {
     const result = await apiSignIn(email, password);
-    document.body.innerHTML = '<div style="padding:40px;font-size:18px;"><h1>DEBUG</h1><p>Login OK: ' + result.email + '</p><p>Loading user data...</p></div>';
+
     // IMPORTANT: Clear ALL old cached data BEFORE storing new tokens
-    // This prevents data from previous user showing up
     console.log('Sign in successful, clearing previous cache...');
     localStorage.removeItem('lifestack_user');
     localStorage.removeItem('lifestack_memories');
     localStorage.removeItem('lifestack_people');
     localStorage.removeItem('lifestack_friendships');
     localStorage.removeItem('lifestack_plans');
+
     // Clear year-specific plan caches
     for (let year = 2020; year <= 2035; year++) {
       localStorage.removeItem(`lifestack_plans_${year}`);
       localStorage.removeItem(`lifestack_theme_${year}`);
     }
-    // Reset in-memory state
-    memories = [];
-    plans = [];
-    people = [];
-    friendships = { friends: [], pendingReceived: [], pendingSent: [] };
-    shares = { sent: [], received: [] };
-    selectedPeopleIds = [];
-    currentUser = null;
-    
-    // Now store new tokens
-    localStorage.setItem('lifestack_tokens', JSON.stringify({
-      idToken: result.tokens.idToken,
-      accessToken: result.tokens.accessToken,
-      refreshToken: result.tokens.refreshToken,
-      expiresAt: Date.now() + (result.tokens.expiresIn * 1000)
-    }));
-    localStorage.setItem('lifestack_auth', JSON.stringify({ email: result.email, userId: result.userId }));
-    closeAllModals();
-    await loadUserData();
+
+    // Reset in-memory state (only if these globals exist)
+    if (typeof memories !== 'undefined') memories = [];
+    if (typeof plans !== 'undefined') plans = [];
+    if (typeof people !== 'undefined') people = [];
+    if (typeof friendships !== 'undefined') friendships = { friends: [], pendingReceived: [], pendingSent: [] };
+    if (typeof shares !== 'undefined') shares = { sent: [], received: [] };
+    if (typeof selectedPeopleIds !== 'undefined') selectedPeopleIds = [];
+    if (typeof currentUser !== 'undefined') currentUser = null;
+
+    // Store new tokens
+    localStorage.setItem(
+      'lifestack_tokens',
+      JSON.stringify({
+        idToken: result.tokens.idToken,
+        accessToken: result.tokens.accessToken,
+        refreshToken: result.tokens.refreshToken,
+        expiresAt: Date.now() + result.tokens.expiresIn * 1000
+      })
+    );
+
+    localStorage.setItem(
+      'lifestack_auth',
+      JSON.stringify({ email: result.email, userId: result.userId })
+    );
+
+    // Wrap UI calls so a missing DOM element doesn’t crash iOS builds
+    try {
+      if (typeof closeAllModals === 'function') closeAllModals();
+    } catch (e) {
+      console.log('closeAllModals error:', e);
+    }
+
+    try {
+      if (typeof loadUserData === 'function') {
+        await loadUserData();
+      } else {
+        alert('loadUserData() is not defined.');
+      }
+    } catch (e) {
+      console.log('loadUserData error:', e);
+      alert('loadUserData failed: ' + (e?.message || e));
+    }
   } catch (error) {
-    if (error.message.includes('verify')) {
+    if (error?.message && error.message.includes('verify')) {
       pendingEmail = email;
       pendingPassword = password;
-      showVerifyModal();
+      if (typeof showVerifyModal === 'function') showVerifyModal();
     } else {
-      errorDiv.textContent = error.message;
+      errorDiv.textContent = error?.message || String(error);
       errorDiv.classList.remove('hidden');
     }
   } finally {
@@ -1282,6 +1316,7 @@ async function handleSignIn(event) {
     btn.textContent = 'Sign In';
   }
 }
+
 
 async function handleSignUp(event) {
   event.preventDefault();
