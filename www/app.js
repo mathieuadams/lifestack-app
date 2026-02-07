@@ -1312,10 +1312,11 @@ async function handleSignIn(event) {
       if (typeof loadUserData === 'function') {
         await loadUserData();
       } else {
-        console.error('loadUserData() is not defined.');
+        alert('loadUserData is not defined!');
       }
     } catch (e) {
       console.error('loadUserData error:', e);
+      alert('handleSignIn > loadUserData error: ' + e.message);
     }
   } catch (error) {
     if (error?.message && error.message.includes('verify')) {
@@ -3179,7 +3180,7 @@ async function openYearView(ageYear, calendarYear) {
 
 function openCurrentYearDesign() {
   if (!currentUser || !currentUser.birthdate) {
-    console.warn('openCurrentYearDesign: currentUser or birthdate is missing');
+    alert('DEBUG: No currentUser or birthdate. currentUser=' + JSON.stringify(currentUser ? {name: currentUser.name, birthdate: currentUser.birthdate} : null));
     return;
   }
   
@@ -3187,12 +3188,14 @@ function openCurrentYearDesign() {
   const birthYear = new Date(currentUser.birthdate).getFullYear();
   
   if (isNaN(birthYear)) {
-    console.warn('openCurrentYearDesign: invalid birthdate', currentUser.birthdate);
+    alert('DEBUG: invalid birthdate: ' + currentUser.birthdate);
     return;
   }
   
   const age = currentYear - birthYear;
-  openYearView(age, currentYear);
+  openYearView(age, currentYear).catch(function(e) {
+    alert('openYearView error: ' + e.message + '\n' + e.stack);
+  });
 }
 
 async function showDesignView(year) {
@@ -3322,6 +3325,7 @@ async function loadUserData() {
     }
   } catch (error) {
     console.error('loadUserData fatal error:', error);
+    alert('loadUserData error: ' + error.message);
     if (!appAlreadyVisible) showLanding();
   }
 }
@@ -3387,6 +3391,7 @@ async function fetchAndSetUserData(tokens) {
     else { throw new Error('Failed to fetch user'); }
   } catch (error) { 
     console.error('Fetch user error:', error);
+    alert('fetchAndSetUserData error: ' + error.message);
     showOnboarding(); 
   }
 }

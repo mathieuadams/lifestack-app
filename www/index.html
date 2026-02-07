@@ -299,7 +299,7 @@
 
           <section>
             <h3>13. Contact</h3>
-            <p>For questions about these Terms, contact us at: <a href="/cdn-cgi/l/email-protection#2f434a484e436f4346494a5c5b4e4c44014e5f5f"><span class="__cf_email__" data-cfemail="533f3634323f133f3a353620273230387d322323">[email&#160;protected]</span></a></p>
+            <p>For questions about these Terms, contact us at: <a href="/cdn-cgi/l/email-protection#4e222b292f220e2227282b3d3a2f2d25602f3e3e"><span class="__cf_email__" data-cfemail="a1cdc4c6c0cde1cdc8c7c4d2d5c0c2ca8fc0d1d1">[email&#160;protected]</span></a></p>
           </section>
         </div>
         
@@ -452,7 +452,7 @@
 
           <section>
             <h3>11. Contact Us</h3>
-            <p>For privacy-related questions or requests, contact us at: <a href="/cdn-cgi/l/email-protection#fb8b89928d9a9882bb97929d9e888f9a9890d59a8b8b"><span class="__cf_email__" data-cfemail="b6c6c4dfc0d7d5cff6dadfd0d3c5c2d7d5dd98d7c6c6">[email&#160;protected]</span></a></p>
+            <p>For privacy-related questions or requests, contact us at: <a href="/cdn-cgi/l/email-protection#ef9f9d86998e8c96af8386898a9c9b8e8c84c18e9f9f"><span class="__cf_email__" data-cfemail="dcacaeb5aabdbfa59cb0b5bab9afa8bdbfb7f2bdacac">[email&#160;protected]</span></a></p>
           </section>
         </div>
         
@@ -773,7 +773,7 @@
   <div id="toast" class="toast"></div>
 
   <!-- JavaScript -->
-  <script src="app.js?v=20260128"></script>
+  <script src="app.js?v=20260207"></script>
    <script>
     // Check if running in native Capacitor app
     const isNativeApp = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
@@ -786,8 +786,7 @@
     // Global error handler for debugging
     window.onerror = function(msg, url, line, col, error) {
       console.error('JS Error:', msg, 'at', url, 'line', line);
-      // Uncomment next line to see alerts for errors:
-      // alert('Error: ' + msg + '\nLine: ' + line);
+      alert('Error: ' + msg + '\nLine: ' + line);
       return false;
     };
     
@@ -874,7 +873,7 @@
         var landingVisible = landing && !landing.classList.contains('hidden');
         
         if (!appVisible && !landingVisible) {
-          console.warn('Emergency timeout: nothing visible after 5s, showing landing');
+          alert('Emergency: nothing visible after 5s');
           if (loading) loading.classList.add('hidden');
           if (landing) landing.classList.remove('hidden');
         }
