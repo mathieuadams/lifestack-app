@@ -4,30 +4,12 @@
 
 // GLOBAL ERROR HANDLER — catches uncaught errors on iOS where console is invisible
 window.onerror = function(msg, source, lineno, colno, error) {
-  const errorInfo = `Error: ${msg}\nLine: ${lineno}:${colno}\nSource: ${source}\n${error?.stack || ''}`;
-  console.error('GLOBAL ERROR:', errorInfo);
-  // Show alert on mobile so we can see what crashed
-  try {
-    const errorDiv = document.getElementById('startupError');
-    if (errorDiv) {
-      errorDiv.textContent = errorInfo;
-      errorDiv.style.display = 'block';
-      errorDiv.style.cssText = 'display:block;position:fixed;top:0;left:0;right:0;background:red;color:white;padding:16px;z-index:99999;font-size:12px;white-space:pre-wrap;max-height:50vh;overflow:auto;';
-    }
-  } catch(e) {}
+  alert('JS Error: ' + msg + '\nLine: ' + lineno + ':' + colno);
   return false;
 };
 
 window.addEventListener('unhandledrejection', function(event) {
-  const errorInfo = `Unhandled Promise: ${event.reason?.message || event.reason}\n${event.reason?.stack || ''}`;
-  console.error('UNHANDLED REJECTION:', errorInfo);
-  try {
-    const errorDiv = document.getElementById('startupError');
-    if (errorDiv) {
-      errorDiv.textContent = errorInfo;
-      errorDiv.style.cssText = 'display:block;position:fixed;top:0;left:0;right:0;background:red;color:white;padding:16px;z-index:99999;font-size:12px;white-space:pre-wrap;max-height:50vh;overflow:auto;';
-    }
-  } catch(e) {}
+  alert('Promise Error: ' + (event.reason?.message || event.reason));
 });
 
 // =====================================================
@@ -7445,13 +7427,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.error('Initialization error:', error);
     
     // VISIBLE ERROR for iOS debugging
-    try {
-      const errorDiv = document.getElementById('startupError');
-      if (errorDiv) {
-        errorDiv.textContent = 'Init Error: ' + (error.message || error) + '\n' + (error.stack || '');
-        errorDiv.style.cssText = 'display:block;position:fixed;top:0;left:0;right:0;background:red;color:white;padding:16px;z-index:99999;font-size:12px;white-space:pre-wrap;max-height:50vh;overflow:auto;';
-      }
-    } catch(e) {}
+    alert('Init Error: ' + (error.message || error));
     
     // If we already showed the app from cache, don't flash the landing page
     const appEl = document.getElementById('app');
