@@ -299,7 +299,7 @@
 
           <section>
             <h3>13. Contact</h3>
-            <p>For questions about these Terms, contact us at: <a href="mailto:legal@lifestack.app">legal@lifestack.app</a></p>
+            <p>For questions about these Terms, contact us at: <a href="/cdn-cgi/l/email-protection#2f434a484e436f4346494a5c5b4e4c44014e5f5f"><span class="__cf_email__" data-cfemail="533f3634323f133f3a353620273230387d322323">[email&#160;protected]</span></a></p>
           </section>
         </div>
         
@@ -452,7 +452,7 @@
 
           <section>
             <h3>11. Contact Us</h3>
-            <p>For privacy-related questions or requests, contact us at: <a href="mailto:privacy@lifestack.app">privacy@lifestack.app</a></p>
+            <p>For privacy-related questions or requests, contact us at: <a href="/cdn-cgi/l/email-protection#fb8b89928d9a9882bb97929d9e888f9a9890d59a8b8b"><span class="__cf_email__" data-cfemail="b6c6c4dfc0d7d5cff6dadfd0d3c5c2d7d5dd98d7c6c6">[email&#160;protected]</span></a></p>
           </section>
         </div>
         
@@ -864,17 +864,24 @@
   </script> 
 
   <script>
-// EMERGENCY TIMEOUT - Force show app after 5 seconds if stuck
-setTimeout(function() {
-  var loading = document.getElementById('loadingScreen');
-  var landing = document.getElementById('landing');
-  if (loading && !loading.classList.contains('hidden')) {
-    console.log('TIMEOUT: Forcing app to show');
-    loading.classList.add('hidden');
-    if (landing) landing.classList.remove('hidden');
-  }
-}, 5000);
-</script>
-
+    // EMERGENCY TIMEOUT - Force show landing after 5 seconds if nothing visible
+    setTimeout(function() {
+      try {
+        var app = document.getElementById('app');
+        var landing = document.getElementById('landing');
+        var loading = document.getElementById('loadingScreen');
+        var appVisible = app && !app.classList.contains('hidden');
+        var landingVisible = landing && !landing.classList.contains('hidden');
+        
+        if (!appVisible && !landingVisible) {
+          console.warn('Emergency timeout: nothing visible after 5s, showing landing');
+          if (loading) loading.classList.add('hidden');
+          if (landing) landing.classList.remove('hidden');
+        }
+      } catch(e) {
+        alert('Emergency timeout error: ' + e.message);
+      }
+    }, 5000);
+  </script>
 </body>
 </html>
