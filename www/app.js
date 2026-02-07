@@ -2,6 +2,34 @@
 // LIFESTACK - APP.JS
 // =====================================================
 
+// GLOBAL ERROR HANDLER — catches uncaught errors on iOS where console is invisible
+window.onerror = function(msg, source, lineno, colno, error) {
+  const errorInfo = `Error: ${msg}\nLine: ${lineno}:${colno}\nSource: ${source}\n${error?.stack || ''}`;
+  console.error('GLOBAL ERROR:', errorInfo);
+  // Show alert on mobile so we can see what crashed
+  try {
+    const errorDiv = document.getElementById('startupError');
+    if (errorDiv) {
+      errorDiv.textContent = errorInfo;
+      errorDiv.style.display = 'block';
+      errorDiv.style.cssText = 'display:block;position:fixed;top:0;left:0;right:0;background:red;color:white;padding:16px;z-index:99999;font-size:12px;white-space:pre-wrap;max-height:50vh;overflow:auto;';
+    }
+  } catch(e) {}
+  return false;
+};
+
+window.addEventListener('unhandledrejection', function(event) {
+  const errorInfo = `Unhandled Promise: ${event.reason?.message || event.reason}\n${event.reason?.stack || ''}`;
+  console.error('UNHANDLED REJECTION:', errorInfo);
+  try {
+    const errorDiv = document.getElementById('startupError');
+    if (errorDiv) {
+      errorDiv.textContent = errorInfo;
+      errorDiv.style.cssText = 'display:block;position:fixed;top:0;left:0;right:0;background:red;color:white;padding:16px;z-index:99999;font-size:12px;white-space:pre-wrap;max-height:50vh;overflow:auto;';
+    }
+  } catch(e) {}
+});
+
 // =====================================================
 // STATE
 // =====================================================
@@ -34,6 +62,12 @@ let selectedCategory = null;
 let bucketList = [];
 let bucketListRecognition = null;
 let isBucketListRecording = false;
+
+// Journal state (must be declared before DOMContentLoaded uses them)
+let journalEntries = [];
+let currentJournalMood = null;
+let isRecording = false;
+let recognition = null;
 
 // Helper function to parse date strings without timezone offset issues
 function parseLocalDate(dateStr) {
@@ -89,7 +123,13 @@ const ADVENTURE_CATEGORIES = [
 ];
 
 // Custom categories stored in localStorage
-let customCategories = JSON.parse(localStorage.getItem('lifestack_custom_categories') || '[]');
+let customCategories = [];
+try {
+  customCategories = JSON.parse(localStorage.getItem('lifestack_custom_categories') || '[]');
+} catch(e) {
+  console.error('Failed to load custom categories:', e);
+  customCategories = [];
+}
 
 // Ensure arrays are always arrays
 function ensureArray(data) {
@@ -5274,7 +5314,8 @@ function lightboxNext() {
 
 // Keyboard navigation for lightbox
 document.addEventListener('keydown', (e) => {
-  if (document.getElementById('photoLightbox').classList.contains('hidden')) return;
+  const lightboxEl = document.getElementById('photoLightbox');
+  if (!lightboxEl || lightboxEl.classList.contains('hidden')) return;
   
   if (e.key === 'Escape') closeLightbox();
   if (e.key === 'ArrowLeft') lightboxPrev();
@@ -6966,10 +7007,7 @@ function getBucketListStatsForYear(year) {
 // JOURNAL FUNCTIONALITY
 // =====================================================
 
-let journalEntries = [];
-let currentJournalMood = null;
-let isRecording = false;
-let recognition = null;
+// (journalEntries, currentJournalMood, isRecording, recognition declared at top of file)
 
 // Initialize Speech Recognition
 function initSpeechRecognition() {
@@ -7364,7 +7402,13 @@ function renderJournalEntries() {
 // =====================================================
 
 document.addEventListener('DOMContentLoaded', async function() {
+  console.log('DOMContentLoaded fired');
   try {
+    // Verify CONFIG exists (loaded from config.js)
+    if (typeof CONFIG === 'undefined' || !CONFIG?.API_URL) {
+      throw new Error('CONFIG not loaded — check that config.js is included before app.js');
+    }
+
     const tokens = localStorage.getItem('lifestack_tokens');
     const savedUser = localStorage.getItem('lifestack_user');
 
@@ -7399,6 +7443,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   } catch (error) {
     console.error('Initialization error:', error);
+    
+    // VISIBLE ERROR for iOS debugging
+    try {
+      const errorDiv = document.getElementById('startupError');
+      if (errorDiv) {
+        errorDiv.textContent = 'Init Error: ' + (error.message || error) + '\n' + (error.stack || '');
+        errorDiv.style.cssText = 'display:block;position:fixed;top:0;left:0;right:0;background:red;color:white;padding:16px;z-index:99999;font-size:12px;white-space:pre-wrap;max-height:50vh;overflow:auto;';
+      }
+    } catch(e) {}
+    
     // If we already showed the app from cache, don't flash the landing page
     const appEl = document.getElementById('app');
     if (appEl && !appEl.classList.contains('hidden')) {
