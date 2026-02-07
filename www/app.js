@@ -2,12 +2,11 @@
 // LIFESTACK - APP.JS
 // =====================================================
 
-// GLOBAL ERROR HANDLER — catches uncaught errors on iOS where console is invisible
+// GLOBAL ERROR HANDLER — catches uncaught errors on iOS
 window.onerror = function(msg, source, lineno, colno, error) {
   alert('JS Error: ' + msg + '\nLine: ' + lineno + ':' + colno);
   return false;
 };
-
 window.addEventListener('unhandledrejection', function(event) {
   alert('Promise Error: ' + (event.reason?.message || event.reason));
 });
@@ -44,12 +43,6 @@ let selectedCategory = null;
 let bucketList = [];
 let bucketListRecognition = null;
 let isBucketListRecording = false;
-
-// Journal state (must be declared before DOMContentLoaded uses them)
-let journalEntries = [];
-let currentJournalMood = null;
-let isRecording = false;
-let recognition = null;
 
 // Helper function to parse date strings without timezone offset issues
 function parseLocalDate(dateStr) {
@@ -105,13 +98,7 @@ const ADVENTURE_CATEGORIES = [
 ];
 
 // Custom categories stored in localStorage
-let customCategories = [];
-try {
-  customCategories = JSON.parse(localStorage.getItem('lifestack_custom_categories') || '[]');
-} catch(e) {
-  console.error('Failed to load custom categories:', e);
-  customCategories = [];
-}
+let customCategories = JSON.parse(localStorage.getItem('lifestack_custom_categories') || '[]');
 
 // Ensure arrays are always arrays
 function ensureArray(data) {
@@ -3117,7 +3104,10 @@ function showApp() {
   try { updateAvatarDisplay(); } catch(e) { console.log('Avatar error:', e); }
   
   startInactivityMonitor();
-  try { openCurrentYearDesign(); } catch(e) { console.error('openCurrentYearDesign error:', e); }
+  try { openCurrentYearDesign(); } catch(e) { 
+    console.error('openCurrentYearDesign error:', e);
+    alert('openCurrentYearDesign error: ' + e.message);
+  }
 }
 
 function switchView(view) {
@@ -3206,19 +3196,23 @@ function openCurrentYearDesign() {
 }
 
 async function showDesignView(year) {
-  var el;
-  el = document.getElementById('designYear'); if (el) el.textContent = year;
-  el = document.getElementById('yearDesignView'); if (el) el.classList.remove('hidden');
-  
-  document.querySelector('.nav-item[data-view="yearDesign"]')?.classList.add('active');
-  
-  plans = await fetchPlans(year);
-  
-  try { loadYearTheme(); } catch(e) { console.error('Theme error:', e); }
-  try { renderMisogis(); } catch(e) { console.error('Misogi error:', e); }
-  try { renderHabits(); } catch(e) { console.error('Habits error:', e); }
-  try { renderMonthGrid(); } catch(e) { console.error('MonthGrid error:', e); }
-  try { renderYearMemories(year); } catch(e) { console.error('Memories error:', e); }
+  try {
+    var el;
+    el = document.getElementById('designYear'); if (el) el.textContent = year;
+    el = document.getElementById('yearDesignView'); if (el) el.classList.remove('hidden');
+    
+    document.querySelector('.nav-item[data-view="yearDesign"]')?.classList.add('active');
+    
+    plans = await fetchPlans(year);
+    
+    try { loadYearTheme(); } catch(e) { alert('Theme error: ' + e.message); }
+    try { renderMisogis(); } catch(e) { alert('Misogi error: ' + e.message); }
+    try { renderHabits(); } catch(e) { alert('Habits error: ' + e.message); }
+    try { renderMonthGrid(); } catch(e) { alert('MonthGrid error: ' + e.message); }
+    try { renderYearMemories(year); } catch(e) { alert('Memories error: ' + e.message); }
+  } catch(e) {
+    alert('showDesignView error: ' + e.message);
+  }
 }
 
 async function showReviewView(year) {
@@ -6989,7 +6983,10 @@ function getBucketListStatsForYear(year) {
 // JOURNAL FUNCTIONALITY
 // =====================================================
 
-// (journalEntries, currentJournalMood, isRecording, recognition declared at top of file)
+let journalEntries = [];
+let currentJournalMood = null;
+let isRecording = false;
+let recognition = null;
 
 // Initialize Speech Recognition
 function initSpeechRecognition() {
@@ -7384,13 +7381,7 @@ function renderJournalEntries() {
 // =====================================================
 
 document.addEventListener('DOMContentLoaded', async function() {
-  console.log('DOMContentLoaded fired');
   try {
-    // Verify CONFIG exists (loaded from config.js)
-    if (typeof CONFIG === 'undefined' || !CONFIG?.API_URL) {
-      throw new Error('CONFIG not loaded — check that config.js is included before app.js');
-    }
-
     const tokens = localStorage.getItem('lifestack_tokens');
     const savedUser = localStorage.getItem('lifestack_user');
 
@@ -7425,10 +7416,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   } catch (error) {
     console.error('Initialization error:', error);
-    
-    // VISIBLE ERROR for iOS debugging
-    alert('Init Error: ' + (error.message || error));
-    
     // If we already showed the app from cache, don't flash the landing page
     const appEl = document.getElementById('app');
     if (appEl && !appEl.classList.contains('hidden')) {
