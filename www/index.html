@@ -1,1140 +1,868 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  
-  <!-- PWA Meta Tags -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="LifeStack">
-  <meta name="theme-color" content="#637a6b">
-  <meta name="description" content="Life by Design - Plan adventures, capture memories, build habits">
-  
-  <!-- Manifest -->
-  <link rel="manifest" href="manifest.json">
-  
-  <!-- App Icons -->
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
-  <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
-  <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167.png">
-  
-  <!-- Splash Screens for iOS -->
-  <link rel="apple-touch-startup-image" href="icons/splash-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)">
-  <link rel="apple-touch-startup-image" href="icons/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
-  <link rel="apple-touch-startup-image" href="icons/splash-1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)">
-  <link rel="apple-touch-startup-image" href="icons/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
-  <link rel="apple-touch-startup-image" href="icons/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
-  <link rel="apple-touch-startup-image" href="icons/splash-1284x2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)">
-  
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <title>LifeStack - Life by Design</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <link rel="stylesheet" href="styles.css?v=20260123">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>LifeStack v4</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sage-50:#f6f7f5;--sage-100:#e8ebe5;--sage-200:#d1d7cb;--sage-300:#b3bda9;
+  --sage-400:#8a9a7c;--sage-500:#6b7f5a;--sage-600:#556847;--sage-700:#3d4d33;
+  --sand-50:#faf9f7;--sand-100:#f3f1ed;--sand-200:#e8e4dd;--sand-300:#d4cfc5;
+  --coral:#e07a5f;--coral-bg:#fde8e0;
+  --blue:#5b8fa8;--blue-light:#d0e8f0;
+  --amber:#c9943e;--amber-light:#f5e6c8;
+  --lavender:#8e7cc3;--lavender-light:#e8e0f5;
+  --teal:#4a9e8f;--teal-light:#d4f0ea;
+  --pink:#d4678c;--pink-light:#f5dce6;
+  --white:#fff;--text-primary:#2c2c2c;--text-secondary:#6b6b6b;--text-tertiary:#9a9a9a;
+  --radius-sm:8px;--radius-md:14px;--radius-lg:20px;--radius-xl:28px;
+  --shadow-soft:0 2px 12px rgba(0,0,0,0.06);--shadow-elevated:0 8px 32px rgba(0,0,0,0.12);
+  --transition:0.25s cubic-bezier(0.4,0,0.2,1);
+  --cat-travel:#5b8fa8;--cat-travel-bg:#d0e8f0;
+  --cat-food:#e07a5f;--cat-food-bg:#fde8e0;
+  --cat-adventure:#6b7f5a;--cat-adventure-bg:#e8ebe5;
+  --cat-roadtrip:#c9943e;--cat-roadtrip-bg:#f5e6c8;
+  --cat-birthday:#d4678c;--cat-birthday-bg:#f5dce6;
+  --cat-health:#4a9e8f;--cat-health-bg:#d4f0ea;
+  --cat-culture:#8e7cc3;--cat-culture-bg:#e8e0f5;
+  --cat-date:#b35c8a;--cat-date-bg:#f5dce6;
+}
+html{font-size:16px}
+body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);color:var(--text-primary);min-height:100vh;min-height:100dvh;overflow:hidden;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+.app-shell{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:430px;margin:0 auto;background:var(--sand-50);position:relative;overflow:hidden}
+
+/* HEADER */
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;padding-top:calc(12px + env(safe-area-inset-top,0px));background:var(--white);border-bottom:1px solid var(--sand-200);z-index:50;flex-shrink:0}
+.hb{display:flex;align-items:center;gap:10px}
+.hl{width:32px;height:32px;background:linear-gradient(135deg,var(--sage-500),var(--sage-600));border-radius:9px;display:flex;align-items:center;justify-content:center;color:white;font-size:14px}
+.ht{font-family:'Fraunces',serif;font-weight:500;font-size:1.2rem;color:var(--sage-700);letter-spacing:-0.02em}
+.ha{display:flex;align-items:center;gap:8px}
+.hbtn{width:36px;height:36px;border-radius:50%;border:none;background:var(--sand-100);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--transition);color:var(--text-secondary);font-size:16px;position:relative}
+.hbtn:active{transform:scale(.92)}
+.nb{position:absolute;top:2px;right:2px;width:8px;height:8px;background:var(--coral);border-radius:50%;border:2px solid var(--sand-100)}
+.hav{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--sage-300),var(--sage-500));border:2px solid var(--sage-200);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer}
+
+/* MAIN */
+.mc{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.v{display:none;animation:fadeIn .3s ease}.v.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.vp{padding:20px;padding-bottom:100px}
+
+/* NAV */
+.bn{display:flex;justify-content:space-around;align-items:center;padding:8px 16px;padding-bottom:calc(8px + env(safe-area-inset-bottom,8px));background:var(--white);border-top:1px solid var(--sand-200);z-index:50;flex-shrink:0}
+.ni{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px;border:none;background:none;cursor:pointer;border-radius:var(--radius-md);transition:var(--transition);color:var(--text-tertiary);position:relative;font-family:inherit}
+.ni.active{color:var(--sage-600)}
+.ni.active::after{content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:20px;height:3px;background:var(--sage-500);border-radius:3px}
+.ni svg{width:22px;height:22px}
+.nl{font-size:.65rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase}
+
+/* FAB */
+.fab{position:absolute;bottom:calc(70px + env(safe-area-inset-bottom,8px));right:20px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--sage-500),var(--sage-600));color:white;border:none;font-size:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(107,127,90,.35);cursor:pointer;transition:var(--transition);z-index:40}
+.fab:active{transform:scale(.9)}
+.fm{position:absolute;bottom:calc(130px + env(safe-area-inset-bottom,8px));right:20px;display:flex;flex-direction:column;gap:10px;z-index:40;opacity:0;pointer-events:none;transform:translateY(10px);transition:var(--transition)}
+.fm.open{opacity:1;pointer-events:auto;transform:translateY(0)}
+.fo{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--white);border-radius:var(--radius-xl);box-shadow:var(--shadow-elevated);border:none;cursor:pointer;white-space:nowrap;font-family:inherit;font-size:.85rem;font-weight:500;color:var(--text-primary);transition:var(--transition)}
+.fo:active{transform:scale(.96)}
+.fi{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+
+/* SHARED */
+.sl{font-family:'Fraunces',serif;font-size:1.35rem;font-weight:500;color:var(--sage-700);margin-bottom:16px;letter-spacing:-0.02em}
+.slsm{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin-bottom:8px}
+
+/* YEAR BANNER */
+.yb{background:linear-gradient(135deg,var(--sage-600),var(--sage-500),var(--sage-400));border-radius:var(--radius-lg);padding:24px;color:white;margin-bottom:24px;position:relative;overflow:hidden}
+.yb::before{content:'';position:absolute;top:-30px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08)}
+.yn{font-family:'Fraunces',serif;font-size:2.4rem;font-weight:700;line-height:1;margin-bottom:4px}
+.yth{font-size:.9rem;opacity:.85;font-style:italic;margin-bottom:16px}
+.ys{display:flex;gap:20px}.ysi{display:flex;flex-direction:column}.ysn{font-size:1.3rem;font-weight:700}.ysl{font-size:.7rem;opacity:.7;text-transform:uppercase;letter-spacing:.05em}
+
+/* TABS */
+.pt{display:flex;gap:4px;background:var(--sand-100);border-radius:var(--radius-md);padding:4px;margin-bottom:20px}
+.ptb{flex:1;padding:10px 4px;border:none;background:transparent;border-radius:10px;font-family:inherit;font-size:.73rem;font-weight:600;color:var(--text-tertiary);cursor:pointer;transition:var(--transition);display:flex;align-items:center;justify-content:center;gap:4px}
+.ptb.active{background:var(--white);color:var(--sage-700);box-shadow:var(--shadow-soft)}
+.ps{display:none}.ps.active{display:block}
+
+/* WEEK */
+.wn{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.wnt{font-weight:600;font-size:.95rem}
+.wnb{width:32px;height:32px;border-radius:50%;border:1px solid var(--sand-200);background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-secondary);transition:var(--transition)}
+.wd{display:flex;gap:6px;margin-bottom:20px;overflow-x:auto;scrollbar-width:none}.wd::-webkit-scrollbar{display:none}
+.wdi{flex-shrink:0;width:46px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 10px;border-radius:var(--radius-md);border:none;background:transparent;cursor:pointer;transition:var(--transition);font-family:inherit}
+.wdn{font-size:.65rem;font-weight:600;text-transform:uppercase;color:var(--text-tertiary)}
+.wdnum{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:600;color:var(--text-secondary)}
+.wdi.today .wdnum{background:var(--sage-500);color:white}
+.wdi.he .wdnum{border:2px solid var(--sage-300)}
+.wdi.sel{background:var(--sage-50)}
+.wdot{width:4px;height:4px;border-radius:50%;background:var(--coral)}
+
+/* PLAN CARDS */
+.pc{background:var(--white);border-radius:var(--radius-md);padding:16px;margin-bottom:10px;box-shadow:var(--shadow-soft);display:flex;gap:14px;align-items:flex-start;cursor:pointer;transition:var(--transition);border-left:4px solid transparent;position:relative}
+.pc:active{box-shadow:var(--shadow-elevated);transform:scale(1.01)}
+.pc.t-travel{border-left-color:var(--cat-travel)}.pc.t-food{border-left-color:var(--cat-food)}
+.pc.t-adventure{border-left-color:var(--cat-adventure)}.pc.t-roadtrip{border-left-color:var(--cat-roadtrip)}
+.pc.t-birthday{border-left-color:var(--cat-birthday)}.pc.t-health{border-left-color:var(--cat-health)}
+.pc.t-culture{border-left-color:var(--cat-culture)}.pc.t-date{border-left-color:var(--cat-date)}
+.pcd{width:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding-top:4px;flex-shrink:0}
+.dd{width:4px;height:4px;border-radius:50%;background:var(--sand-300)}
+.pcb{flex:1;min-width:0}
+.pct{font-weight:600;font-size:.92rem;margin-bottom:4px}
+.pcm{font-size:.78rem;color:var(--text-tertiary);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tag{font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em}
+.tag-travel{background:var(--cat-travel-bg);color:var(--cat-travel)}.tag-food{background:var(--cat-food-bg);color:var(--cat-food)}
+.tag-adventure{background:var(--cat-adventure-bg);color:var(--cat-adventure)}.tag-roadtrip{background:var(--cat-roadtrip-bg);color:var(--cat-roadtrip)}
+.tag-birthday{background:var(--cat-birthday-bg);color:var(--cat-birthday)}.tag-health{background:var(--cat-health-bg);color:var(--cat-health)}
+.tag-culture{background:var(--cat-culture-bg);color:var(--cat-culture)}.tag-date{background:var(--cat-date-bg);color:var(--cat-date)}
+.pcchk{width:24px;height:24px;border-radius:50%;border:2px solid var(--sand-300);background:none;cursor:pointer;flex-shrink:0;transition:var(--transition);display:flex;align-items:center;justify-content:center;font-size:13px;color:transparent}
+.pcchk.done{background:var(--sage-500);border-color:var(--sage-500);color:white}
+.recurring-badge{font-size:.62rem;font-weight:700;color:var(--lavender);background:var(--lavender-light);padding:1px 6px;border-radius:10px}
+
+/* MONTH GRID */
+.cmn{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cmt{font-family:'Fraunces',serif;font-size:1.15rem;font-weight:500;color:var(--sage-700)}
+.ch{text-align:center;font-size:.76rem;color:var(--text-tertiary);padding:8px;background:var(--sage-50);border-radius:var(--radius-md);margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px}
+.cl{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.cli{display:flex;align-items:center;gap:4px;font-size:.68rem;color:var(--text-secondary)}
+.cld{width:8px;height:8px;border-radius:2px}
+.mg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:16px}
+.mgh{text-align:center;font-size:.65rem;font-weight:700;color:var(--text-tertiary);padding:6px 0;text-transform:uppercase;letter-spacing:.04em}
+.mgc{min-height:56px;background:var(--white);border-radius:6px;padding:3px;cursor:pointer;transition:var(--transition);position:relative;overflow:hidden;border:1.5px solid transparent}
+.mgc:active{background:var(--sage-50)}
+.mgc.today{border-color:var(--sage-400)}
+.mgc.empty{background:transparent;pointer-events:none}
+.mgc.rs{background:var(--sage-100);border-color:var(--sage-200)}
+.mgc.rstart{background:var(--sage-500);border-color:var(--sage-500)}
+.mgc.rstart .mgn{color:white}
+.mgc.rend{background:var(--sage-500);border-color:var(--sage-500)}
+.mgc.rend .mgn{color:white}
+.mgn{font-size:.7rem;font-weight:700;color:var(--text-secondary);margin-bottom:1px}
+.mge{font-size:.52rem;font-weight:600;padding:1px 3px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px;line-height:1.3}
+.mge.c-travel{background:var(--cat-travel-bg);color:var(--cat-travel)}
+.mge.c-food{background:var(--cat-food-bg);color:var(--cat-food)}
+.mge.c-adventure{background:var(--cat-adventure-bg);color:var(--cat-adventure)}
+.mge.c-roadtrip{background:var(--cat-roadtrip-bg);color:var(--cat-roadtrip)}
+.mge.c-birthday{background:var(--cat-birthday-bg);color:var(--cat-birthday)}
+.mge.c-health{background:var(--cat-health-bg);color:var(--cat-health)}
+.mge.c-culture{background:var(--cat-culture-bg);color:var(--cat-culture)}
+.mge.c-date{background:var(--cat-date-bg);color:var(--cat-date)}
+.mgmore{font-size:.5rem;color:var(--text-tertiary);font-weight:600}
+
+/* ACTIVITY LIST below calendar */
+.act-list{margin-top:8px}
+.act-item{display:flex;align-items:center;gap:12px;padding:14px;background:var(--white);border-radius:var(--radius-md);margin-bottom:8px;box-shadow:var(--shadow-soft);cursor:pointer;transition:var(--transition);border-left:4px solid transparent}
+.act-item:active{transform:scale(.99);box-shadow:var(--shadow-elevated)}
+.act-item.t-travel{border-left-color:var(--cat-travel)}.act-item.t-food{border-left-color:var(--cat-food)}
+.act-item.t-adventure{border-left-color:var(--cat-adventure)}.act-item.t-roadtrip{border-left-color:var(--cat-roadtrip)}
+.act-item.t-birthday{border-left-color:var(--cat-birthday)}.act-item.t-health{border-left-color:var(--cat-health)}
+.act-item.t-culture{border-left-color:var(--cat-culture)}.act-item.t-date{border-left-color:var(--cat-date)}
+.act-icon{width:36px;height:36px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.act-body{flex:1;min-width:0}
+.act-name{font-weight:600;font-size:.88rem}
+.act-meta{font-size:.75rem;color:var(--text-tertiary);display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap}
+.act-edit{color:var(--text-tertiary);font-size:16px;cursor:pointer;padding:4px}
+
+/* YEARLY */
+.yg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.ym{background:var(--white);border-radius:var(--radius-md);padding:10px;box-shadow:var(--shadow-soft);cursor:pointer;transition:var(--transition)}
+.ym:active{transform:scale(.97)}
+.ym.cur{border:2px solid var(--sage-400)}
+.ymn{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--sage-600);margin-bottom:4px}
+.ymg{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.ymc{width:100%;aspect-ratio:1;border-radius:2px}
+.ymc.blank{background:transparent}.ymc.day{background:var(--sand-100)}
+.ymc.e-travel{background:var(--cat-travel)}.ymc.e-food{background:var(--cat-food)}
+.ymc.e-adventure{background:var(--cat-adventure)}.ymc.e-roadtrip{background:var(--cat-roadtrip)}
+.ymc.e-birthday{background:var(--cat-birthday)}.ymc.e-health{background:var(--cat-health)}
+.ymc.e-culture{background:var(--cat-culture)}.ymc.e-date{background:var(--cat-date)}
+.ymc-count{margin-top:4px;font-size:.68rem;color:var(--text-tertiary)}
+
+/* PANELS */
+.po{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;opacity:0;pointer-events:none;transition:var(--transition)}
+.po.open{opacity:1;pointer-events:auto}
+.sp{position:fixed;bottom:0;left:0;right:0;max-width:430px;margin:0 auto;background:var(--white);border-radius:var(--radius-lg) var(--radius-lg) 0 0;z-index:201;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);max-height:90vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,16px)}
+.sp.open{transform:translateY(0)}
+.ph{width:36px;height:4px;background:var(--sand-300);border-radius:4px;margin:10px auto 0}
+.phd{padding:16px 20px 0;display:flex;align-items:center;justify-content:space-between}
+.ptl{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:500;color:var(--sage-700)}
+.pcl{width:32px;height:32px;border-radius:50%;border:none;background:var(--sand-100);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary)}
+.pbd{padding:16px 20px}
+
+/* Form elements */
+.fl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin-bottom:8px}
+.tinp{width:100%;padding:12px 14px;border:1.5px solid var(--sand-200);border-radius:var(--radius-md);font-family:inherit;font-size:.9rem;background:var(--sand-50);color:var(--text-primary);outline:none;transition:var(--transition);margin-bottom:10px}
+.tinp:focus{border-color:var(--sage-400);background:var(--white)}
+.tc{padding:7px 14px;border-radius:var(--radius-xl);border:1.5px solid var(--sand-200);background:var(--white);font-family:inherit;font-size:.78rem;font-weight:600;color:var(--text-secondary);cursor:pointer;transition:var(--transition);display:inline-flex;align-items:center;gap:4px}
+.tc.sel{border-color:var(--sage-500);background:var(--sage-50);color:var(--sage-700)}
+.tc:active{transform:scale(.95)}
+.tcr{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.btn-p{width:100%;padding:14px;border:none;background:linear-gradient(135deg,var(--sage-500),var(--sage-600));color:white;border-radius:var(--radius-md);font-family:inherit;font-size:.92rem;font-weight:600;cursor:pointer;transition:var(--transition);margin-top:8px}
+.btn-p:active{transform:scale(.98);opacity:.9}
+.btn-s{width:100%;padding:12px;border:1.5px solid var(--sand-200);background:var(--white);color:var(--text-primary);border-radius:var(--radius-md);font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer;margin-top:8px}
+
+/* Date row */
+.tdr{display:flex;gap:10px;margin-bottom:12px}
+.tdb{flex:1;padding:12px;background:var(--sage-50);border-radius:var(--radius-md);text-align:center}
+.tdl{font-size:.7rem;color:var(--text-tertiary);margin-bottom:2px}
+.tdv{font-weight:700;font-size:.95rem;color:var(--sage-700)}
+
+/* Friends */
+.fr{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.fc{display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--sage-50);border-radius:var(--radius-xl);font-size:.82rem;font-weight:500}
+.fav{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px}
+.afb{padding:6px 12px;border:1.5px dashed var(--sand-300);border-radius:var(--radius-xl);background:none;cursor:pointer;font-family:inherit;font-size:.82rem;color:var(--text-tertiary);transition:var(--transition);display:flex;align-items:center;gap:4px}
+
+/* Reminders */
+.ri{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--sand-100)}
+.rchk{width:22px;height:22px;border-radius:6px;border:2px solid var(--sand-300);background:none;cursor:pointer;transition:var(--transition);display:flex;align-items:center;justify-content:center;font-size:12px;color:transparent;flex-shrink:0}
+.rchk.done{background:var(--sage-500);border-color:var(--sage-500);color:white}
+.rbd{flex:1;min-width:0}.rtx{font-size:.88rem;font-weight:500}.rtx.sk{text-decoration:line-through;color:var(--text-tertiary)}
+.rwh{font-size:.72rem;color:var(--text-tertiary);margin-top:2px}
+.rdl{width:28px;height:28px;border-radius:50%;border:none;background:none;cursor:pointer;color:var(--text-tertiary);font-size:14px;display:flex;align-items:center;justify-content:center}
+.redit{width:28px;height:28px;border-radius:50%;border:none;background:none;cursor:pointer;color:var(--text-tertiary);font-size:14px;display:flex;align-items:center;justify-content:center}
+.redit:active{color:var(--sage-600)}
+.ri-editing{background:var(--sage-50);border-radius:var(--radius-md);padding:12px;margin:-4px 0;border-bottom:none}
+.ri-editing .rtx{display:none}
+.ri-edit-input{width:100%;padding:8px 10px;border:1.5px solid var(--sage-400);border-radius:var(--radius-sm);font-family:inherit;font-size:.85rem;background:var(--white);outline:none;margin-bottom:6px}
+.ri-edit-timing{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.ri-edit-timing .tc{font-size:.7rem;padding:4px 10px}
+.ri-edit-actions{display:flex;gap:6px;justify-content:flex-end}
+.ri-save{padding:6px 14px;background:var(--sage-500);color:white;border:none;border-radius:var(--radius-sm);font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer}
+.ri-cancel{padding:6px 14px;background:var(--sand-100);color:var(--text-secondary);border:none;border-radius:var(--radius-sm);font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer}
+
+/* AI Recs */
+.air{margin-top:16px;padding:16px;background:linear-gradient(135deg,var(--sage-50),var(--sand-100));border-radius:var(--radius-md)}
+.airt{font-size:.78rem;font-weight:700;color:var(--sage-600);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.airc{display:flex;gap:12px;padding:12px;background:var(--white);border-radius:var(--radius-md);margin-bottom:8px;cursor:pointer;transition:var(--transition);box-shadow:var(--shadow-soft)}
+.airc:active{transform:scale(.98)}
+.airc.selected{border:2px solid var(--sage-500);background:var(--sage-50)}
+.airi{width:50px;height:50px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.airb{flex:1}.airn{font-weight:600;font-size:.85rem;margin-bottom:2px}
+.aird{font-size:.73rem;color:var(--text-tertiary);line-height:1.3}
+.airdist{font-size:.7rem;color:var(--sage-500);font-weight:600;margin-top:3px}
+
+/* Dest search */
+.ds{display:flex;align-items:center;gap:10px;background:var(--sand-50);border:1.5px solid var(--sand-200);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:16px;transition:var(--transition);cursor:pointer}
+.ds:focus-within{border-color:var(--sage-400);background:var(--white)}
+.ds input{flex:1;border:none;background:none;outline:none;font-family:inherit;font-size:.92rem;color:var(--text-primary)}
+.ds input::placeholder{color:var(--text-tertiary)}
+.dr{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--sand-100);cursor:pointer}
+.dr:active{opacity:.6}
+.dri{width:40px;height:40px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.drb{flex:1}.drn{font-weight:600;font-size:.92rem}.drr{font-size:.78rem;color:var(--text-tertiary)}
+.drt{font-size:.68rem;font-weight:600;padding:3px 8px;border-radius:20px;background:var(--sand-100);color:var(--text-tertiary)}
+
+/* Location selector inside plan flow */
+.loc-option{display:flex;align-items:center;gap:10px;padding:12px;background:var(--white);border:1.5px solid var(--sand-200);border-radius:var(--radius-md);margin-bottom:8px;cursor:pointer;transition:var(--transition)}
+.loc-option:active{transform:scale(.98)}
+.loc-option.sel{border-color:var(--sage-500);background:var(--sage-50)}
+.loc-icon{font-size:20px;width:32px;text-align:center}
+.loc-body{flex:1}.loc-name{font-weight:600;font-size:.88rem}.loc-desc{font-size:.75rem;color:var(--text-tertiary)}
+
+/* Notifs */
+.nfi{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--sand-100)}
+.nfiw{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.nfb{flex:1}.nft{font-size:.88rem;line-height:1.4}.nft strong{font-weight:600}
+.nftm{font-size:.72rem;color:var(--text-tertiary);margin-top:3px}
+.nfa{padding:6px 12px;border-radius:var(--radius-xl);border:1.5px solid var(--sand-200);background:var(--white);font-family:inherit;font-size:.75rem;font-weight:600;color:var(--sage-600);cursor:pointer;flex-shrink:0;align-self:center}
+.nfa.clr{background:var(--sage-100);color:var(--sage-500);border-color:var(--sage-200);text-decoration:line-through}
+
+/* Profile */
+.pro{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;opacity:0;pointer-events:none;transition:var(--transition)}
+.pro.open{opacity:1;pointer-events:auto}
+.prp{position:fixed;top:0;right:-300px;width:280px;height:100%;background:var(--white);z-index:201;transition:right .35s cubic-bezier(.4,0,.2,1);padding:60px 24px 24px;overflow-y:auto}
+.prp.open{right:0}
+.prn{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:500;color:var(--sage-700);margin-bottom:4px}
+.pre{font-size:.82rem;color:var(--text-tertiary);margin-bottom:24px}
+.prst{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary);margin-bottom:10px;margin-top:20px}
+.prl{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--sand-100);cursor:pointer;color:var(--text-primary);font-size:.9rem;font-weight:500}
+.prl:active{opacity:.6}
+.prli{font-size:18px;width:24px;text-align:center}
+.prso{margin-top:30px;width:100%;padding:12px;background:var(--sand-100);border:none;border-radius:var(--radius-md);font-family:inherit;font-size:.88rem;font-weight:600;color:var(--coral);cursor:pointer}
+
+/* Habits/Memories (unchanged) */
+.hc{background:var(--white);border-radius:var(--radius-md);padding:18px;margin-bottom:12px;box-shadow:var(--shadow-soft);display:flex;align-items:center;gap:14px}
+.hr{width:52px;height:52px;position:relative;flex-shrink:0}
+.hr svg{width:52px;height:52px;transform:rotate(-90deg)}
+.hrbg{fill:none;stroke:var(--sand-200);stroke-width:4}
+.hrf{fill:none;stroke-width:4;stroke-linecap:round}
+.hrc{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px}
+.hinf{flex:1;min-width:0}.hnam{font-weight:600;font-size:.92rem;margin-bottom:2px}
+.hstr{font-size:.78rem;color:var(--text-tertiary)}.hsn{font-weight:700;color:var(--coral)}
+.hci{width:42px;height:42px;border-radius:50%;border:2px solid var(--sage-300);background:none;cursor:pointer;transition:var(--transition);font-size:18px;display:flex;align-items:center;justify-content:center;color:var(--sage-300);flex-shrink:0}
+.hci.chk{background:var(--sage-500);border-color:var(--sage-500);color:white}
+.hhm{display:flex;gap:3px;margin-top:10px;padding-top:10px;border-top:1px solid var(--sand-100)}
+.hmc{width:10px;height:10px;border-radius:2px;background:var(--sand-100)}
+.hmc.l1{background:var(--sage-100)}.hmc.l2{background:var(--sage-300)}.hmc.l3{background:var(--sage-500)}
+.ql{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--teal);background:var(--teal-light);padding:4px 12px;border-radius:var(--radius-xl);display:inline-block;margin-bottom:14px}
+.otd{background:linear-gradient(135deg,var(--coral),#d4694f);border-radius:var(--radius-lg);padding:20px;color:white;margin-bottom:24px;position:relative;overflow:hidden}
+.otd::after{content:'📅';position:absolute;top:-10px;right:10px;font-size:4rem;opacity:.15}
+.mmt{position:relative;padding-left:24px}.mmt::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--sand-200)}
+.mml{font-family:'Fraunces',serif;font-size:1rem;font-weight:500;color:var(--sage-600);margin-bottom:14px;position:relative}
+.mml::before{content:'';position:absolute;left:-20px;top:50%;transform:translateY(-50%);width:10px;height:10px;border-radius:50%;background:var(--sage-400);border:2px solid var(--sand-50)}
+.mmcd{background:var(--white);border-radius:var(--radius-md);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-soft);cursor:pointer;transition:var(--transition)}
+.mmcd:active{transform:scale(.98)}
+.mimg{width:100%;height:140px;background-size:cover;background-position:center;position:relative}
+.mdt{position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.5);color:white;font-size:.7rem;font-weight:600;padding:3px 8px;border-radius:20px;backdrop-filter:blur(4px)}
+.mbdy{padding:14px}
+.mbtl{font-weight:600;font-size:.9rem;margin-bottom:4px}
+.mbdsc{font-size:.8rem;color:var(--text-tertiary);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* Bucket */
+.bh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.bab{font-size:.78rem;font-weight:600;color:var(--sage-600);background:var(--sage-100);border:none;padding:6px 14px;border-radius:var(--radius-xl);cursor:pointer;font-family:inherit}
+.bi{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--sand-100);cursor:pointer}
+.bi:active{opacity:.7}
+.bic{width:38px;height:38px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.bbd{flex:1;min-width:0}.bbt{font-weight:500;font-size:.9rem}.bbs{font-size:.75rem;color:var(--text-tertiary);margin-top:2px}
+.bar{color:var(--sand-300);font-size:14px}
+
+/* Steps indicator */
+.steps{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:16px}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--sand-200);transition:var(--transition)}
+.step-dot.active{background:var(--sage-500);width:20px;border-radius:4px}
+.step-dot.done{background:var(--sage-300)}
+
+.toast{position:fixed;bottom:calc(90px + env(safe-area-inset-bottom,8px));left:50%;transform:translateX(-50%) translateY(100px);background:var(--sage-700);color:white;padding:12px 24px;border-radius:var(--radius-xl);font-size:.85rem;font-weight:500;z-index:300;transition:transform .3s ease;box-shadow:var(--shadow-elevated);white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.mc::-webkit-scrollbar{width:0}
+.ideas-scroll::-webkit-scrollbar{display:none}
+.ideas-scroll{scrollbar-width:none}
+</style>
 </head>
 <body>
-  <script>
-    const CONFIG = {
-      API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.com/prod"
-    };
-  </script>
+<div class="app-shell">
+  <header class="app-header">
+    <div class="hb"><div class="hl">🏔️</div><span class="ht">LifeStack</span></div>
+    <div class="ha"><button class="hbtn" onclick="openPanel('notif')">🔔<span class="nb"></span></button><div class="hav" onclick="toggleProfile()">👤</div></div>
+  </header>
 
-  <!-- Loading Screen -->
-  <div id="loadingScreen" class="loading-screen">
-    <div class="loading-spinner"></div>
-    <p class="loading-text">Loading LifeStack...</p>
+  <div class="mc">
+    <!-- PLAN VIEW -->
+    <div id="planView" class="v active"><div class="vp">
+      <div class="yb"><div class="yn">2026</div><div class="yth">"The year of running back to health"</div><div class="ys"><div class="ysi"><span class="ysn">12</span><span class="ysl">Adventures</span></div><div class="ysi"><span class="ysn">3</span><span class="ysl">Bucket list</span></div><div class="ysi"><span class="ysn">1</span><span class="ysl">Misogi</span></div></div></div>
+      <div class="pt">
+        <button class="ptb active" onclick="swTab('week',this)">📋 Week</button>
+        <button class="ptb" onclick="swTab('month',this)">📅 Month</button>
+        <button class="ptb" onclick="swTab('year',this)">🗓️ Year</button>
+        <button class="ptb" onclick="swTab('bucket',this)">🪣 Bucket</button>
+      </div>
+
+      <!-- WEEK -->
+      <div id="st-week" class="ps active">
+        <div class="wn"><button class="wnb">‹</button><span class="wnt">Feb 3 – Feb 9</span><button class="wnb">›</button></div>
+        <div class="wd">
+          <button class="wdi"><span class="wdn">Mon</span><span class="wdnum">3</span></button>
+          <button class="wdi he"><span class="wdn">Tue</span><span class="wdnum">4</span><span class="wdot"></span></button>
+          <button class="wdi"><span class="wdn">Wed</span><span class="wdnum">5</span></button>
+          <button class="wdi"><span class="wdn">Thu</span><span class="wdnum">6</span></button>
+          <button class="wdi today sel"><span class="wdn">Fri</span><span class="wdnum">7</span></button>
+          <button class="wdi he"><span class="wdn">Sat</span><span class="wdnum">8</span><span class="wdot"></span></button>
+          <button class="wdi"><span class="wdn">Sun</span><span class="wdnum">9</span></button>
+        </div>
+        <div class="slsm">Today's Plans</div>
+        <div id="planCards">
+          <div class="pc t-health" draggable="true"><div class="pcd"><span class="dd"></span><span class="dd"></span><span class="dd"></span><span class="dd"></span><span class="dd"></span><span class="dd"></span></div><div class="pcb"><div class="pct">🏃 Morning 5K Run</div><div class="pcm"><span>7:00 AM</span><span class="tag tag-health">Health</span></div></div><button class="pcchk done" onclick="event.stopPropagation();tgChk(this)">✓</button></div>
+          <div class="pc t-travel" draggable="true" onclick="openTripDetail()"><div class="pcd"><span class="dd"></span><span class="dd"></span><span class="dd"></span><span class="dd"></span><span class="dd"></span><span class="dd"></span></div><div class="pcb"><div class="pct">✈️ Marseille Trip</div><div class="pcm"><span>Mar 15 – 22</span><span class="tag tag-travel">Travel</span></div></div><button class="pcchk" onclick="event.stopPropagation();tgChk(this)">✓</button></div>
+          <div class="pc t-birthday" draggable="true"><div class="pcd"><span class="dd"></span><span class="dd"></span><span class="dd"></span><span class="dd"></span><span class="dd"></span><span class="dd"></span></div><div class="pcb"><div class="pct">🎂 Sarah's Birthday dinner</div><div class="pcm"><span>Sat, Feb 8 · 7 PM</span><span class="tag tag-birthday">Birthday</span></div></div><button class="pcchk" onclick="event.stopPropagation();tgChk(this)">✓</button></div>
+          <div class="pc t-date" draggable="true" onclick="openTripDetail()"><div class="pcd"><span class="dd"></span><span class="dd"></span><span class="dd"></span><span class="dd"></span><span class="dd"></span><span class="dd"></span></div><div class="pcb"><div class="pct">💕 Date Night</div><div class="pcm"><span>Sat, Feb 8 · 8 PM</span><span class="tag tag-date">Date</span><span class="recurring-badge">🔁 Bi-weekly</span></div></div><button class="pcchk" onclick="event.stopPropagation();tgChk(this)">✓</button></div>
+        </div>
+        <!-- Weekend ideas -->
+        <div style="background:linear-gradient(135deg,var(--sand-100),var(--sage-50));border-radius:var(--radius-lg);padding:20px;margin-top:20px">
+          <div style="font-family:'Fraunces',serif;font-size:1.05rem;font-weight:500;color:var(--sage-700);margin-bottom:4px">✨ Plan your weekend</div>
+          <div style="font-size:.8rem;color:var(--text-tertiary);margin-bottom:14px">Based on Sacramento · Tap to start planning</div>
+          <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px" class="ideas-scroll">
+            <button class="fo" onclick="pfQuick('adventure')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">🏔️ Day hike</button>
+            <button class="fo" onclick="pfQuick('food')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">🍳 Brunch spot</button>
+            <button class="fo" onclick="pfQuick('culture')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">📸 Photo walk</button>
+            <button class="fo" onclick="pfQuick('health')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">🧘 Yoga</button>
+            <button class="fo" onclick="pfQuick('date')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">💕 Date idea</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MONTH -->
+      <div id="st-month" class="ps">
+        <div class="cmn"><button class="wnb" onclick="navMonth(-1)">‹</button><span class="cmt" id="cmTitle">February 2026</span><button class="wnb" onclick="navMonth(1)">›</button></div>
+        <div class="ch">👆 Tap start → tap end to plan · Long-press to add event</div>
+        <div class="cl">
+          <div class="cli"><div class="cld" style="background:var(--cat-travel)"></div>Travel</div>
+          <div class="cli"><div class="cld" style="background:var(--cat-food)"></div>Food</div>
+          <div class="cli"><div class="cld" style="background:var(--cat-adventure)"></div>Adventure</div>
+          <div class="cli"><div class="cld" style="background:var(--cat-roadtrip)"></div>Road trip</div>
+          <div class="cli"><div class="cld" style="background:var(--cat-birthday)"></div>Birthday</div>
+          <div class="cli"><div class="cld" style="background:var(--cat-date)"></div>Date</div>
+        </div>
+        <div class="mg" id="mGrid"></div>
+        <div class="slsm" id="actListTitle">Activities this month</div>
+        <div class="act-list" id="actList"></div>
+        <!-- Month: Plan a trip -->
+        <div style="background:linear-gradient(135deg,var(--blue-light),var(--sage-50));border-radius:var(--radius-lg);padding:20px;margin-top:16px">
+          <div style="font-family:'Fraunces',serif;font-size:1.05rem;font-weight:500;color:var(--sage-700);margin-bottom:4px">🗺️ Plan a trip</div>
+          <div style="font-size:.8rem;color:var(--text-tertiary);margin-bottom:14px">Getaways & adventures</div>
+          <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px" class="ideas-scroll">
+            <button class="fo" onclick="startPlanFlow(1)" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">✈️ Plan a trip</button>
+            <button class="fo" onclick="pfQuick('roadtrip')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">🚗 Road trip</button>
+            <button class="fo" onclick="pfQuick('date')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">💕 Date night</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- YEAR -->
+      <div id="st-year" class="ps">
+        <div class="sl" style="margin-bottom:4px">2026 at a Glance</div>
+        <p style="font-size:.82rem;color:var(--text-tertiary);margin-bottom:12px">Tap a month to view details</p>
+        <div class="cl"><div class="cli"><div class="cld" style="background:var(--cat-travel)"></div>Travel</div><div class="cli"><div class="cld" style="background:var(--cat-food)"></div>Food</div><div class="cli"><div class="cld" style="background:var(--cat-adventure)"></div>Adventure</div><div class="cli"><div class="cld" style="background:var(--cat-roadtrip)"></div>Road trip</div><div class="cli"><div class="cld" style="background:var(--cat-birthday)"></div>Birthday</div><div class="cli"><div class="cld" style="background:var(--cat-date)"></div>Date</div></div>
+        <div class="yg" id="yearGrid"></div>
+      </div>
+
+      <!-- BUCKET -->
+      <div id="st-bucket" class="ps">
+        <div class="bh"><div class="sl" style="margin-bottom:0">🪣 Bucket List</div><button class="bab">+ Add</button></div>
+        <div class="bi"><div class="bic" style="background:var(--blue-light)">✈️</div><div class="bbd"><div class="bbt">Visit Japan cherry blossom</div><div class="bbs">Travel · Jan 2026</div></div><span class="bar">›</span></div>
+        <div class="bi"><div class="bic" style="background:var(--teal-light)">🏔️</div><div class="bbd"><div class="bbt">Hike Inca Trail</div><div class="bbs">Adventure · Dec 2025</div></div><span class="bar">›</span></div>
+        <div class="bi"><div class="bic" style="background:var(--amber-light)">🎸</div><div class="bbd"><div class="bbt">Learn "Blackbird" on guitar</div><div class="bbs">Skills · In progress</div></div><span class="bar">›</span></div>
+      </div>
+    </div></div>
+
+    <!-- HABITS -->
+    <div id="habitsView" class="v"><div class="vp">
+      <div class="sl">Winning Habits</div>
+      <p style="font-size:.85rem;color:var(--text-tertiary);margin-bottom:20px;margin-top:-8px">One powerful habit per quarter.</p>
+      <div class="ql">Q1 · Jan — Mar</div>
+      <div class="hc"><div class="hr"><svg viewBox="0 0 52 52"><circle class="hrbg" cx="26" cy="26" r="22"/><circle class="hrf" cx="26" cy="26" r="22" stroke="var(--teal)" stroke-dasharray="138.23" stroke-dashoffset="44.23"/></svg><div class="hrc">🧘</div></div><div class="hinf"><div class="hnam">10 min stretch every morning</div><div class="hstr">🔥 <span class="hsn">27</span> day streak</div><div class="hhm" id="hm1"></div></div><button class="hci chk" onclick="tgHab(this)">✓</button></div>
+      <div style="margin-top:28px"><div class="sl">🏔️ Misogi Challenge</div>
+      <div class="hc" style="border-left:4px solid var(--coral)"><div class="hr"><svg viewBox="0 0 52 52"><circle class="hrbg" cx="26" cy="26" r="22"/><circle class="hrf" cx="26" cy="26" r="22" stroke="var(--coral)" stroke-dasharray="138.23" stroke-dashoffset="96.76"/></svg><div class="hrc">🏃</div></div><div class="hinf"><div class="hnam">Run a Marathon by year end</div><div class="hstr">🎯 Dec 6 · <span style="color:var(--coral);font-weight:700">In Progress</span></div></div></div></div>
+    </div></div>
+
+    <!-- MEMORIES -->
+    <div id="memoriesView" class="v"><div class="vp">
+      <div class="otd"><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.8;margin-bottom:8px">On This Day</div><div style="font-family:'Fraunces',serif;font-size:1.1rem;font-weight:500;margin-bottom:4px">First solo hike at Mt. Tamalpais</div><div style="font-size:.8rem;opacity:.75">1 year ago · Feb 7, 2025</div></div>
+      <div class="sl">Memories & Journal</div>
+      <div class="mmt"><div class="mml">February 2026</div><div class="mmcd"><div class="mimg" style="background:linear-gradient(135deg,var(--sage-200),var(--sage-400))"><span class="mdt">Feb 4</span></div><div class="mbdy"><div class="mbtl">Sunset run along the waterfront</div><div class="mbdsc">Perfect golden hour. Hit a new PB — 5K in 24:30!</div></div></div></div>
+    </div></div>
   </div>
 
-  <!-- Landing Page -->
-  <div id="landing" class="landing hidden">
-    <div class="landing-logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-      </svg>
+  <!-- FAB -->
+  <div class="fm" id="fabMenu">
+    <button class="fo" onclick="startPlanFlow();closeFab()"><div class="fi" style="background:var(--sage-100)">📋</div>Plan Activity</button>
+    <button class="fo" onclick="startRecurring();closeFab()"><div class="fi" style="background:var(--lavender-light)">🔁</div>Recurring Event</button>
+    <button class="fo" onclick="toast('📸 Memory captured!');closeFab()"><div class="fi" style="background:var(--coral-bg)">📸</div>Capture Memory</button>
+  </div>
+  <button class="fab" id="fabBtn" onclick="toggleFab()">+</button>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bn">
+    <button class="ni active" onclick="swView('plan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nl">Plan</span></button>
+    <button class="ni" onclick="swView('habits')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nl">Habits</span></button>
+    <button class="ni" onclick="swView('memories')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span class="nl">Memories</span></button>
+  </nav>
+
+  <!-- ===== PLANNING FLOW PANEL (multi-step) ===== -->
+  <div class="po" id="planFlowOverlay" onclick="closePanel('planFlow')"></div>
+  <div class="sp" id="planFlowPanel">
+    <div class="ph"></div>
+    <div class="phd"><span class="ptl" id="pfTitle">Plan Activity</span><button class="pcl" onclick="closePanel('planFlow')">✕</button></div>
+    <div class="pbd">
+      <div class="steps" id="pfSteps">
+        <div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+      </div>
+      <!-- Step 1: Type -->
+      <div id="pf1" class="pf-step">
+        <div class="fl">What kind of activity?</div>
+        <div class="tcr" id="pfTypes">
+          <button class="tc" onclick="pfSelType(this,'travel')">✈️ Travel</button>
+          <button class="tc" onclick="pfSelType(this,'food')">🍽️ Food</button>
+          <button class="tc" onclick="pfSelType(this,'adventure')">🏔️ Adventure</button>
+          <button class="tc" onclick="pfSelType(this,'roadtrip')">🚗 Road trip</button>
+          <button class="tc" onclick="pfSelType(this,'culture')">🎭 Culture</button>
+          <button class="tc" onclick="pfSelType(this,'health')">💪 Health</button>
+          <button class="tc" onclick="pfSelType(this,'birthday')">🎂 Birthday</button>
+          <button class="tc" onclick="pfSelType(this,'date')">💕 Date night</button>
+        </div>
+        <button class="btn-p" onclick="pfNext(2)" id="pfNext1" style="opacity:.5;pointer-events:none">Next →</button>
+      </div>
+      <!-- Step 2: Location -->
+      <div id="pf2" class="pf-step" style="display:none">
+        <div class="fl">Where?</div>
+        <div class="loc-option sel" onclick="pfSelLoc(this,'around')" id="locAround">
+          <span class="loc-icon">📍</span><div class="loc-body"><div class="loc-name">Around me</div><div class="loc-desc">Sacramento, CA · 50 mile radius</div></div>
+        </div>
+        <div class="loc-option" onclick="pfSelLoc(this,'city')" id="locCity">
+          <span class="loc-icon">🏙️</span><div class="loc-body"><div class="loc-name">Specific city or town</div><div class="loc-desc">Search for a destination</div></div>
+        </div>
+        <div class="loc-option" onclick="pfSelLoc(this,'country')" id="locCountry">
+          <span class="loc-icon">🌍</span><div class="loc-body"><div class="loc-name">Another country</div><div class="loc-desc">International destination</div></div>
+        </div>
+        <div id="pfCitySearch" style="display:none;margin-top:12px">
+          <div class="ds"><span>🔍</span><input type="text" placeholder="Search city..." id="pfCityInput" oninput="pfFilterCity(this.value)"></div>
+          <div id="pfCityResults"></div>
+        </div>
+        <div id="pfSelectedLoc" style="display:none;margin-top:8px;padding:10px 14px;background:var(--sage-50);border-radius:var(--radius-md);font-weight:600;font-size:.9rem"></div>
+        <button class="btn-p" onclick="pfNext(3)" style="margin-top:12px">Next →</button>
+      </div>
+      <!-- Step 3: Date -->
+      <div id="pf3" class="pf-step" style="display:none">
+        <div class="fl">When?</div>
+        <div class="tcr">
+          <button class="tc" onclick="selTC(this)" data-d="tomorrow">Tomorrow</button>
+          <button class="tc sel" onclick="selTC(this)" data-d="sat">This Saturday</button>
+          <button class="tc" onclick="selTC(this)" data-d="sun">This Sunday</button>
+          <button class="tc" onclick="selTC(this)" data-d="nwk">Next weekend</button>
+        </div>
+        <div class="fl" style="margin-top:8px">Or pick specific dates</div>
+        <div class="tdr">
+          <div class="tdb"><div class="tdl">Start</div><input class="tinp" type="date" style="margin:0;padding:8px;font-size:.8rem" id="pfDateStart"></div>
+          <div class="tdb"><div class="tdl">End</div><input class="tinp" type="date" style="margin:0;padding:8px;font-size:.8rem" id="pfDateEnd"></div>
+        </div>
+        <button class="btn-p" onclick="pfNext(4)">See AI Recommendations →</button>
+      </div>
+      <!-- Step 4: AI Recs + Add -->
+      <div id="pf4" class="pf-step" style="display:none">
+        <div class="air" style="margin-top:0">
+          <div class="airt">🤖 AI Recommendations · <span id="pfLocLabel">Near Sacramento</span></div>
+          <div id="pfAiRecs"></div>
+        </div>
+        <div class="fl" style="margin-top:16px">Activity name</div>
+        <input class="tinp" id="pfActName" placeholder="e.g., Dinner at The Kitchen">
+        <div class="fl">👥 Friends</div>
+        <div class="fr"><button class="afb" onclick="toast('Friend added!')">+ Add friend</button></div>
+        <button class="btn-p" onclick="pfFinish()">Add to Plan →</button>
+      </div>
     </div>
-    <h1>Life by Design</h1>
-    <p class="landing-subtitle">Most people don't plan their lives. They just let them happen. You're different.</p>
-    <div class="landing-features">
-      <div class="landing-feature">
-        <div class="landing-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg></div>
-        <span>See your life as 80 years</span>
-      </div>
-      <div class="landing-feature">
-        <div class="landing-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-        <span>Set your Misogi - one defining challenge</span>
-      </div>
-      <div class="landing-feature">
-        <div class="landing-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
-        <span>Capture memories & photos</span>
-      </div>
-    </div>
-    <div class="landing-buttons">
-      <button class="btn btn-primary" onclick="showSignInModal()">Sign In</button>
-      <button class="btn btn-secondary" onclick="showSignUpModal()">Create Account</button>
-    </div>
   </div>
 
-  <!-- Sign In Modal -->
-  <div id="signInModal" class="modal-overlay">
-    <div class="modal"><div class="modal-content">
-      <button class="modal-close" onclick="closeAllModals()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header"><h2>Welcome Back</h2><p>Sign in to your LifeStack account</p></div>
-      <div class="modal-body">
-        <div id="signInError" class="alert alert-error hidden"></div>
-        <form id="signInForm" onsubmit="handleSignIn(event)">
-          <div class="form-group"><label for="signInEmail">Email</label><input type="email" id="signInEmail" placeholder="you@example.com" required></div>
-          <div class="form-group"><label for="signInPassword">Password</label><input type="password" id="signInPassword" placeholder="Your password" required></div>
-          <button type="submit" id="signInBtn" class="btn btn-primary" style="width: 100%;">Sign In</button>
-        </form>
-        <div class="form-divider">Don't have an account?</div>
-        <button class="btn btn-secondary" style="width: 100%;" onclick="showSignUpModal()">Create Account</button>
+  <!-- ===== RECURRING EVENT PANEL ===== -->
+  <div class="po" id="recurOverlay" onclick="closePanel('recur')"></div>
+  <div class="sp" id="recurPanel">
+    <div class="ph"></div>
+    <div class="phd"><span class="ptl">🔁 Recurring Event</span><button class="pcl" onclick="closePanel('recur')">✕</button></div>
+    <div class="pbd">
+      <div class="fl">Event type</div>
+      <div class="tcr">
+        <button class="tc sel" onclick="selTC(this)">💕 Date night</button>
+        <button class="tc" onclick="selTC(this)">🍽️ Family dinner</button>
+        <button class="tc" onclick="selTC(this)">🏋️ Gym</button>
+        <button class="tc" onclick="selTC(this)">📖 Book club</button>
+        <button class="tc" onclick="selTC(this)">Custom...</button>
       </div>
-    </div></div>
-  </div>
-
-  <!-- Sign Up Modal -->
-  <div id="signUpModal" class="modal-overlay">
-    <div class="modal"><div class="modal-content">
-      <button class="modal-close" onclick="closeAllModals()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header"><h2>Create Account</h2><p>Start your Life by Design journey</p></div>
-      <div class="modal-body">
-        <div id="signUpError" class="alert alert-error hidden"></div>
-        <form id="signUpForm" onsubmit="handleSignUp(event)">
-          <div class="form-row">
-            <div class="form-group"><label for="signUpFirstName">First Name</label><input type="text" id="signUpFirstName" placeholder="John" required></div>
-            <div class="form-group"><label for="signUpLastName">Last Name</label><input type="text" id="signUpLastName" placeholder="Doe" required></div>
-          </div>
-          <div class="form-group"><label for="signUpEmail">Email</label><input type="email" id="signUpEmail" placeholder="you@example.com" required></div>
-          <div class="form-group"><label for="signUpPassword">Password</label><input type="password" id="signUpPassword" placeholder="Min 8 chars, uppercase, number, symbol" required minlength="8"></div>
-          <button type="submit" id="signUpBtn" class="btn btn-primary" style="width: 100%;">Create Account</button>
-        </form>
-        <div class="form-divider">Already have an account?</div>
-        <button class="btn btn-secondary" style="width: 100%;" onclick="showSignInModal()">Sign In</button>
+      <div class="fl">Event name</div>
+      <input class="tinp" id="recurName" value="Date Night" placeholder="e.g., Date night with Sarah">
+      <div class="fl">Frequency</div>
+      <div class="tcr">
+        <button class="tc" onclick="selTC(this)">Weekly</button>
+        <button class="tc sel" onclick="selTC(this)">Bi-weekly</button>
+        <button class="tc" onclick="selTC(this)">Monthly</button>
       </div>
-    </div></div>
-  </div>
-
-  <!-- Verify Email Modal -->
-  <div id="verifyModal" class="modal-overlay">
-    <div class="modal"><div class="modal-content">
-      <button class="modal-close" onclick="closeAllModals()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header"><h2>Verify Your Email</h2><p>We sent a code to <strong id="verifyEmailDisplay"></strong></p></div>
-      <div class="modal-body">
-        <div id="verifyError" class="alert alert-error hidden"></div>
-        <div id="verifySuccess" class="alert alert-success hidden"></div>
-        <form id="verifyForm" onsubmit="handleVerify(event)">
-          <div class="code-input-container">
-            <input type="text" class="code-input" maxlength="1" data-index="0" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" oninput="handleCodeInput(this)" onkeydown="handleCodeKeydown(event, this)">
-            <input type="text" class="code-input" maxlength="1" data-index="1" inputmode="numeric" pattern="[0-9]*" oninput="handleCodeInput(this)" onkeydown="handleCodeKeydown(event, this)">
-            <input type="text" class="code-input" maxlength="1" data-index="2" inputmode="numeric" pattern="[0-9]*" oninput="handleCodeInput(this)" onkeydown="handleCodeKeydown(event, this)">
-            <input type="text" class="code-input" maxlength="1" data-index="3" inputmode="numeric" pattern="[0-9]*" oninput="handleCodeInput(this)" onkeydown="handleCodeKeydown(event, this)">
-            <input type="text" class="code-input" maxlength="1" data-index="4" inputmode="numeric" pattern="[0-9]*" oninput="handleCodeInput(this)" onkeydown="handleCodeKeydown(event, this)">
-            <input type="text" class="code-input" maxlength="1" data-index="5" inputmode="numeric" pattern="[0-9]*" oninput="handleCodeInput(this)" onkeydown="handleCodeKeydown(event, this)">
-          </div>
-          <button type="submit" id="verifyBtn" class="btn btn-primary" style="width: 100%;">Verify Email</button>
-        </form>
-        <div style="text-align: center; margin-top: 1rem;"><button class="btn-link" onclick="resendCode()">Didn't receive a code? Resend</button></div>
+      <div class="fl">Preferred day</div>
+      <div class="tcr">
+        <button class="tc" onclick="selTC(this)">Mon</button>
+        <button class="tc" onclick="selTC(this)">Tue</button>
+        <button class="tc" onclick="selTC(this)">Wed</button>
+        <button class="tc" onclick="selTC(this)">Thu</button>
+        <button class="tc" onclick="selTC(this)">Fri</button>
+        <button class="tc sel" onclick="selTC(this)">Sat</button>
+        <button class="tc" onclick="selTC(this)">Sun</button>
       </div>
-    </div></div>
-  </div>
-
-  <!-- Onboarding -->
-  <div id="onboarding" class="onboarding hidden">
-    <div class="onboarding-card">
-      <h2>Welcome to LifeStack</h2>
-      <p>Let's set up your life timeline. This will only take a moment.</p>
-      <form id="onboardingForm">
-        <div class="form-group"><label for="name">Your Name</label><input type="text" id="name" placeholder="Enter your name" required></div>
-        <div class="form-group"><label for="birthdate">Date of Birth</label><input type="date" id="birthdate" required></div>
-        <div class="form-group"><label for="lifespan">Expected Lifespan (years)</label><input type="number" id="lifespan" value="80" min="50" max="120"></div>
-        <div class="form-group"><label for="goal">Primary Life Goal</label>
-          <select id="goal">
-            <option value="family">Family & Relationships</option>
-            <option value="adventure">Adventure & Travel</option>
-            <option value="health">Health & Wellness</option>
-            <option value="creativity">Creativity & Art</option>
-            <option value="career">Career & Achievement</option>
-            <option value="community">Community & Impact</option>
-          </select>
-        </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%;">Start My Journey</button>
-      </form>
+      <div class="fl">Auto-reminders</div>
+      <div style="margin-bottom:12px">
+        <div class="ri"><div class="rchk done" style="pointer-events:none">✓</div><div class="rbd"><div class="rtx">Book restaurant</div><div class="rwh">🔔 3 days before each occurrence</div></div></div>
+        <div class="ri"><div class="rchk done" style="pointer-events:none">✓</div><div class="rbd"><div class="rtx">Confirm reservation</div><div class="rwh">🔔 1 day before each occurrence</div></div></div>
+      </div>
+      <div class="fl">Add custom reminder</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px"><input class="tinp" style="flex:1;margin:0" placeholder="e.g., Buy flowers"><button class="tc sel" style="white-space:nowrap">+ Add</button></div>
+      <div class="fl">👥 With</div>
+      <div class="fr"><div class="fc"><div class="fav" style="background:var(--coral-bg)">S</div>Sarah</div><button class="afb" onclick="toast('Added!')">+ Add</button></div>
+      <button class="btn-p" onclick="closePanel('recur');toast('🔁 Date Night added every other Saturday!')">Create Recurring Event</button>
     </div>
   </div>
 
-  <!-- Main App -->
-  <div id="app" class="app hidden">
-    <header class="header">
-      <div class="header-logo">
-        <div class="header-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
-        <span>LifeStack</span>
+  <!-- ===== TRIP DETAIL with REMINDERS ===== -->
+  <div class="po" id="tripOverlay" onclick="closePanel('trip')"></div>
+  <div class="sp" id="tripPanel">
+    <div class="ph"></div>
+    <div class="phd"><span class="ptl" id="tripTitle">✈️ Marseille Trip</span><button class="pcl" onclick="closePanel('trip')">✕</button></div>
+    <div class="pbd">
+      <div class="tdr"><div class="tdb"><div class="tdl">Start</div><div class="tdv">Mar 15</div></div><div class="tdb"><div class="tdl">End</div><div class="tdv">Mar 22</div></div><div class="tdb" style="background:var(--blue-light)"><div class="tdl">Duration</div><div class="tdv" style="color:var(--blue)">7 nights</div></div></div>
+      <div class="fl">👥 Friends</div>
+      <div class="fr"><div class="fc"><div class="fav" style="background:var(--coral-bg)">S</div>Sarah</div><button class="afb" onclick="toast('Added!')">+ Add friend</button></div>
+      <div class="fl">📋 Trip Checklist & Reminders</div>
+      <div id="remList">
+        <div class="ri"><button class="rchk done" onclick="tgRem(this)">✓</button><div class="rbd"><div class="rtx sk">Check passport expiry</div><div class="rwh">🔔 3 months prior · Done ✓</div></div><button class="redit" onclick="editRem(this)">✏️</button><button class="rdl" onclick="this.closest('.ri').remove()">🗑</button></div>
+        <div class="ri"><button class="rchk" onclick="tgRem(this)">✓</button><div class="rbd"><div class="rtx">Book car rental for Marseille</div><div class="rwh">🔔 1 month prior · Feb 15</div></div><button class="redit" onclick="editRem(this)">✏️</button><button class="rdl" onclick="this.closest('.ri').remove()">🗑</button></div>
+        <div class="ri"><button class="rchk" onclick="tgRem(this)">✓</button><div class="rbd"><div class="rtx">Book hotel in Marseille</div><div class="rwh">🔔 1 month prior · Feb 15</div></div><button class="redit" onclick="editRem(this)">✏️</button><button class="rdl" onclick="this.closest('.ri').remove()">🗑</button></div>
+        <div class="ri"><button class="rchk" onclick="tgRem(this)">✓</button><div class="rbd"><div class="rtx">Pack sunscreen & swim gear</div><div class="rwh">🔔 1 week prior · Mar 8</div></div><button class="redit" onclick="editRem(this)">✏️</button><button class="rdl" onclick="this.closest('.ri').remove()">🗑</button></div>
       </div>
-      <div class="header-user">
-        <button class="header-sync-btn" id="syncBtn" onclick="syncAllData()" title="Sync data">🔄</button>
-        <button class="header-friends-btn" id="friendsBtn" onclick="showFriendsModal()" title="Friends">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-          <span id="friendRequestBadge" class="notification-badge hidden">0</span>
-        </button>
-        <div class="header-avatar" id="userAvatar" onclick="switchView('settings')">
-          <span id="userAvatarInitials">?</span>
-          <img id="userAvatarImage" src="" alt="Avatar" style="display: none;">
-        </div>
-      </div>
-    </header>
-
-    <main class="main" id="mainContent">
-      <!-- Dashboard View -->
-      <div id="dashboardView">
-        <section class="section">
-          <div class="progress-card">
-            <div class="progress-header">
-              <div><div class="progress-year" id="currentYear">2026</div><div class="progress-age">Year <span id="currentAge">30</span> of <span id="lifespanDisplay">80</span></div></div>
-              <div class="progress-ring-container">
-                <svg class="progress-ring" width="80" height="80"><circle class="progress-ring-bg" cx="40" cy="40" r="32"/><circle class="progress-ring-fill" id="progressRing" cx="40" cy="40" r="32" stroke-dasharray="201" stroke-dashoffset="201"/></svg>
-                <div class="progress-percent" id="yearPercent">0%</div>
-              </div>
-            </div>
-            <div class="progress-stats">
-              <div><div class="progress-stat-value" id="yearsLived">30</div><div class="progress-stat-label">Years Lived</div></div>
-              <div><div class="progress-stat-value" id="yearsLeft">50</div><div class="progress-stat-label">Years Left</div></div>
-              <div><div class="progress-stat-value" id="memoriesCount">0</div><div class="progress-stat-label">Memories</div></div>
-            </div>
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="section-header"><div><h2 class="section-title">Your Life Timeline</h2><p class="section-subtitle">Click any year to plan or review</p></div></div>
-          <div class="progress-card"><div class="timeline-grid" id="timelineGrid"></div></div>
-        </section>
-
-        <section class="section">
-          <h2 class="section-title mb-4">Quick Actions</h2>
-          <div class="quick-actions">
-            <div class="action-card" onclick="showMemoryModal()">
-              <div class="action-icon memory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
-              <div class="action-text"><h3>Capture Memory</h3><p>Save a meaningful moment</p></div>
-            </div>
-            <div class="action-card" onclick="openCurrentYearDesign()">
-              <div class="action-icon plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-              <div class="action-text"><h3>Plan This Year</h3><p>Design your Misogi & adventures</p></div>
-            </div>
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="section-header"><h2 class="section-title">Recent Memories</h2></div>
-          <div id="memoriesList" class="memory-list"></div>
-        </section>
-      </div>
-
-      <!-- Year Design View (Current Year) -->
-      <div id="yearDesignView" class="year-view hidden">
-        <div class="year-header">
-          <div class="year-header-back" onclick="switchView('dashboard')">← Back to Dashboard</div>
-          <h2>🎯 <span id="designYear">2026</span> - LIFE BY DESIGN</h2>
-          <div class="year-header-actions">
-            <input type="text" id="yearTheme" placeholder="This is the year I..." onchange="saveYearTheme()">
-            <button class="btn btn-secondary" onclick="showYearReview()">📖 Year in Review</button>
-            <!-- Old share button hidden - now using friend tagging on adventures -->
-            <!-- <button class="btn btn-primary" onclick="showShareModal()">🔗 Share</button> -->
-          </div>
-        </div>
-
-        <!-- Misogi Section -->
-        <div class="plan-section misogi-section">
-          <div class="section-header">
-            <h3>🏔️ MISOGI - Your Defining Challenge</h3>
-            <button class="btn btn-small btn-secondary" onclick="showAddPlanModal('misogi')">+ Add</button>
-          </div>
-          <p class="section-description">One epic challenge that defines your year. Something so hard you might fail, but attempting it will transform you.</p>
-          <div id="misogiList" class="misogi-cards"></div>
-        </div>
-
-        <!-- Quarterly Habits -->
-        <div class="plan-section">
-          <div class="section-header">
-            <h3>🔄 WINNING HABITS - One per Quarter</h3>
-          </div>
-          <p class="section-description">Build one powerful habit each quarter. Focus on one thing at a time for 90 days.</p>
-          <div class="quarters-grid" id="habitsGrid">
-            <div class="quarter-card" id="habitQ1">
-              <div class="quarter-header"><span class="quarter-label">Q1</span><span class="quarter-months">Jan - Mar</span></div>
-              <div class="quarter-content empty" onclick="showAddPlanModal('habit', 1)"><span>+ Add Q1 Habit</span></div>
-            </div>
-            <div class="quarter-card" id="habitQ2">
-              <div class="quarter-header"><span class="quarter-label">Q2</span><span class="quarter-months">Apr - Jun</span></div>
-              <div class="quarter-content empty" onclick="showAddPlanModal('habit', 2)"><span>+ Add Q2 Habit</span></div>
-            </div>
-            <div class="quarter-card" id="habitQ3">
-              <div class="quarter-header"><span class="quarter-label">Q3</span><span class="quarter-months">Jul - Sep</span></div>
-              <div class="quarter-content empty" onclick="showAddPlanModal('habit', 3)"><span>+ Add Q3 Habit</span></div>
-            </div>
-            <div class="quarter-card" id="habitQ4">
-              <div class="quarter-header"><span class="quarter-label">Q4</span><span class="quarter-months">Oct - Dec</span></div>
-              <div class="quarter-content empty" onclick="showAddPlanModal('habit', 4)"><span>+ Add Q4 Habit</span></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Monthly Adventures -->
-        <div class="plan-section">
-          <div class="section-header">
-            <h3>🎯 ADVENTURES - Your Year at a Glance</h3>
-          </div>
-          <div class="calendar-year-view" id="monthGrid"></div>
-        </div>
-
-        <!-- Month Calendar Modal -->
-        <div id="monthCalendarModal" class="modal-overlay">
-          <div class="modal modal-large"><div class="modal-content">
-            <button class="modal-close" onclick="closeMonthCalendarModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-            <div class="modal-header">
-              <h2 id="monthCalendarTitle">January 2026</h2>
-            </div>
-            <div class="modal-body">
-              <div id="monthCalendarGrid" class="month-calendar-grid"></div>
-              <div class="month-calendar-plans">
-                <h4>Plans this month</h4>
-                <div id="monthPlansList"></div>
-              </div>
-              <button class="btn btn-primary" onclick="addPlanFromCalendar()" style="width: 100%; margin-top: 1rem;">+ Add Adventure</button>
-            </div>
-          </div></div>
-        </div>
-
-        <!-- Year Memories -->
-        <div class="plan-section">
-          <div class="section-header">
-            <h3>📸 MEMORIES THIS YEAR</h3>
-            <div class="memory-controls">
-              <button class="btn btn-small btn-secondary" onclick="showPhotoGallery()">🖼️ Gallery</button>
-              <button class="btn btn-small btn-secondary" onclick="showMemoryModal()">+ Add</button>
-            </div>
-          </div>
-          
-          <!-- Search & Filters -->
-          <div class="memory-filters">
-            <div class="search-box">
-              <input type="text" id="memorySearch" placeholder="Search memories..." oninput="filterMemoriesBySearch()">
-              <span class="search-icon">🔍</span>
-            </div>
-            <div class="filter-row">
-              <select id="memoryFilter" onchange="filterMemories()" class="memory-filter-select">
-                <option value="all">All Adventures</option>
-              </select>
-              <select id="memoryPeopleFilter" onchange="filterMemories()" class="memory-filter-select">
-                <option value="all">All People</option>
-              </select>
-              <select id="memoryPhotoFilter" onchange="filterMemories()" class="memory-filter-select">
-                <option value="all">All Memories</option>
-                <option value="with-photos">With Photos</option>
-                <option value="without-photos">Without Photos</option>
-              </select>
-            </div>
-          </div>
-          
-          <div id="selectedAdventureInfo" class="selected-adventure-info hidden"></div>
-          <div id="memoryStats" class="memory-stats"></div>
-          <div id="yearMemories" class="memory-feed"></div>
-        </div>
-      </div>
-
-      <!-- Photo Gallery Modal -->
-      <div id="photoGalleryModal" class="modal-overlay">
-        <div class="modal modal-fullscreen"><div class="modal-content">
-          <button class="modal-close" onclick="closePhotoGallery()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-          <div class="modal-header"><h2>📸 Photo Gallery - <span id="galleryYear">2026</span></h2></div>
-          <div class="modal-body">
-            <div id="photoGalleryGrid" class="photo-gallery-grid"></div>
-          </div>
-        </div></div>
-      </div>
-
-      <!-- Photo Lightbox -->
-      <div id="photoLightbox" class="lightbox hidden">
-        <button class="lightbox-close" onclick="closeLightbox()">×</button>
-        <button class="lightbox-prev" onclick="lightboxPrev()">‹</button>
-        <button class="lightbox-next" onclick="lightboxNext()">›</button>
-        <div class="lightbox-content">
-          <img id="lightboxImage" src="" alt="">
-          <div id="lightboxCounter" class="lightbox-counter">1 / 1</div>
-          <div class="lightbox-caption">
-            <h3 id="lightboxTitle"></h3>
-            <p id="lightboxDate"></p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Year Review Modal (Enhanced with Map) -->
-      <div id="yearReviewModal" class="modal-overlay">
-        <div class="modal modal-fullscreen"><div class="modal-content">
-          <button class="modal-close" onclick="closeYearReview()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-          <div class="modal-header">
-            <h2>📖 Year in Review - <span id="reviewYearTitle">2026</span></h2>
-            <div class="review-tabs">
-              <button class="review-tab active" onclick="switchReviewTab('timeline')">📅 Timeline</button>
-              <button class="review-tab" onclick="switchReviewTab('map')">🗺️ Map</button>
-            </div>
-          </div>
-          <div class="modal-body">
-            <div id="reviewTimelineTab" class="review-tab-content active">
-              <div id="yearReviewContent"></div>
-            </div>
-            <div id="reviewMapTab" class="review-tab-content">
-              <div id="yearReviewMap" class="review-map"></div>
-              <div id="mapMemoryList" class="map-memory-list"></div>
-            </div>
-          </div>
-        </div></div>
-      </div>
-
-      <!-- Habit Tracking Modal -->
-      <div id="habitTrackingModal" class="modal-overlay">
-        <div class="modal"><div class="modal-content">
-          <button class="modal-close" onclick="closeHabitTracking()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-          <div class="modal-header">
-            <h2 id="habitTrackingTitle">Track Habit</h2>
-          </div>
-          <div class="modal-body">
-            <input type="hidden" id="trackingHabitId">
-            
-            <div class="habit-tracking-stats">
-              <div class="habit-stat">
-                <span class="habit-stat-value" id="habitCurrentStreak">0</span>
-                <span class="habit-stat-label">Current Streak</span>
-              </div>
-              <div class="habit-stat">
-                <span class="habit-stat-value" id="habitLongestStreak">0</span>
-                <span class="habit-stat-label">Longest Streak</span>
-              </div>
-              <div class="habit-stat">
-                <span class="habit-stat-value" id="habitTotalCheckins">0</span>
-                <span class="habit-stat-label">Total Check-ins</span>
-              </div>
-              <div class="habit-stat">
-                <span class="habit-stat-value" id="habitCompletionRate">0%</span>
-                <span class="habit-stat-label">Completion Rate</span>
-              </div>
-            </div>
-            
-            <div class="habit-today-checkin">
-              <button id="habitCheckinBtn" class="btn btn-primary btn-large" onclick="toggleTodayCheckin()">
-                ✓ Check in for Today
-              </button>
-            </div>
-            
-            <div class="habit-calendar-section">
-              <h4>This Quarter</h4>
-              <div id="habitCalendarGrid" class="habit-calendar-grid"></div>
-            </div>
-            
-            <div class="habit-tracking-actions">
-              <button class="btn btn-secondary" onclick="showEditPlanModal(document.getElementById('trackingHabitId').value); closeHabitTracking();">✏️ Edit Habit</button>
-              <button class="btn btn-secondary" onclick="markHabitComplete()">✅ Mark Quarter Complete</button>
-            </div>
-          </div>
-        </div></div>
-      </div>
-
-      <!-- Year Review View (Past Years) -->
-      <div id="yearReviewView" class="year-view hidden">
-        <div class="year-header">
-          <div class="year-header-back" onclick="switchView('dashboard')">← Back to Dashboard</div>
-          <h2>📖 <span id="reviewYear">2025</span> - YEAR IN REVIEW</h2>
-        </div>
-
-        <div class="stats-grid">
-          <div class="stat-card"><span class="stat-icon">🏔️</span><span class="stat-value" id="reviewMisogiCount">0</span><span class="stat-label">Misogi Done</span></div>
-          <div class="stat-card"><span class="stat-icon">🎯</span><span class="stat-value" id="reviewAdventureCount">0/6</span><span class="stat-label">Adventures</span></div>
-          <div class="stat-card"><span class="stat-icon">🔄</span><span class="stat-value" id="reviewHabitCount">0/4</span><span class="stat-label">Habits Stuck</span></div>
-          <div class="stat-card"><span class="stat-icon">📸</span><span class="stat-value" id="reviewMemoryCount">0</span><span class="stat-label">Memories</span></div>
-        </div>
-
-        <div id="reviewContent"></div>
-
-        <div class="review-actions">
-          <button class="btn btn-secondary" onclick="showMemoryModal()">+ Add Memory to <span id="reviewYearBtn">2025</span></button>
-        </div>
-      </div>
-
-      <!-- Year Locked View (Future Years) -->
-      <div id="yearLockedView" class="year-view hidden">
-        <div class="locked-content">
-          <div class="locked-icon">🔒</div>
-          <h2><span id="lockedYear">2027</span></h2>
-          <p>"Focus on this year first."</p>
-          <p class="locked-message">You can plan <span id="lockedYearMsg">2027</span> starting <span id="unlockDate">December 2026</span>.</p>
-          <button class="btn btn-primary" onclick="goToCurrentYear()">Back to <span id="currentYearBtn">2026</span></button>
-        </div>
-      </div>
-
-      <!-- Journal View -->
-      <div id="journalView" class="hidden">
-        <section class="section">
-          <div class="section-header">
-            <h2 class="section-title">📓 Journal</h2>
-            <button class="btn btn-primary" onclick="showJournalModal()">+ New Entry</button>
-          </div>
-          
-          <!-- Journal Entries List -->
-          <div id="journalEntries" class="journal-entries">
-            <div class="empty-state">
-              <div class="empty-state-icon">📝</div>
-              <h3>No journal entries yet</h3>
-              <p>Start capturing your thoughts and reflections</p>
-              <button class="btn btn-primary" onclick="showJournalModal()">Write First Entry</button>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <!-- Settings View -->
-      <div id="settingsView" class="hidden">
-        <section class="section">
-          <h2 class="section-title mb-4">Settings</h2>
-          <div class="progress-card">
-            <!-- Avatar Section -->
-            <div class="settings-avatar-section">
-              <div class="settings-avatar-preview" id="settingsAvatarPreview" onclick="document.getElementById('avatarInput').click()">
-                <span id="settingsAvatarInitials">?</span>
-                <img id="settingsAvatarImage" src="" alt="Avatar" style="display: none;">
-                <div class="settings-avatar-overlay">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                    <circle cx="12" cy="13" r="4"/>
-                  </svg>
-                </div>
-              </div>
-              <input type="file" id="avatarInput" accept="image/*" hidden onchange="handleAvatarSelect(event)">
-              <p class="settings-avatar-hint">Tap to change photo</p>
-            </div>
-            
-            <div class="form-group"><label>Name</label><input type="text" id="settingsName" readonly></div>
-            <div class="form-group"><label>Email</label><input type="text" id="settingsEmail" readonly></div>
-            <div class="form-group"><label>Birthdate</label><input type="text" id="settingsBirthdate" readonly></div>
-            <div class="form-group"><label>Expected Lifespan</label><input type="text" id="settingsLifespan" readonly></div>
-            <button class="btn btn-secondary" style="width: 100%; margin-top: 1rem;" onclick="showFriendsModal()">👥 Manage Friends</button>
-            <button class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;" onclick="showManagePeopleModal()">🧑 Manage People</button>
-            <button class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;" onclick="clearCacheAndSync()">🔄 Clear Cache & Sync</button>
-            <button id="installAppBtn" class="btn btn-primary hidden" style="width: 100%; margin-top: 0.5rem;" onclick="installApp()">📲 Install App</button>
-            <div id="pwaStatus" class="pwa-status"></div>
-            <button class="btn btn-danger" style="width: 100%; margin-top: 0.5rem;" onclick="signOut()">Sign Out</button>
-          </div>
-        </section>
-      </div>
-    </main>
-
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-      <button class="nav-item active" data-view="dashboard" onclick="switchView('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></button>
-      <button class="nav-item" data-view="yearDesign" onclick="openCurrentYearDesign()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span>Plan</span></button>
-      <button class="nav-item" data-view="journal" onclick="switchView('journal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="12" y2="15"/></svg><span>Journal</span></button>
-      <button class="nav-item" data-view="settings" onclick="switchView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
-    </nav>
+      <div class="fl" style="margin-top:16px">Add reminder</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px"><input class="tinp" id="nri" style="flex:1;margin:0" placeholder="e.g., Buy adapter..."></div>
+      <div class="tcr" id="trTiming"><button class="tc" onclick="selTC(this)">24h</button><button class="tc sel" onclick="selTC(this)">1 week</button><button class="tc" onclick="selTC(this)">1 month</button><button class="tc" onclick="selTC(this)">3 months</button></div>
+      <button class="btn-s" onclick="addRem()">+ Add Reminder</button>
+      <button class="btn-p" onclick="closePanel('trip');toast('Trip saved!')">Save Trip</button>
+    </div>
   </div>
 
-  <!-- Add Plan Modal -->
-  <div id="planModal" class="modal-overlay">
-    <div class="modal"><div class="modal-content">
-      <button class="modal-close" onclick="closePlanModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header"><h2 id="planModalTitle">Add Plan</h2></div>
-      <div class="modal-body">
-        <form id="planForm" onsubmit="handlePlanSubmit(event)">
-          <input type="hidden" id="planId" value="">
-          <input type="hidden" id="planType" value="misogi">
-          <input type="hidden" id="planTargetQuarter" value="">
-          <input type="hidden" id="planTargetMonth" value="">
-          <input type="hidden" id="planCategory" value="">
-          
-          <!-- Shared Adventure Info Banner -->
-          <div id="sharedAdventureInfo" style="display: none;"></div>
-          
-          <!-- Category Picker -->
-          <div class="form-group" id="categoryPickerGroup">
-            <label>Category</label>
-            <div class="category-selected" onclick="showCategoryPicker()">
-              <span id="selectedCategoryIcon">🎯</span>
-              <span id="selectedCategoryName">Select category...</span>
-              <span class="category-chevron">▼</span>
-            </div>
-          </div>
-          
-          <div class="form-group"><label for="planTitle">What's the plan?</label><input type="text" id="planTitle" placeholder="e.g., Run a marathon" required></div>
-          <div class="form-group"><label for="planDescription">Why does this matter? (optional)</label><textarea id="planDescription" placeholder="Describe why this is important to you..."></textarea></div>
-          
-          <!-- Date Selection - for adventures -->
-          <div class="form-group" id="dateSelectorGroup">
-            <label>When?</label>
-            <div class="date-picker-row">
-              <div>
-                <label for="planStartDate" style="font-size: 0.75rem; color: var(--sage-600);">Start Date</label>
-                <input type="date" id="planStartDate">
-              </div>
-              <div>
-                <label for="planEndDate" style="font-size: 0.75rem; color: var(--sage-600);">End Date (optional)</label>
-                <input type="date" id="planEndDate">
-              </div>
-            </div>
-            <div class="date-range-calendar hidden" id="dateRangeCalendar"></div>
-          </div>
-          
-          <!-- People Selection -->
-          <div class="form-group" id="planPeopleGroup">
-            <label>Who's involved?</label>
-            <div class="people-grid" id="planPeopleGrid">
-              <div class="add-person-chip" onclick="showPeopleSelector('plan')">+ Add people</div>
-            </div>
-          </div>
-          
-          <button type="submit" id="planSubmitBtn" class="btn btn-primary" style="width: 100%;">Save Plan</button>
-          <button type="button" id="deletePlanBtn" class="btn btn-danger" style="width: 100%; margin-top: 0.5rem; display: none;" onclick="deletePlanFromModal()">Delete Plan</button>
-        </form>
-      </div>
-    </div></div>
+  <!-- NOTIFICATIONS -->
+  <div class="po" id="notifOverlay" onclick="closePanel('notif')"></div>
+  <div class="sp" id="notifPanel">
+    <div class="ph"></div>
+    <div class="phd"><span class="ptl">Notifications</span><button class="pcl" onclick="closePanel('notif')">✕</button></div>
+    <div class="pbd">
+      <div class="nfi"><div class="nfiw" style="background:var(--blue-light)">🚗</div><div class="nfb"><div class="nft"><strong>Book car rental</strong> for <strong>Marseille</strong> trip</div><div class="nftm">Due Feb 15 · 1 month prior</div></div><button class="nfa" onclick="clrNot(this)">Done</button></div>
+      <div class="nfi"><div class="nfiw" style="background:var(--pink-light)">💕</div><div class="nfb"><div class="nft"><strong>Book restaurant</strong> for Date Night this Saturday</div><div class="nftm">Feb 5 · 3 days prior</div></div><button class="nfa" onclick="clrNot(this)">Done</button></div>
+      <div class="nfi"><div class="nfiw" style="background:var(--pink-light)">🎂</div><div class="nfb"><div class="nft"><strong>Sarah's Birthday</strong> dinner tomorrow!</div><div class="nftm">Feb 8 · 1 day prior</div></div><button class="nfa" onclick="clrNot(this)">Done</button></div>
+    </div>
   </div>
 
-  <!-- Category Picker Modal -->
-  <div id="categoryPickerModal" class="modal-overlay" style="z-index: 1100;">
-    <div class="modal modal-medium"><div class="modal-content">
-      <button class="modal-close" onclick="closeCategoryPicker()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header"><h2>Choose Category</h2></div>
-      <div class="modal-body">
-        <input type="text" id="categorySearch" class="category-search" placeholder="Search categories..." oninput="filterCategories()">
-        <div id="categoryGrid" class="category-grid"></div>
-        <div class="category-custom">
-          <button class="btn btn-secondary" onclick="showCustomCategoryInput()">+ Create Custom Category</button>
-        </div>
-        <div id="customCategoryInput" class="custom-category-input hidden">
-          <input type="text" id="customCategoryName" placeholder="Category name">
-          <input type="text" id="customCategoryIcon" placeholder="Emoji (e.g., 🎸)" maxlength="2">
-          <button class="btn btn-primary" onclick="addCustomCategory()">Add</button>
-        </div>
-      </div>
-    </div></div>
+  <!-- PROFILE -->
+  <div class="pro" id="profileOverlay" onclick="toggleProfile()"></div>
+  <div class="prp" id="profilePanel">
+    <div class="prn">Mathieu</div><div class="pre">Sacramento, CA</div>
+    <div class="prst">Past Years</div><div class="prl"><span class="prli">📅</span> 2025 Year Plan</div><div class="prl"><span class="prli">📅</span> 2024 Year Plan</div>
+    <div class="prst">Account</div><div class="prl"><span class="prli">👥</span> Manage People</div><div class="prl"><span class="prli">🏠</span> Home Location</div><div class="prl"><span class="prli">🔔</span> Notifications</div><div class="prl"><span class="prli">⭐</span> Upgrade to Pro</div>
+    <button class="prso">Sign Out</button>
   </div>
 
-  <!-- Memory Modal -->
-  <div id="memoryModal" class="modal-overlay">
-    <div class="modal"><div class="modal-content">
-      <button class="modal-close" onclick="closeMemoryModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header"><h2 id="memoryModalTitle">Capture a Memory</h2></div>
-      <div class="modal-body">
-        <div id="sharedMemoryInfo" style="display: none;"></div>
-        <form id="memoryForm">
-          <input type="hidden" id="memoryId" value="">
-          <div class="form-group"><label for="memoryTitle">Title</label><input type="text" id="memoryTitle" placeholder="What happened?" required></div>
-          <div class="form-group"><label for="memoryDate">Date</label><input type="date" id="memoryDate" required></div>
-          <div class="form-group"><label for="memoryText">Description</label><textarea id="memoryText" placeholder="Tell the story..."></textarea></div>
-          
-          <!-- Photo Upload -->
-          <div class="form-group">
-            <label>Photos</label>
-            <div class="photo-upload-area" id="photoUploadArea" onclick="document.getElementById('photoInput').click()">
-              <span>📷 Click or drag photos here</span>
-            </div>
-            <input type="file" id="photoInput" multiple accept="image/*" hidden onchange="handlePhotoSelect(event)">
-            <div id="photoPreview" class="photo-preview"></div>
-            <div id="uploadProgress" class="photo-upload-progress hidden"><div id="uploadProgressBar" class="photo-upload-progress-bar"></div></div>
-          </div>
-          
-          <!-- People Selection -->
-          <div class="form-group">
-            <label>Who was there?</label>
-            <div class="people-grid" id="memoryPeopleGrid">
-              <div class="add-person-chip" onclick="showPeopleSelector('memory')">+ Add people</div>
-            </div>
-          </div>
-          
-          <div class="form-group"><label for="memoryPlanId">Link to Plan (optional)</label>
-            <select id="memoryPlanId"><option value="">-- No plan --</option></select>
-          </div>
-          <div class="form-group"><label for="memoryTags">Tags (comma separated)</label><input type="text" id="memoryTags" placeholder="family, travel, milestone"></div>
-          
-          <!-- Location -->
-          <div class="form-group">
-            <label>Location</label>
-            <div class="location-input-wrapper">
-              <div class="location-autocomplete-container">
-                <input type="text" id="memoryLocation" placeholder="Search for a place..." autocomplete="off">
-                <div id="locationAutocomplete" class="location-autocomplete-dropdown"></div>
-              </div>
-              <input type="hidden" id="memoryLat" value="">
-              <input type="hidden" id="memoryLng" value="">
-              <input type="hidden" id="memoryPlaceId" value="">
-              <button type="button" class="location-btn" onclick="captureLocation()" id="locationBtn" title="Get current location">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="10" r="3"/>
-                  <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/>
-                </svg>
-              </button>
-              <button type="button" class="location-clear-btn" onclick="clearLocation()" id="locationClearBtn" title="Clear location" style="display: none;">✕</button>
-            </div>
-            <div id="locationStatus" class="location-status"></div>
-          </div>
-          
-          <button type="button" class="btn btn-primary" style="width: 100%;" onclick="saveMemory()" id="saveMemoryBtn">Save Memory</button>
-          <button type="button" class="btn btn-danger" style="width: 100%; margin-top: 0.5rem; display: none;" onclick="deleteMemory()" id="deleteMemoryBtn">Delete Memory</button>
-        </form>
-      </div>
-    </div></div>
-  </div>
+  <div class="toast" id="toastEl"></div>
+</div>
 
-  <!-- Year Modal (for clicking timeline) -->
-  <div id="yearModal" class="modal-overlay">
-    <div class="modal"><div class="modal-content">
-      <button class="modal-close" onclick="closeYearModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header"><h2 id="yearModalTitle">Year 30</h2><p id="yearModalSubtitle">Calendar Year 2026</p></div>
-      <div class="modal-body"><div id="yearMemoriesList"></div></div>
-    </div></div>
-  </div>
+<script>
+// ===== CORE =====
+function swView(v){document.querySelectorAll('.v').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));document.getElementById({plan:'planView',habits:'habitsView',memories:'memoriesView'}[v]).classList.add('active');document.querySelectorAll('.ni')[{plan:0,habits:1,memories:2}[v]].classList.add('active');document.querySelector('.mc').scrollTop=0;closeFab()}
+function swTab(t,b){document.querySelectorAll('.ptb').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.ps').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('st-'+t).classList.add('active')}
+function openPanel(n){document.getElementById(n+'Overlay').classList.add('open');document.getElementById(n+'Panel').classList.add('open')}
+function closePanel(n){document.getElementById(n+'Overlay').classList.remove('open');document.getElementById(n+'Panel').classList.remove('open')}
+function toggleFab(){const m=document.getElementById('fabMenu'),b=document.getElementById('fabBtn');m.classList.toggle('open');b.textContent=m.classList.contains('open')?'×':'+'}
+function closeFab(){document.getElementById('fabMenu').classList.remove('open');document.getElementById('fabBtn').textContent='+'}
+function toggleProfile(){document.getElementById('profileOverlay').classList.toggle('open');document.getElementById('profilePanel').classList.toggle('open')}
+function toast(m){const t=document.getElementById('toastEl');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function tgChk(b){b.classList.toggle('done');if(b.classList.contains('done'))toast('✓ Done!')}
+function tgHab(b){b.classList.toggle('chk');toast(b.classList.contains('chk')?'🔥 28 day streak!':'Unchecked')}
+function selTC(c){c.parentElement.querySelectorAll('.tc').forEach(x=>x.classList.remove('sel'));c.classList.add('sel')}
+function openTripDetail(){openPanel('trip')}
 
-  <!-- People Selector Modal -->
-  <div id="peopleSelectorModal" class="modal-overlay">
-    <div class="modal"><div class="modal-content">
-      <button class="modal-close" onclick="closePeopleSelector()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header">
-        <h2 id="peopleSelectorTitle">Select People</h2>
-        <p id="peopleSelectorSubtitle">Who was involved?</p>
-      </div>
-      <div class="modal-body">
-        <div id="peopleList" class="people-list"></div>
-        <button id="addPersonBtn" class="btn btn-secondary" style="width: 100%; margin-top: 1rem;" onclick="handleAddPersonFromSelector()">+ Add New Person</button>
-        <button class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" onclick="confirmPeopleSelection()">Done</button>
-      </div>
-    </div></div>
-  </div>
+// ===== MONTH CALENDAR =====
+const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DIM=[31,28,31,30,31,30,31,31,30,31,30,31];
+const SD=[3,6,6,2,4,0,2,5,1,3,6,1];
+let curM=1;
+const ME={
+  0:[{d:1,n:'New Year Run',c:'health'},{d:15,n:'Weekend Trip',c:'travel'}],
+  1:[{d:2,n:'5K Run',c:'health'},{d:4,n:'Sunset run',c:'health'},{d:7,n:'Morning run',c:'health'},{d:8,n:"Sarah's Bday",c:'birthday'},{d:8,n:'Date Night 💕',c:'date'},{d:14,n:"Valentine's",c:'food'},{d:15,n:'Wine tasting',c:'food'},{d:21,n:'Day hike',c:'adventure'},{d:22,n:'Road trip',c:'roadtrip'},{d:22,n:'Date Night 💕',c:'date'}],
+  2:[{d:15,n:'Marseille ✈️',c:'travel'},{d:16,n:'Marseille',c:'travel'},{d:17,n:'Marseille',c:'travel'},{d:18,n:'Marseille',c:'travel'},{d:19,n:'Marseille',c:'travel'},{d:20,n:'Marseille',c:'travel'},{d:21,n:'Marseille',c:'travel'},{d:22,n:'Marseille',c:'travel'}],
+  3:[{d:10,n:'Sushi class',c:'food'},{d:11,n:'Date Night 💕',c:'date'},{d:20,n:'Trail hike',c:'adventure'},{d:25,n:'Date Night 💕',c:'date'}],
+  4:[{d:5,n:'Napa trip',c:'roadtrip'},{d:6,n:'Napa trip',c:'roadtrip'},{d:9,n:'Date Night 💕',c:'date'}],
+  5:[{d:15,n:"Mom's Bday",c:'birthday'},{d:20,n:'Date Night 💕',c:'date'}],
+  6:[{d:4,n:'Jazz fest',c:'culture'},{d:4,n:'Date Night 💕',c:'date'}],
+  7:[{d:10,n:'Yosemite',c:'adventure'},{d:11,n:'Yosemite',c:'adventure'}],
+  8:[],9:[{d:15,n:'Harvest dinner',c:'food'}],10:[],
+  11:[{d:6,n:'Marathon 🏃',c:'health'},{d:25,n:'Christmas',c:'birthday'}]
+};
+let calS=null,calE=null,lpT=null;
 
-  <!-- Calendar Export Modal -->
-  <div id="calendarExportModal" class="modal-overlay">
-    <div class="modal modal-small"><div class="modal-content">
-      <button class="modal-close" onclick="closeCalendarExport()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header">
-        <h2>📆 Add to Calendar</h2>
-        <p id="calendarExportTitle"></p>
-      </div>
-      <div class="modal-body">
-        <div class="calendar-export-options">
-          <button class="calendar-export-btn" onclick="exportToGoogleCalendar()">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-            <span>Google Calendar</span>
-          </button>
-          <button class="calendar-export-btn" onclick="exportToAppleCalendar()">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/>
-            </svg>
-            <span>Apple Calendar (.ics)</span>
-          </button>
-          <button class="calendar-export-btn" onclick="exportToOutlook()">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-            <span>Outlook (.ics)</span>
-          </button>
-        </div>
-        <p class="calendar-export-hint">The .ics file works with most calendar apps including Apple Calendar, Outlook, and others.</p>
-      </div>
-    </div></div>
-  </div>
+function buildMG(){
+  const g=document.getElementById('mGrid');g.innerHTML='';
+  document.getElementById('cmTitle').textContent=MN[curM]+' 2026';
+  ['M','T','W','T','F','S','S'].forEach(d=>{const h=document.createElement('div');h.className='mgh';h.textContent=d;g.appendChild(h)});
+  for(let i=0;i<SD[curM];i++){const e=document.createElement('div');e.className='mgc empty';g.appendChild(e)}
+  const evts=ME[curM]||[];
+  for(let d=1;d<=DIM[curM];d++){
+    const c=document.createElement('div');c.className='mgc';c.dataset.day=d;
+    if(curM===1&&d===7)c.classList.add('today');
+    const n=document.createElement('div');n.className='mgn';n.textContent=d;c.appendChild(n);
+    const de=evts.filter(e=>e.d===d);
+    de.slice(0,2).forEach(e=>{const v=document.createElement('div');v.className='mge c-'+e.c;v.textContent=e.n;c.appendChild(v)});
+    if(de.length>2){const m=document.createElement('div');m.className='mgmore';m.textContent='+'+(de.length-2);c.appendChild(m)}
+    c.addEventListener('click',()=>calClick(d));
+    c.addEventListener('touchstart',ev=>{lpT=setTimeout(()=>{ev.preventDefault();openQuickAdd(d)},600)},{passive:false});
+    c.addEventListener('touchend',()=>clearTimeout(lpT));
+    c.addEventListener('touchmove',()=>clearTimeout(lpT));
+    g.appendChild(c);
+  }
+  calS=null;calE=null;
+  buildActList(evts);
+}
 
-  <!-- Journal Entry Modal -->
-  <div id="journalModal" class="modal-overlay">
-    <div class="modal"><div class="modal-content">
-      <button class="modal-close" onclick="closeJournalModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header">
-        <h2 id="journalModalTitle">📝 New Journal Entry</h2>
-        <p id="journalModalDate"></p>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="journalEntryId" value="">
-        
-        <!-- Voice Recording Section -->
-        <div class="voice-record-section">
-          <button type="button" id="voiceRecordBtn" class="voice-record-btn" onclick="toggleVoiceRecording()">
-            <svg id="voiceMicIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-              <line x1="12" y1="19" x2="12" y2="23"/>
-              <line x1="8" y1="23" x2="16" y2="23"/>
-            </svg>
-            <span id="voiceRecordText">Tap to speak</span>
-          </button>
-          <div id="voiceStatus" class="voice-status"></div>
-        </div>
-        
-        <!-- Journal Text -->
-        <div class="form-group">
-          <label for="journalText">Your thoughts</label>
-          <textarea id="journalText" rows="8" placeholder="What's on your mind? How are you feeling today?"></textarea>
-        </div>
-        
-        <!-- Mood Selector (optional) -->
-        <div class="form-group">
-          <label>How are you feeling?</label>
-          <div class="mood-selector" id="moodSelector">
-            <button type="button" class="mood-btn" data-mood="great" onclick="selectMood('great')">😊 Great</button>
-            <button type="button" class="mood-btn" data-mood="good" onclick="selectMood('good')">🙂 Good</button>
-            <button type="button" class="mood-btn" data-mood="okay" onclick="selectMood('okay')">😐 Okay</button>
-            <button type="button" class="mood-btn" data-mood="low" onclick="selectMood('low')">😔 Low</button>
-            <button type="button" class="mood-btn" data-mood="stressed" onclick="selectMood('stressed')">😰 Stressed</button>
-          </div>
-        </div>
-        
-        <!-- Tags -->
-        <div class="form-group">
-          <label for="journalTags">Tags (optional)</label>
-          <input type="text" id="journalTags" placeholder="gratitude, reflection, goals">
-        </div>
-        
-        <button type="button" class="btn btn-primary" style="width: 100%;" onclick="saveJournalEntry()" id="saveJournalBtn">Save Entry</button>
-        <button type="button" class="btn btn-danger" style="width: 100%; margin-top: 0.5rem; display: none;" onclick="deleteJournalEntry()" id="deleteJournalBtn">Delete Entry</button>
-      </div>
-    </div></div>
-  </div>
+function buildActList(evts){
+  const al=document.getElementById('actList');al.innerHTML='';
+  document.getElementById('actListTitle').textContent='Activities in '+MN[curM];
+  const icons={travel:'✈️',food:'🍽️',adventure:'🏔️',roadtrip:'🚗',birthday:'🎂',health:'💪',culture:'🎭',date:'💕'};
+  const bgs={travel:'var(--cat-travel-bg)',food:'var(--cat-food-bg)',adventure:'var(--cat-adventure-bg)',roadtrip:'var(--cat-roadtrip-bg)',birthday:'var(--cat-birthday-bg)',health:'var(--cat-health-bg)',culture:'var(--cat-culture-bg)',date:'var(--cat-date-bg)'};
+  // Deduplicate multi-day events
+  const seen=new Set();const unique=[];
+  evts.forEach(e=>{const k=e.n+e.c;if(!seen.has(k)){seen.add(k);const days=evts.filter(x=>x.n===e.n&&x.c===e.c);unique.push({...e,startD:Math.min(...days.map(x=>x.d)),endD:Math.max(...days.map(x=>x.d)),multi:days.length>1})}});
+  unique.sort((a,b)=>a.startD-b.startD);
+  unique.forEach(e=>{
+    const mn=MN[curM].slice(0,3);
+    const dateStr=e.multi?`${mn} ${e.startD}–${e.endD}`:`${mn} ${e.startD}`;
+    const item=document.createElement('div');item.className='act-item t-'+e.c;
+    item.innerHTML=`<div class="act-icon" style="background:${bgs[e.c]}">${icons[e.c]}</div><div class="act-body"><div class="act-name">${e.n}</div><div class="act-meta"><span>${dateStr}</span><span class="tag tag-${e.c}">${e.c}</span>${e.c==='date'?'<span class="recurring-badge">🔁 Bi-weekly</span>':''}</div></div><span class="act-edit" onclick="event.stopPropagation();openTripDetail()">✏️</span>`;
+    item.onclick=()=>openTripDetail();
+    al.appendChild(item);
+  });
+}
 
-  <!-- Add Person Modal -->
-  <div id="addPersonModal" class="modal-overlay">
-    <div class="modal"><div class="modal-content">
-      <button class="modal-close" onclick="closeAddPersonModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header"><h2>Add Person</h2><p>Family member or friend</p></div>
-      <div class="modal-body">
-        <form id="addPersonForm" onsubmit="handleAddPerson(event)">
-          <div class="form-group"><label for="personName">Name</label><input type="text" id="personName" placeholder="e.g., Sarah" required></div>
-          
-          <div class="form-group">
-            <label>Avatar</label>
-            <div class="avatar-picker" id="avatarPicker">
-              <button type="button" class="avatar-option selected" data-avatar="👨">👨</button>
-              <button type="button" class="avatar-option" data-avatar="👩">👩</button>
-              <button type="button" class="avatar-option" data-avatar="👦">👦</button>
-              <button type="button" class="avatar-option" data-avatar="👧">👧</button>
-              <button type="button" class="avatar-option" data-avatar="👴">👴</button>
-              <button type="button" class="avatar-option" data-avatar="👵">👵</button>
-              <button type="button" class="avatar-option" data-avatar="🧑">🧑</button>
-              <button type="button" class="avatar-option" data-avatar="👶">👶</button>
-              <button type="button" class="avatar-option" data-avatar="🐕">🐕</button>
-              <button type="button" class="avatar-option" data-avatar="🐈">🐈</button>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label>Relationship</label>
-            <div class="relationship-picker" id="relationshipPicker">
-              <button type="button" class="relationship-option selected" data-rel="friend">Friend</button>
-              <button type="button" class="relationship-option" data-rel="spouse">Spouse</button>
-              <button type="button" class="relationship-option" data-rel="child">Child</button>
-              <button type="button" class="relationship-option" data-rel="parent">Parent</button>
-              <button type="button" class="relationship-option" data-rel="sibling">Sibling</button>
-              <button type="button" class="relationship-option" data-rel="other">Other</button>
-            </div>
-          </div>
-          
-          <div class="form-group"><label for="personKnownSince">Known Since <span style="color: var(--sage-500);">(when did you meet?)</span></label><input type="date" id="personKnownSince"></div>
-          
-          <div class="form-group"><label for="personBirthdate">Birthday (optional)</label><input type="date" id="personBirthdate"></div>
-          
-          <div class="form-group"><label for="personNotes">Notes (optional)</label><input type="text" id="personNotes" placeholder="e.g., College roommate"></div>
-          
-          <button type="submit" class="btn btn-primary" style="width: 100%;">Add Person</button>
-        </form>
-      </div>
-    </div></div>
-  </div>
+function calClick(day){
+  const ma=MN[curM].slice(0,3);
+  if(!calS||(calS&&calE)){calS=day;calE=null;hlRange()}
+  else{if(day<calS){calE=calS;calS=day}else calE=day;hlRange();setTimeout(()=>{document.getElementById('pfDateStart').value=`2026-${String(curM+1).padStart(2,'0')}-${String(calS).padStart(2,'0')}`;document.getElementById('pfDateEnd').value=`2026-${String(curM+1).padStart(2,'0')}-${String(calE).padStart(2,'0')}`;startPlanFlow(3)},300)}
+}
 
-  <!-- Manage People Modal (from settings) -->
-  <div id="managePeopleModal" class="modal-overlay">
-    <div class="modal"><div class="modal-content">
-      <button class="modal-close" onclick="closeManagePeopleModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header"><h2>My People</h2><p>Family & friends</p></div>
-      <div class="modal-body">
-        <div id="managePeopleList" class="people-list"></div>
-        <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="showAddPersonModal()">+ Add Person</button>
-      </div>
-    </div></div>
-  </div>
+function hlRange(){
+  document.querySelectorAll('#mGrid .mgc').forEach(c=>{
+    c.classList.remove('rs','rstart','rend');const d=parseInt(c.dataset.day);if(!d)return;
+    if(calS&&!calE&&d===calS){c.classList.add('rstart','rend')}
+    else if(calS&&calE){if(d===calS)c.classList.add('rstart');else if(d===calE)c.classList.add('rend');else if(d>calS&&d<calE)c.classList.add('rs')}
+  });
+}
+function openQuickAdd(d){document.getElementById('pfDateStart').value=`2026-${String(curM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;document.getElementById('pfDateEnd').value=`2026-${String(curM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;startPlanFlow(1)}
+function navMonth(dir){curM=(curM+dir+12)%12;buildMG()}
 
-  <!-- Share Modal -->
-  <div id="shareModal" class="modal-overlay">
-    <div class="modal modal-medium"><div class="modal-content">
-      <button class="modal-close" onclick="closeShareModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header"><h2>🔗 Share Your Plan</h2><p>Choose what to share with family or friends</p></div>
-      <div class="modal-body">
-        <form id="shareForm" onsubmit="handleShareSubmit(event)">
-          
-          <!-- What to Share -->
-          <div class="share-options-section">
-            <label class="share-section-label">What do you want to share?</label>
-            <div class="share-checkboxes">
-              <label class="share-checkbox">
-                <input type="checkbox" id="shareEverything" onchange="toggleShareAll(this)">
-                <span class="checkbox-label">📋 Everything (Full Year Plan)</span>
-              </label>
-              <div class="share-checkbox-divider">— or select specific sections —</div>
-              <label class="share-checkbox">
-                <input type="checkbox" id="shareMisogi" class="share-item-check">
-                <span class="checkbox-label">🏔️ Misogi Challenges</span>
-              </label>
-              <label class="share-checkbox">
-                <input type="checkbox" id="shareHabits" class="share-item-check">
-                <span class="checkbox-label">🔄 Winning Habits</span>
-              </label>
-              <label class="share-checkbox">
-                <input type="checkbox" id="shareAdventures" class="share-item-check">
-                <span class="checkbox-label">🎯 Adventures Calendar</span>
-              </label>
-              <label class="share-checkbox">
-                <input type="checkbox" id="shareMemories" class="share-item-check">
-                <span class="checkbox-label">📸 Memories</span>
-              </label>
-            </div>
-          </div>
-          
-          <!-- Permission Level -->
-          <div class="share-options-section">
-            <label class="share-section-label">Permission level</label>
-            <div class="share-permission-options">
-              <label class="share-permission-option">
-                <input type="radio" name="sharePermission" value="view" checked>
-                <div class="permission-card">
-                  <span class="permission-icon">👁️</span>
-                  <span class="permission-title">View Only</span>
-                  <span class="permission-desc">They can see your plans but not change anything</span>
-                </div>
-              </label>
-              <label class="share-permission-option">
-                <input type="radio" name="sharePermission" value="collaborate">
-                <div class="permission-card">
-                  <span class="permission-icon">👥</span>
-                  <span class="permission-title">Be Part of It</span>
-                  <span class="permission-desc">They join your plan and can add to it together</span>
-                </div>
-              </label>
-            </div>
-          </div>
-          
-          <!-- Recipient -->
-          <div class="form-group">
-            <label for="shareContact">Send invite to</label>
-            <input type="text" id="shareContact" placeholder="Email or phone number" required>
-          </div>
-          
-          <button type="submit" id="shareSubmitBtn" class="btn btn-primary" style="width: 100%;">Create Share Link</button>
-        </form>
-        
-        <div id="shareResult" class="share-result hidden">
-          <p class="share-success">✓ Share link created!</p>
-          <div class="share-link-container">
-            <input type="text" id="shareInviteLink" readonly>
-            <button type="button" class="btn btn-primary" onclick="copyShareLink()">📋 Copy</button>
-          </div>
-          <p class="share-instructions">Send this link to invite them. They'll need to sign in to accept.</p>
-          <button type="button" class="btn btn-secondary" style="width: 100%; margin-top: 1rem;" onclick="closeShareModal()">Done</button>
-        </div>
-      </div>
-    </div></div>
-  </div>
+// ===== YEARLY VIEW =====
+function buildYV(){
+  const g=document.getElementById('yearGrid');g.innerHTML='';
+  MN.forEach((m,i)=>{
+    const card=document.createElement('div');card.className='ym'+(i===1?' cur':'');
+    const evts=ME[i]||[];const evMap={};evts.forEach(e=>evMap[e.d]=e.c);
+    let cells='';for(let b=0;b<SD[i];b++)cells+='<div class="ymc blank"></div>';
+    for(let d=1;d<=DIM[i];d++){const c=evMap[d];cells+=`<div class="ymc ${c?'e-'+c:'day'}"></div>`}
+    card.innerHTML=`<div class="ymn">${m.slice(0,3)}</div><div class="ymg">${cells}</div><div class="ymc-count">${evts.length} event${evts.length!==1?'s':''}</div>`;
+    card.onclick=()=>{curM=i;buildMG();swTab('month',document.querySelectorAll('.ptb')[1])};
+    g.appendChild(card);
+  });
+}
 
-  <!-- Manage Shares Modal -->
-  <div id="manageSharesModal" class="modal-overlay">
-    <div class="modal modal-large"><div class="modal-content">
-      <button class="modal-close" onclick="closeManageSharesModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header"><h2>👥 Manage Shares</h2><p>View and manage who you share with</p></div>
-      <div class="modal-body">
-        <div class="shares-section">
-          <h3>📤 Shares I've Sent</h3>
-          <div id="sharesSentList" class="shares-list"></div>
-        </div>
-        
-        <div class="shares-section">
-          <h3>📥 Shares I've Received</h3>
-          <div id="sharesReceivedList" class="shares-list"></div>
-        </div>
-      </div>
-    </div></div>
-  </div>
+// ===== PLANNING FLOW =====
+let pfState={type:null,loc:null,locName:'Around Sacramento'};
 
-  <!-- Friends Modal -->
-  <div id="friendsModal" class="modal-overlay">
-    <div class="modal modal-large"><div class="modal-content">
-      <button class="modal-close" onclick="closeFriendsModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header"><h2>👥 Friends</h2><p>Manage your connections</p></div>
-      <div class="modal-body">
-        <!-- Pending Requests Section -->
-        <div id="pendingRequestsSection" class="friends-section hidden">
-          <h3>📬 Friend Requests</h3>
-          <div id="pendingRequestsList" class="friends-list"></div>
-        </div>
-        
-        <!-- My Friends Section -->
-        <div class="friends-section">
-          <div class="friends-section-header">
-            <h3>My Friends</h3>
-            <button class="btn btn-primary btn-small" onclick="showAddFriendModal()">+ Add Friend</button>
-          </div>
-          <div id="friendsList" class="friends-list">
-            <p class="friends-empty-state">No friends yet. Add someone to get started!</p>
-          </div>
-        </div>
-        
-        <!-- Pending Sent Section -->
-        <div id="pendingSentSection" class="friends-section hidden">
-          <h3>⏳ Pending Requests Sent</h3>
-          <div id="pendingSentList" class="friends-list"></div>
-        </div>
-      </div>
-    </div></div>
-  </div>
+function startPlanFlow(startStep){
+  pfState={type:null,loc:null,locName:'Around Sacramento'};
+  document.querySelectorAll('.pf-step').forEach(s=>s.style.display='none');
+  const step=startStep||1;
+  document.getElementById('pf'+step).style.display='block';
+  updateSteps(step);
+  if(step===1){document.querySelectorAll('#pfTypes .tc').forEach(t=>t.classList.remove('sel'));document.getElementById('pfNext1').style.opacity='.5';document.getElementById('pfNext1').style.pointerEvents='none'}
+  openPanel('planFlow');
+}
 
-  <!-- Add Friend Modal -->
-  <div id="addFriendModal" class="modal-overlay">
-    <div class="modal modal-medium"><div class="modal-content">
-      <button class="modal-close" onclick="closeAddFriendModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <div class="modal-header"><h2>➕ Add Friend</h2><p>Connect with someone on LifeStack</p></div>
-      <div class="modal-body">
-        <form id="addFriendForm" onsubmit="handleAddFriend(event)">
-          <!-- Email Search -->
-          <div class="form-group">
-            <label for="friendEmail">Their email address</label>
-            <div class="friend-search-group">
-              <input type="email" id="friendEmail" placeholder="friend@example.com" required>
-              <button type="button" class="btn btn-secondary" onclick="searchFriendByEmail()">Search</button>
-            </div>
-          </div>
-          
-          <!-- Search Result -->
-          <div id="friendSearchResult" class="friend-search-result hidden"></div>
-          
-          <!-- Relationship Details (shown after search) -->
-          <div id="friendDetailsSection" class="hidden">
-            <div class="form-group">
-              <label for="friendRelationship">Relationship</label>
-              <select id="friendRelationship">
-                <option value="friend">Friend</option>
-                <option value="spouse">Spouse / Partner</option>
-                <option value="family">Family</option>
-                <option value="colleague">Colleague</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="friendKnownSince">Known since (optional)</label>
-              <input type="date" id="friendKnownSince">
-            </div>
-            
-            <div class="form-group">
-              <label for="friendNotes">Notes (optional)</label>
-              <input type="text" id="friendNotes" placeholder="How you met, nickname, etc.">
-            </div>
-          </div>
-          
-          <!-- SMS Invite Section (shown if not found) -->
-          <div id="smsInviteSection" class="hidden">
-            <div class="form-group">
-              <label for="invitePhone">Their phone number</label>
-              <input type="tel" id="invitePhone" placeholder="+1 (555) 123-4567">
-            </div>
-            <p class="form-help-text">We'll send them a text to join LifeStack</p>
-          </div>
-          
-          <!-- Hidden fields for found user -->
-          <input type="hidden" id="foundUserId">
-          <input type="hidden" id="foundUserName">
-          
-          <button type="submit" id="addFriendBtn" class="btn btn-primary" style="width: 100%;" disabled>Send Friend Request</button>
-        </form>
-      </div>
-    </div></div>
-  </div>
+function updateSteps(n){
+  document.querySelectorAll('#pfSteps .step-dot').forEach((d,i)=>{d.className='step-dot';if(i+1<n)d.classList.add('done');if(i+1===n)d.classList.add('active')});
+}
 
-  <!-- Toast -->
-  <div id="toast" class="toast"></div>
+function pfSelType(btn,type){
+  document.querySelectorAll('#pfTypes .tc').forEach(t=>t.classList.remove('sel'));
+  btn.classList.add('sel');pfState.type=type;
+  document.getElementById('pfNext1').style.opacity='1';document.getElementById('pfNext1').style.pointerEvents='auto';
+}
 
-  <!-- JavaScript -->
-  <script src="app.js?v=20260123"></script>
-  
-  <!-- Service Worker Registration -->
-  <script>
-    // Register service worker for PWA
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then(registration => {
-            console.log('SW registered:', registration.scope);
-            
-            // Check for updates
-            registration.addEventListener('updatefound', () => {
-              const newWorker = registration.installing;
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New version available
-                  if (confirm('New version available! Reload to update?')) {
-                    window.location.reload();
-                  }
-                }
-              });
-            });
-          })
-          .catch(err => console.log('SW registration failed:', err));
-      });
-    }
-    
-    // Handle PWA install prompt
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      
-      // Show install button if not already installed
-      const installBtn = document.getElementById('installAppBtn');
-      if (installBtn) {
-        installBtn.classList.remove('hidden');
-      }
-    });
-    
-    // Install app function
-    function installApp() {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            console.log('User accepted install');
-          }
-          deferredPrompt = null;
-        });
-      }
-    }
-    
-    // Check if running as installed PWA
-    function isPWA() {
-      return window.matchMedia('(display-mode: standalone)').matches ||
-             window.navigator.standalone === true;
-    }
-    
-    // Handle app shortcuts
-    const urlParams = new URLSearchParams(window.location.search);
-    const action = urlParams.get('action');
-    if (action === 'new-memory') {
-      window.addEventListener('load', () => setTimeout(() => showMemoryModal(), 500));
-    } else if (action === 'new-adventure') {
-      window.addEventListener('load', () => setTimeout(() => showAddPlanModal('adventure'), 500));
-    }
-  </script>
+function pfNext(step){
+  document.querySelectorAll('.pf-step').forEach(s=>s.style.display='none');
+  document.getElementById('pf'+step).style.display='block';
+  updateSteps(step);
+  if(step===4)buildPfRecs();
+}
+
+function pfSelLoc(el,type){
+  document.querySelectorAll('.loc-option').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');pfState.loc=type;
+  document.getElementById('pfCitySearch').style.display=(type==='city'||type==='country')?'block':'none';
+  document.getElementById('pfSelectedLoc').style.display='none';
+  if(type==='around'){pfState.locName='Near Sacramento';document.getElementById('pfSelectedLoc').style.display='block';document.getElementById('pfSelectedLoc').textContent='📍 Sacramento, CA · 50 mile radius'}
+}
+
+const cities=[{n:'Napa Valley',r:'California',f:'🍷'},{n:'Lake Tahoe',r:'California',f:'🏔️'},{n:'San Francisco',r:'California',f:'🌉'},{n:'Big Sur',r:'California',f:'🌊'},{n:'Monterey',r:'California',f:'🐋'},{n:'Portland',r:'Oregon',f:'🌲'},{n:'Marseille',r:'France',f:'🇫🇷'},{n:'Tokyo',r:'Japan',f:'🇯🇵'},{n:'Barcelona',r:'Spain',f:'🇪🇸'},{n:'Paris',r:'France',f:'🇫🇷'}];
+function pfFilterCity(q){
+  const r=document.getElementById('pfCityResults');
+  const f=q.length>0?cities.filter(c=>c.n.toLowerCase().includes(q.toLowerCase())):cities.slice(0,5);
+  r.innerHTML=f.map(c=>`<div class="dr" onclick="pfPickCity('${c.n}','${c.f}')"><div class="dri" style="background:var(--sage-50)">${c.f}</div><div class="drb"><div class="drn">${c.n}</div><div class="drr">${c.r}</div></div></div>`).join('');
+}
+
+function pfPickCity(name,flag){
+  pfState.locName=name;document.getElementById('pfSelectedLoc').style.display='block';
+  document.getElementById('pfSelectedLoc').textContent=flag+' '+name;
+  document.getElementById('pfCityResults').innerHTML='';document.getElementById('pfCityInput').value='';
+}
+
+// AI recommendations database
+const aiDB={
+  'food-around':[{n:'The Kitchen',d:'Award-winning Sacramento restaurant. Reserve ahead.',dist:'Downtown · 12 min',e:'🍳',bg:'var(--amber-light)'},{n:'Kru Contemporary Japanese',d:'Omakase and creative sushi.',dist:'East Sac · 8 min',e:'🍣',bg:'var(--cat-food-bg)'},{n:'Mulvaney\'s B&L',d:'Farm-to-fork fine dining in a historic firehouse.',dist:'Midtown · 10 min',e:'🥂',bg:'var(--sage-100)'}],
+  'adventure-around':[{n:'American River Trail',d:'Easy paved path along the river, great for running or biking.',dist:'10 min drive',e:'🌲',bg:'var(--teal-light)'},{n:'Auburn SRA',d:'Canyon trails with stunning river views. Moderate.',dist:'35 min drive',e:'🏔️',bg:'var(--sage-100)'},{n:'Folsom Lake Loop',d:'Lakeside trail with wildflowers in spring.',dist:'25 min drive',e:'💧',bg:'var(--blue-light)'}],
+  'travel-around':[{n:'Napa Valley Wine Country',d:'World-class wine tasting and dining.',dist:'1.5h drive',e:'🍷',bg:'var(--amber-light)'},{n:'Lake Tahoe',d:'Crystal clear alpine lake. Beaches in summer, ski in winter.',dist:'2h drive',e:'🏔️',bg:'var(--blue-light)'},{n:'San Francisco',d:'Golden Gate, Fisherman\'s Wharf, amazing food scene.',dist:'1.5h drive',e:'🌉',bg:'var(--coral-bg)'}],
+  'roadtrip-around':[{n:'Pacific Coast Highway',d:'Big Sur coastal drive. One of the most scenic in the world.',dist:'3.5h to Big Sur',e:'🌊',bg:'var(--blue-light)'},{n:'Napa → Sonoma Loop',d:'Wine country road trip through rolling hills.',dist:'1.5h start',e:'🍷',bg:'var(--amber-light)'},{n:'Lassen Volcanic NP',d:'Geothermal features, volcanic peaks, hot springs.',dist:'3h drive',e:'🌋',bg:'var(--coral-bg)'}],
+  'culture-around':[{n:'Crocker Art Museum',d:'Oldest art museum in the West. Beautiful architecture.',dist:'Downtown · 12 min',e:'🎨',bg:'var(--lavender-light)'},{n:'Sacramento Philharmonic',d:'World-class orchestra at SAFE Credit Union PAC.',dist:'Downtown · 10 min',e:'🎵',bg:'var(--sage-100)'},{n:'B Street Theatre',d:'Intimate local theater with great productions.',dist:'Midtown · 8 min',e:'🎭',bg:'var(--coral-bg)'}],
+  'date-around':[{n:'The Firehouse Restaurant',d:'Romantic fine dining in Old Sacramento.',dist:'Downtown · 12 min',e:'🕯️',bg:'var(--coral-bg)'},{n:'Hawks Public House',d:'Craft cocktails, cozy atmosphere.',dist:'Midtown · 8 min',e:'🍸',bg:'var(--amber-light)'},{n:'Sac River Sunset Cruise',d:'Evening boat cruise on the Sacramento River.',dist:'Old Sac · 15 min',e:'🚤',bg:'var(--blue-light)'}],
+  'health-around':[{n:'Sol Yoga Sacramento',d:'Hot yoga and vinyasa. Drop-in friendly.',dist:'Midtown · 7 min',e:'🧘',bg:'var(--teal-light)'},{n:'Sacramento Rock Climbing',d:'Indoor bouldering gym. Great for beginners.',dist:'Arden · 15 min',e:'🧗',bg:'var(--sage-100)'},{n:'Folsom Lake Open Water',d:'Open water swimming at Folsom Lake.',dist:'Folsom · 25 min',e:'🏊',bg:'var(--blue-light)'}],
+  'birthday-around':[{n:'Iron Horse Tavern',d:'Private dining room, craft cocktails, great for groups.',dist:'Downtown · 10 min',e:'🎂',bg:'var(--pink-light)'},{n:'Topgolf Roseville',d:'Fun group activity with food & drinks.',dist:'Roseville · 20 min',e:'⛳',bg:'var(--sage-100)'},{n:'Sacramento River Cats Game',d:'Minor league baseball, group packages available.',dist:'West Sac · 12 min',e:'⚾',bg:'var(--amber-light)'}],
+};
+
+function buildPfRecs(){
+  const key=(pfState.type||'food')+'-around';
+  const recs=aiDB[key]||aiDB['food-around'];
+  document.getElementById('pfLocLabel').textContent=pfState.locName||'Near Sacramento';
+  const c=document.getElementById('pfAiRecs');c.innerHTML='';
+  recs.forEach((r,i)=>{
+    c.innerHTML+=`<div class="airc${i===0?' selected':''}" onclick="pfSelRec(this,'${r.n}')"><div class="airi" style="background:${r.bg}">${r.e}</div><div class="airb"><div class="airn">${r.n}</div><div class="aird">${r.d}</div><div class="airdist">📍 ${r.dist}</div></div></div>`;
+  });
+  document.getElementById('pfActName').value=recs[0]?.n||'';
+}
+
+function pfSelRec(el,name){
+  document.querySelectorAll('.airc').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('pfActName').value=name;
+}
+
+function pfFinish(){
+  const name=document.getElementById('pfActName').value||'New Activity';
+  closePanel('planFlow');
+  toast('🎉 '+name+' added to plan!');
+  // Open trip detail for reminders
+  setTimeout(()=>{document.getElementById('tripTitle').textContent=(pfState.type==='travel'?'✈️':pfState.type==='food'?'🍽️':'📋')+' '+name;openPanel('trip')},500);
+}
+
+function startRecurring(){openPanel('recur')}
+function pfQuick(type){
+  pfState={type:type,loc:'around',locName:'Near Sacramento'};
+  document.querySelectorAll('.pf-step').forEach(s=>s.style.display='none');
+  document.getElementById('pf3').style.display='block';
+  updateSteps(3);
+  openPanel('planFlow');
+  document.getElementById('pfTitle').textContent='Plan Activity';
+}
+
+// ===== REMINDERS =====
+function tgRem(b){b.classList.toggle('done');b.closest('.ri').querySelector('.rtx').classList.toggle('sk');if(b.classList.contains('done'))toast('✓ Done')}
+function editRem(btn){
+  const ri=btn.closest('.ri');
+  if(ri.classList.contains('ri-editing')){return}
+  const txt=ri.querySelector('.rtx');const when=ri.querySelector('.rwh');
+  const oldText=txt.textContent;const oldWhen=when.textContent;
+  // Extract current timing
+  const timings=['24h','1 week','1 month','3 months'];
+  let curTiming='1 week';timings.forEach(t=>{if(oldWhen.includes(t))curTiming=t});
+  ri.classList.add('ri-editing');
+  const editDiv=document.createElement('div');editDiv.className='ri-edit-wrap';
+  editDiv.innerHTML=`<input class="ri-edit-input" value="${oldText}"><div class="ri-edit-timing">${timings.map(t=>`<button class="tc${t===curTiming?' sel':''}" onclick="selTC(this)">${t}</button>`).join('')}</div><div class="ri-edit-actions"><button class="ri-cancel" onclick="cancelEditRem(this)">Cancel</button><button class="ri-save" onclick="saveEditRem(this)">Save</button></div>`;
+  ri.querySelector('.rbd').appendChild(editDiv);
+}
+function saveEditRem(btn){
+  const ri=btn.closest('.ri');const input=ri.querySelector('.ri-edit-input');
+  const newTiming=ri.querySelector('.ri-edit-timing .tc.sel')?.textContent||'1 week';
+  ri.querySelector('.rtx').textContent=input.value;
+  ri.querySelector('.rwh').textContent='🔔 '+newTiming+' prior';
+  ri.querySelector('.ri-edit-wrap').remove();ri.classList.remove('ri-editing');
+  toast('Reminder updated!');
+}
+function cancelEditRem(btn){
+  const ri=btn.closest('.ri');ri.querySelector('.ri-edit-wrap').remove();ri.classList.remove('ri-editing');
+}
+function addRem(){const i=document.getElementById('nri'),t=i.value.trim();if(!t)return;const tm=document.querySelector('#trTiming .tc.sel')?.textContent||'1 week';const l=document.getElementById('remList'),it=document.createElement('div');it.className='ri';it.innerHTML=`<button class="rchk" onclick="tgRem(this)">✓</button><div class="rbd"><div class="rtx">${t}</div><div class="rwh">🔔 ${tm} prior</div></div><button class="redit" onclick="editRem(this)">✏️</button><button class="rdl" onclick="this.closest('.ri').remove()">🗑</button>`;l.appendChild(it);i.value='';toast('Reminder added!')}
+function clrNot(b){b.classList.add('clr');b.textContent='Cleared';toast('Cleared')}
+
+// ===== INIT =====
+buildMG();buildYV();pfFilterCity('');
+(function(){const el=document.getElementById('hm1');if(!el)return;for(let i=0;i<28;i++){const c=document.createElement('div');c.className='hmc';const r=Math.random();if(r>.3)c.classList.add(r>.7?'l3':r>.5?'l2':'l1');el.appendChild(c)}})();
+const pcc=document.getElementById('planCards');if(pcc){let de=null;pcc.addEventListener('dragstart',e=>{de=e.target.closest('.pc');if(de)de.style.opacity='.5'});pcc.addEventListener('dragend',()=>{if(de)de.style.opacity='1';de=null});pcc.addEventListener('dragover',e=>e.preventDefault());pcc.addEventListener('drop',e=>{e.preventDefault();const t=e.target.closest('.pc');if(t&&t!==de&&de){pcc.insertBefore(de,t);toast('Reordered')}})}
+</script>
 </body>
 </html>
