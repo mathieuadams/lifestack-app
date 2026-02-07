@@ -204,14 +204,25 @@ async function getValidTokens() {
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.log('Token refresh failed:', errorData);
-        showToast('Session expired. Please sign in again.', 'error');
-        signOut();
+        const appVisible = !document.getElementById('app')?.classList.contains('hidden');
+        if (!appVisible) {
+          showToast('Session expired. Please sign in again.', 'error');
+          signOut();
+        } else {
+          console.log('Token refresh failed but app is showing cached data — continuing offline');
+        }
         return null;
       }
     } catch (error) {
       console.error('Token refresh error:', error);
-      showToast('Session expired. Please sign in again.', 'error');
-      signOut();
+      // Only force sign-out if the app isn't already showing cached data
+      const appVisible = !document.getElementById('app')?.classList.contains('hidden');
+      if (!appVisible) {
+        showToast('Session expired. Please sign in again.', 'error');
+        signOut();
+      } else {
+        console.log('Token refresh failed but app is showing cached data — continuing offline');
+      }
       return null;
     }
   }
@@ -3234,10 +3245,16 @@ function goToCurrentYear() {
 // =====================================================
 
 async function loadUserData() {
+  // Check if the app is already visible (instant launch from cache)
+  const appAlreadyVisible = !document.getElementById('app')?.classList.contains('hidden');
+
   try {
     const storedTokens = JSON.parse(localStorage.getItem('lifestack_tokens') || 'null');
     const auth = JSON.parse(localStorage.getItem('lifestack_auth') || 'null');
-    if (!storedTokens || !auth) { showLanding(); return; }
+    if (!storedTokens || !auth) {
+      if (!appAlreadyVisible) showLanding();
+      return;
+    }
 
     const savedUser = localStorage.getItem('lifestack_user');
     if (savedUser) {
@@ -3266,24 +3283,72 @@ async function loadUserData() {
         if (!tokens) { showLanding(); return; }
         await fetchAndSetUserData(tokens);
       } else {
-        // Cached user matches - use it
+        // Cached user matches - use it for immediate display
         currentUser = cachedUser;
         loadLocalMemories();
         loadLocalPeople();
         // Also load friendships
         friendships = await fetchFriendships();
         updateFriendBadge();
-        showApp();
+        if (!appAlreadyVisible) showApp();
+
+        // Background refresh: silently sync latest data from server
+        silentSync();
       }
     } else {
       // No cached user - fetch from API
       const tokens = await getValidTokens();
-      if (!tokens) { showLanding(); return; }
+      if (!tokens) {
+        if (!appAlreadyVisible) showLanding();
+        return;
+      }
       await fetchAndSetUserData(tokens);
     }
   } catch (error) {
     console.error('loadUserData fatal error:', error);
-    showLanding();
+    if (!appAlreadyVisible) showLanding();
+  }
+}
+
+// Silent background sync — refreshes data without disrupting the UI
+async function silentSync() {
+  try {
+    const tokens = await getValidTokens();
+    if (!tokens?.idToken) return;
+
+    // Refresh user profile in background
+    const response = await fetch(`${CONFIG.API_URL}/users`, {
+      headers: { 'Authorization': `Bearer ${tokens.idToken}` }
+    });
+    if (response.ok) {
+      const userData = await response.json();
+      if (userData && userData.name) {
+        currentUser = userData;
+        localStorage.setItem('lifestack_user', JSON.stringify(userData));
+      }
+    }
+
+    // Refresh plans for current view year
+    const freshPlans = await fetchPlans(currentViewYear);
+    if (freshPlans) {
+      plans = freshPlans;
+      try { renderMisogis(); } catch(e) {}
+      try { renderHabits(); } catch(e) {}
+      try { renderMonthGrid(); } catch(e) {}
+      try { renderYearMemories(currentViewYear); } catch(e) {}
+      try { renderDashboard(); } catch(e) {}
+    }
+
+    // Refresh memories
+    const freshMemories = await fetchMemories();
+    if (freshMemories) {
+      memories = freshMemories;
+      try { renderYearMemories(currentViewYear); } catch(e) {}
+    }
+
+    console.log('Silent background sync complete');
+  } catch (error) {
+    console.error('Silent sync error (non-blocking):', error);
   }
 }
 
@@ -7301,7 +7366,30 @@ function renderJournalEntries() {
 document.addEventListener('DOMContentLoaded', async function() {
   try {
     const tokens = localStorage.getItem('lifestack_tokens');
-    if (tokens) {
+    const savedUser = localStorage.getItem('lifestack_user');
+
+    if (tokens && savedUser) {
+      // INSTANT APP LAUNCH: Show app immediately from cache — no login flash
+      try {
+        currentUser = JSON.parse(savedUser);
+        loadLocalMemories();
+        loadLocalPeople();
+        const cachedJournals = localStorage.getItem('lifestack_journals');
+        if (cachedJournals) journalEntries = JSON.parse(cachedJournals);
+        const cachedFriendships = localStorage.getItem('lifestack_friendships');
+        if (cachedFriendships) friendships = JSON.parse(cachedFriendships);
+        updateFriendBadge();
+        showApp();
+      } catch (cacheErr) {
+        console.error('Cache parse error, falling back to full load:', cacheErr);
+      }
+
+      // Background sync: refresh tokens & data silently
+      loadUserData().catch(err => console.error('Background loadUserData error:', err));
+      processPendingInvite().catch(err => console.error('Pending invite error:', err));
+      checkForInviteCode();
+    } else if (tokens && !savedUser) {
+      // Tokens exist but no cached user profile yet (e.g. first launch after verify)
       await loadUserData();
       await processPendingInvite();
       checkForInviteCode();
@@ -7311,13 +7399,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   } catch (error) {
     console.error('Initialization error:', error);
-    // Guarantee the landing page shows even if something fails
-    try { showLanding(); } catch(e) {
-      // Last resort: manually unhide landing, hide loading
-      const loading = document.getElementById('loadingScreen');
-      if (loading) loading.classList.add('hidden');
-      const landing = document.getElementById('landing');
-      if (landing) landing.classList.remove('hidden');
+    // If we already showed the app from cache, don't flash the landing page
+    const appEl = document.getElementById('app');
+    if (appEl && !appEl.classList.contains('hidden')) {
+      hideLoading();
+    } else {
+      try { showLanding(); } catch(e) {
+        const loading = document.getElementById('loadingScreen');
+        if (loading) loading.classList.add('hidden');
+        const landing = document.getElementById('landing');
+        if (landing) landing.classList.remove('hidden');
+      }
     }
   }
   
