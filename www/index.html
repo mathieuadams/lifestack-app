@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <!-- PWA Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,8 +40,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <link rel="stylesheet" href="styles.css?v=20260128">
-  <link rel="stylesheet" href="styles-additions.css">
+  <link rel="stylesheet" href="styles.css?v=20260123">
 </head>
 <body>
   <script>
@@ -82,11 +82,6 @@
       <button class="btn btn-primary" onclick="showSignInModal()">Sign In</button>
       <button class="btn btn-secondary" onclick="showSignUpModal()">Create Account</button>
     </div>
-    <div class="landing-footer-links">
-      <a href="#" onclick="showTermsModal(); return false;">Terms of Service</a>
-      <span>·</span>
-      <a href="#" onclick="showPrivacyModal(); return false;">Privacy Policy</a>
-    </div>
   </div>
 
   <!-- Sign In Modal -->
@@ -107,7 +102,7 @@
     </div></div>
   </div>
 
-  <!-- Sign Up Modal (Updated with Terms Consent) -->
+  <!-- Sign Up Modal -->
   <div id="signUpModal" class="modal-overlay">
     <div class="modal"><div class="modal-content">
       <button class="modal-close" onclick="closeAllModals()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
@@ -121,19 +116,6 @@
           </div>
           <div class="form-group"><label for="signUpEmail">Email</label><input type="email" id="signUpEmail" placeholder="you@example.com" required></div>
           <div class="form-group"><label for="signUpPassword">Password</label><input type="password" id="signUpPassword" placeholder="Min 8 chars, uppercase, number, symbol" required minlength="8"></div>
-          
-          <!-- Terms & Privacy Consent -->
-          <div class="form-group consent-group">
-            <label class="consent-label">
-              <input type="checkbox" id="termsConsent" required>
-              <span class="consent-text">
-                I agree to the <a href="#" onclick="showTermsModal(); return false;">Terms of Service</a> and 
-                <a href="#" onclick="showPrivacyModal(); return false;">Privacy Policy</a>, including 
-                automated content scanning for safety.
-              </span>
-            </label>
-          </div>
-          
           <button type="submit" id="signUpBtn" class="btn btn-primary" style="width: 100%;">Create Account</button>
         </form>
         <div class="form-divider">Already have an account?</div>
@@ -166,632 +148,931 @@
     </div></div>
   </div>
 
-  <!-- ============================================= -->
-  <!-- TERMS OF SERVICE MODAL -->
-  <!-- ============================================= -->
-  <div id="termsModal" class="modal-overlay">
-    <div class="modal modal-large modal-legal">
-      <div class="modal-content">
-        <button class="modal-close" onclick="closeTermsModal()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-        
-        <div class="modal-header">
-          <h2>📜 Terms of Service</h2>
-          <p>Last updated: January 28, 2026</p>
+  <!-- Onboarding -->
+  <div id="onboarding" class="onboarding hidden">
+    <div class="onboarding-card">
+      <h2>Welcome to LifeStack</h2>
+      <p>Let's set up your life timeline. This will only take a moment.</p>
+      <form id="onboardingForm">
+        <div class="form-group"><label for="name">Your Name</label><input type="text" id="name" placeholder="Enter your name" required></div>
+        <div class="form-group"><label for="birthdate">Date of Birth</label><input type="date" id="birthdate" required></div>
+        <div class="form-group"><label for="lifespan">Expected Lifespan (years)</label><input type="number" id="lifespan" value="80" min="50" max="120"></div>
+        <div class="form-group"><label for="goal">Primary Life Goal</label>
+          <select id="goal">
+            <option value="family">Family & Relationships</option>
+            <option value="adventure">Adventure & Travel</option>
+            <option value="health">Health & Wellness</option>
+            <option value="creativity">Creativity & Art</option>
+            <option value="career">Career & Achievement</option>
+            <option value="community">Community & Impact</option>
+          </select>
         </div>
-        
-        <div class="modal-body legal-content">
-          <section>
-            <h3>1. Acceptance of Terms</h3>
-            <p>By accessing or using LifeStack ("the Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.</p>
-          </section>
-
-          <section>
-            <h3>2. Description of Service</h3>
-            <p>LifeStack is a personal life planning application that allows you to:</p>
-            <ul>
-              <li>Visualize your life timeline</li>
-              <li>Plan adventures and track goals</li>
-              <li>Capture and store memories including photos</li>
-              <li>Track habits and personal challenges</li>
-              <li>Create and manage bucket lists</li>
-              <li>Share experiences with friends and family</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>3. Account Registration</h3>
-            <p>To use LifeStack, you must:</p>
-            <ul>
-              <li>Be at least 18 years of age</li>
-              <li>Provide accurate and complete registration information</li>
-              <li>Maintain the security of your password</li>
-              <li>Accept responsibility for all activities under your account</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>4. Subscription Plans and Payment</h3>
-            <p>LifeStack offers the following plans:</p>
-            <ul>
-              <li><strong>Free:</strong> Limited features with usage caps</li>
-              <li><strong>Plus ($4.99/month):</strong> Expanded features and limits</li>
-              <li><strong>Pro ($9.99/month):</strong> Full access to all features</li>
-            </ul>
-            <p>Subscriptions are billed monthly or annually. You may cancel at any time, and access continues until the end of your billing period.</p>
-          </section>
-
-          <section class="highlight-section">
-            <h3>5. Content Policy</h3>
-            <h4>5.1 Prohibited Content</h4>
-            <p>You may NOT upload, share, or distribute any content that:</p>
-            <ul>
-              <li><strong>Sexually exploits or endangers minors</strong> in any way, including child sexual abuse material (CSAM)</li>
-              <li><strong>Contains explicit sexual content</strong> including nudity, sexual acts, or pornography</li>
-              <li><strong>Depicts graphic violence</strong>, gore, or promotes violence against individuals or groups</li>
-              <li><strong>Contains hate speech</strong> or symbols associated with hate groups</li>
-              <li><strong>Promotes illegal drug use</strong> or drug trafficking</li>
-              <li><strong>Violates any applicable laws</strong> in your jurisdiction</li>
-            </ul>
-
-            <h4>5.2 Content Moderation</h4>
-            <p>To maintain a safe environment:</p>
-            <ul>
-              <li><strong>All uploaded images are automatically scanned</strong> for prohibited content using industry-standard content moderation technology</li>
-              <li><strong>Flagged content may be reviewed</strong> by our trust and safety team</li>
-              <li><strong>Prohibited content will be removed</strong> and may result in account termination</li>
-              <li><strong>We are legally required to report</strong> child sexual abuse material (CSAM) to the National Center for Missing & Exploited Children (NCMEC) and may report other illegal content to law enforcement</li>
-            </ul>
-
-            <h4>5.3 Consequences of Violations</h4>
-            <p>Violations of this content policy may result in:</p>
-            <ul>
-              <li>Immediate removal of the violating content</li>
-              <li>Temporary or permanent suspension of your account</li>
-              <li>Reporting to law enforcement authorities</li>
-              <li>Civil or criminal liability</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>6. User Responsibilities</h3>
-            <p>You are solely responsible for:</p>
-            <ul>
-              <li>All content you upload to the Service</li>
-              <li>Ensuring you have the right to share any content you upload</li>
-              <li>Compliance with all applicable laws and regulations</li>
-              <li>Maintaining the confidentiality of your account credentials</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>7. Intellectual Property</h3>
-            <p>You retain ownership of content you upload. By uploading content, you grant LifeStack a limited license to store, display, and process your content solely to provide the Service.</p>
-          </section>
-
-          <section>
-            <h3>8. Data and Privacy</h3>
-            <p>Your use of the Service is also governed by our <a href="#" onclick="closeTermsModal(); showPrivacyModal(); return false;">Privacy Policy</a>, which describes how we collect, use, and protect your personal information.</p>
-          </section>
-
-          <section>
-            <h3>9. Termination</h3>
-            <p>We may terminate or suspend your account at any time for violations of these Terms. You may delete your account at any time through the app settings.</p>
-          </section>
-
-          <section>
-            <h3>10. Disclaimers</h3>
-            <p>THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND. WE DO NOT GUARANTEE UNINTERRUPTED OR ERROR-FREE SERVICE.</p>
-          </section>
-
-          <section>
-            <h3>11. Limitation of Liability</h3>
-            <p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, LIFESTACK SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING FROM YOUR USE OF THE SERVICE.</p>
-          </section>
-
-          <section>
-            <h3>12. Changes to Terms</h3>
-            <p>We may update these Terms from time to time. We will notify you of material changes via email or in-app notification. Continued use after changes constitutes acceptance.</p>
-          </section>
-
-          <section>
-            <h3>13. Contact</h3>
-            <p>For questions about these Terms, contact us at: <a href="/cdn-cgi/l/email-protection#4e222b292f220e2227282b3d3a2f2d25602f3e3e"><span class="__cf_email__" data-cfemail="a1cdc4c6c0cde1cdc8c7c4d2d5c0c2ca8fc0d1d1">[email&#160;protected]</span></a></p>
-          </section>
-        </div>
-        
-        <div class="modal-footer">
-          <button class="btn btn-primary" onclick="closeTermsModal()">I Understand</button>
-        </div>
-      </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Start My Journey</button>
+      </form>
     </div>
   </div>
 
-  <!-- ============================================= -->
-  <!-- PRIVACY POLICY MODAL -->
-  <!-- ============================================= -->
-  <div id="privacyModal" class="modal-overlay">
-    <div class="modal modal-large modal-legal">
-      <div class="modal-content">
-        <button class="modal-close" onclick="closePrivacyModal()">
+  <!-- Main App -->
+  <div id="app" class="app hidden">
+    <header class="header">
+      <div class="header-logo">
+        <div class="header-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+        <span>LifeStack</span>
+      </div>
+      <div class="header-user">
+        <button class="header-sync-btn" id="syncBtn" onclick="syncAllData()" title="Sync data">🔄</button>
+        <button class="header-friends-btn" id="friendsBtn" onclick="showFriendsModal()" title="Friends">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
+          <span id="friendRequestBadge" class="notification-badge hidden">0</span>
         </button>
-        
-        <div class="modal-header">
-          <h2>🔒 Privacy Policy</h2>
-          <p>Last updated: January 28, 2026</p>
-        </div>
-        
-        <div class="modal-body legal-content">
-          <section>
-            <h3>1. Information We Collect</h3>
-            
-            <h4>1.1 Information You Provide</h4>
-            <ul>
-              <li><strong>Account information:</strong> Email address, name, password</li>
-              <li><strong>Profile information:</strong> Birth year, life goals, preferences</li>
-              <li><strong>Content:</strong> Adventures, memories, photos, habits, bucket list items</li>
-              <li><strong>Communications:</strong> Support requests, feedback</li>
-            </ul>
-
-            <h4>1.2 Information Collected Automatically</h4>
-            <ul>
-              <li><strong>Device information:</strong> Device type, operating system, browser</li>
-              <li><strong>Usage data:</strong> Features used, time spent, interactions</li>
-              <li><strong>Log data:</strong> IP address, access times, error logs</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>2. How We Use Your Information</h3>
-            <p>We use your information to:</p>
-            <ul>
-              <li>Provide and improve the LifeStack service</li>
-              <li>Process your subscription and payments</li>
-              <li>Send you service-related notifications</li>
-              <li>Respond to your support requests</li>
-              <li>Ensure the safety and security of our platform</li>
-              <li>Comply with legal obligations</li>
-            </ul>
-          </section>
-
-          <section class="highlight-section">
-            <h3>3. Image Processing and Content Safety</h3>
-            
-            <h4>3.1 Automated Content Scanning</h4>
-            <p>To maintain a safe platform, we use automated content moderation technology (Amazon Rekognition) to scan uploaded images for prohibited content. This scanning:</p>
-            <ul>
-              <li>Occurs automatically when you upload images</li>
-              <li>Detects potentially prohibited content such as nudity, violence, or hate symbols</li>
-              <li>Does NOT use facial recognition to identify individuals</li>
-              <li>Does NOT share your images with third parties except as required by law</li>
-            </ul>
-
-            <h4>3.2 Content Review</h4>
-            <p>If our automated systems flag content as potentially prohibited:</p>
-            <ul>
-              <li>The content may be temporarily held for review</li>
-              <li>Our trust and safety team may review the flagged content</li>
-              <li>Content determined to violate our policies will be removed</li>
-              <li>You will be notified if content is removed (except in cases involving potential illegal activity)</li>
-            </ul>
-
-            <h4>3.3 Legal Reporting Obligations</h4>
-            <p>We are legally required to report child sexual abuse material (CSAM) to the National Center for Missing & Exploited Children (NCMEC). Such reports include:</p>
-            <ul>
-              <li>The content itself</li>
-              <li>Associated user account information</li>
-              <li>IP addresses and timestamps</li>
-              <li>Any other legally required information</li>
-            </ul>
-            <p>We may also report other illegal content to law enforcement as required or permitted by law.</p>
-          </section>
-
-          <section>
-            <h3>4. Data Sharing</h3>
-            <p>We do NOT sell your personal information. We may share information with:</p>
-            <ul>
-              <li><strong>Service providers:</strong> AWS (hosting), payment processors</li>
-              <li><strong>Friends:</strong> Only what you explicitly choose to share</li>
-              <li><strong>Legal authorities:</strong> When required by law or to report illegal content</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>5. Data Storage and Security</h3>
-            <ul>
-              <li>Your data is stored securely on Amazon Web Services (AWS)</li>
-              <li>All data is encrypted in transit (HTTPS) and at rest</li>
-              <li>We use industry-standard security practices</li>
-              <li>Access to user data is strictly limited and logged</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>6. Data Retention</h3>
-            <ul>
-              <li><strong>Active account data:</strong> Retained while your account is active</li>
-              <li><strong>Deleted account data:</strong> Removed within 30 days of account deletion</li>
-              <li><strong>Flagged content:</strong> May be retained for up to 90 days for review</li>
-              <li><strong>Violation records:</strong> Retained for 7 years for legal compliance</li>
-              <li><strong>Reported content:</strong> Preserved as required by law enforcement</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>7. Your Rights</h3>
-            <p>You have the right to:</p>
-            <ul>
-              <li><strong>Access:</strong> Request a copy of your data</li>
-              <li><strong>Correction:</strong> Update inaccurate information</li>
-              <li><strong>Deletion:</strong> Delete your account and data</li>
-              <li><strong>Export:</strong> Download your data (Plus/Pro plans)</li>
-              <li><strong>Opt-out:</strong> Unsubscribe from marketing communications</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3>8. Children's Privacy</h3>
-            <p>LifeStack is not intended for users under 18 years of age. We do not knowingly collect information from children under 18. If we discover such information has been collected, we will delete it immediately.</p>
-          </section>
-
-          <section>
-            <h3>9. International Users</h3>
-            <p>Your data is processed and stored in the United States. By using LifeStack, you consent to the transfer of your data to the United States.</p>
-          </section>
-
-          <section>
-            <h3>10. Changes to This Policy</h3>
-            <p>We may update this Privacy Policy from time to time. We will notify you of material changes via email or in-app notification.</p>
-          </section>
-
-          <section>
-            <h3>11. Contact Us</h3>
-            <p>For privacy-related questions or requests, contact us at: <a href="/cdn-cgi/l/email-protection#ef9f9d86998e8c96af8386898a9c9b8e8c84c18e9f9f"><span class="__cf_email__" data-cfemail="dcacaeb5aabdbfa59cb0b5bab9afa8bdbfb7f2bdacac">[email&#160;protected]</span></a></p>
-          </section>
-        </div>
-        
-        <div class="modal-footer">
-          <button class="btn btn-primary" onclick="closePrivacyModal()">I Understand</button>
+        <div class="header-avatar" id="userAvatar" onclick="switchView('settings')">
+          <span id="userAvatarInitials">?</span>
+          <img id="userAvatarImage" src="" alt="Avatar" style="display: none;">
         </div>
       </div>
-    </div>
-  </div>
+    </header>
 
-  <!-- ============================================= -->
-  <!-- UPGRADE MODAL -->
-  <!-- ============================================= -->
-  <div id="upgradeModal" class="modal-overlay">
-    <div class="modal modal-upgrade">
-      <div class="modal-content">
-        <button class="modal-close" onclick="closeUpgradeModal()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-        
-        <div id="upgradeContent" class="upgrade-content">
-          <!-- Dynamic content inserted by JavaScript -->
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================= -->
-  <!-- COMPARE PLANS MODAL -->
-  <!-- ============================================= -->
-  <div id="comparePlansModal" class="modal-overlay">
-    <div class="modal modal-large">
-      <div class="modal-content">
-        <button class="modal-close" onclick="closeComparePlansModal()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-        
-        <div class="modal-header">
-          <h2>Choose Your Plan</h2>
-          <p>Unlock more of LifeStack</p>
-        </div>
-        
-        <div class="modal-body">
-          <div class="plans-comparison">
-            <!-- Free Plan -->
-            <div class="plan-card plan-free">
-              <div class="plan-header">
-                <span class="plan-icon">🆓</span>
-                <h3>Free</h3>
-                <div class="plan-price">$0</div>
-                <div class="plan-period">forever</div>
+    <main class="main" id="mainContent">
+      <!-- Dashboard View -->
+      <div id="dashboardView">
+        <section class="section">
+          <div class="progress-card">
+            <div class="progress-header">
+              <div><div class="progress-year" id="currentYear">2026</div><div class="progress-age">Year <span id="currentAge">30</span> of <span id="lifespanDisplay">80</span></div></div>
+              <div class="progress-ring-container">
+                <svg class="progress-ring" width="80" height="80"><circle class="progress-ring-bg" cx="40" cy="40" r="32"/><circle class="progress-ring-fill" id="progressRing" cx="40" cy="40" r="32" stroke-dasharray="201" stroke-dashoffset="201"/></svg>
+                <div class="progress-percent" id="yearPercent">0%</div>
               </div>
-              <ul class="plan-features">
-                <li>✓ Life timeline</li>
-                <li>✓ 5 adventures</li>
-                <li>✓ 20 memories</li>
-                <li>✓ 3 habits</li>
-                <li>✓ 10 bucket list items</li>
-                <li>✓ 3 AI requests/month</li>
-                <li>✓ 50 MB photos</li>
-                <li>✓ 3 friends</li>
-                <li class="feature-disabled">✗ Year in Review</li>
-                <li class="feature-disabled">✗ Data export</li>
-                <li class="feature-disabled">✗ AI templates</li>
-              </ul>
-              <button class="btn btn-secondary plan-btn" disabled>Current Plan</button>
             </div>
-            
-            <!-- Plus Plan -->
-            <div class="plan-card plan-plus">
-              <div class="plan-badge">POPULAR</div>
-              <div class="plan-header">
-                <span class="plan-icon">⭐</span>
-                <h3>Plus</h3>
-                <div class="plan-price">$4.99</div>
-                <div class="plan-period">/month</div>
-                <div class="plan-annual">or $39.99/year (save 33%)</div>
-              </div>
-              <ul class="plan-features">
-                <li>✓ Life timeline</li>
-                <li><strong>✓ Unlimited adventures</strong></li>
-                <li><strong>✓ Unlimited memories</strong></li>
-                <li><strong>✓ Unlimited habits</strong></li>
-                <li><strong>✓ Unlimited bucket list</strong></li>
-                <li><strong>✓ 20 AI requests/month</strong></li>
-                <li><strong>✓ 2 GB photos</strong></li>
-                <li><strong>✓ Unlimited friends</strong></li>
-                <li><strong>✓ Year in Review</strong></li>
-                <li><strong>✓ Data export</strong></li>
-                <li class="feature-disabled">✗ AI templates</li>
-              </ul>
-              <button class="btn btn-primary plan-btn" onclick="startUpgrade('plus')">Upgrade to Plus</button>
+            <div class="progress-stats">
+              <div><div class="progress-stat-value" id="yearsLived">30</div><div class="progress-stat-label">Years Lived</div></div>
+              <div><div class="progress-stat-value" id="yearsLeft">50</div><div class="progress-stat-label">Years Left</div></div>
+              <div><div class="progress-stat-value" id="memoriesCount">0</div><div class="progress-stat-label">Memories</div></div>
             </div>
-            
-            <!-- Pro Plan -->
-            <div class="plan-card plan-pro">
-              <div class="plan-badge">BEST VALUE</div>
-              <div class="plan-header">
-                <span class="plan-icon">🚀</span>
-                <h3>Pro</h3>
-                <div class="plan-price">$9.99</div>
-                <div class="plan-period">/month</div>
-                <div class="plan-annual">or $79.99/year (save 33%)</div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header"><div><h2 class="section-title">Your Life Timeline</h2><p class="section-subtitle">Click any year to plan or review</p></div></div>
+          <div class="progress-card"><div class="timeline-grid" id="timelineGrid"></div></div>
+        </section>
+
+        <section class="section">
+          <h2 class="section-title mb-4">Quick Actions</h2>
+          <div class="quick-actions">
+            <div class="action-card" onclick="showMemoryModal()">
+              <div class="action-icon memory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+              <div class="action-text"><h3>Capture Memory</h3><p>Save a meaningful moment</p></div>
+            </div>
+            <div class="action-card" onclick="openCurrentYearDesign()">
+              <div class="action-icon plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+              <div class="action-text"><h3>Plan This Year</h3><p>Design your Misogi & adventures</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header"><h2 class="section-title">Recent Memories</h2></div>
+          <div id="memoriesList" class="memory-list"></div>
+        </section>
+      </div>
+
+      <!-- Year Design View (Current Year) -->
+      <div id="yearDesignView" class="year-view hidden">
+        <div class="year-header">
+          <div class="year-header-back" onclick="switchView('dashboard')">← Back to Dashboard</div>
+          <h2>🎯 <span id="designYear">2026</span> - LIFE BY DESIGN</h2>
+          <div class="year-header-actions">
+            <input type="text" id="yearTheme" placeholder="This is the year I..." onchange="saveYearTheme()">
+            <button class="btn btn-secondary" onclick="showYearReview()">📖 Year in Review</button>
+            <!-- Old share button hidden - now using friend tagging on adventures -->
+            <!-- <button class="btn btn-primary" onclick="showShareModal()">🔗 Share</button> -->
+          </div>
+        </div>
+
+        <!-- Misogi Section -->
+        <div class="plan-section misogi-section">
+          <div class="section-header">
+            <h3>🏔️ MISOGI - Your Defining Challenge</h3>
+            <button class="btn btn-small btn-secondary" onclick="showAddPlanModal('misogi')">+ Add</button>
+          </div>
+          <p class="section-description">One epic challenge that defines your year. Something so hard you might fail, but attempting it will transform you.</p>
+          <div id="misogiList" class="misogi-cards"></div>
+        </div>
+
+        <!-- Quarterly Habits -->
+        <div class="plan-section">
+          <div class="section-header">
+            <h3>🔄 WINNING HABITS - One per Quarter</h3>
+          </div>
+          <p class="section-description">Build one powerful habit each quarter. Focus on one thing at a time for 90 days.</p>
+          <div class="quarters-grid" id="habitsGrid">
+            <div class="quarter-card" id="habitQ1">
+              <div class="quarter-header"><span class="quarter-label">Q1</span><span class="quarter-months">Jan - Mar</span></div>
+              <div class="quarter-content empty" onclick="showAddPlanModal('habit', 1)"><span>+ Add Q1 Habit</span></div>
+            </div>
+            <div class="quarter-card" id="habitQ2">
+              <div class="quarter-header"><span class="quarter-label">Q2</span><span class="quarter-months">Apr - Jun</span></div>
+              <div class="quarter-content empty" onclick="showAddPlanModal('habit', 2)"><span>+ Add Q2 Habit</span></div>
+            </div>
+            <div class="quarter-card" id="habitQ3">
+              <div class="quarter-header"><span class="quarter-label">Q3</span><span class="quarter-months">Jul - Sep</span></div>
+              <div class="quarter-content empty" onclick="showAddPlanModal('habit', 3)"><span>+ Add Q3 Habit</span></div>
+            </div>
+            <div class="quarter-card" id="habitQ4">
+              <div class="quarter-header"><span class="quarter-label">Q4</span><span class="quarter-months">Oct - Dec</span></div>
+              <div class="quarter-content empty" onclick="showAddPlanModal('habit', 4)"><span>+ Add Q4 Habit</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Adventures -->
+        <div class="plan-section">
+          <div class="section-header">
+            <h3>🎯 ADVENTURES - Your Year at a Glance</h3>
+          </div>
+          <div class="calendar-year-view" id="monthGrid"></div>
+        </div>
+
+        <!-- Month Calendar Modal -->
+        <div id="monthCalendarModal" class="modal-overlay">
+          <div class="modal modal-large"><div class="modal-content">
+            <button class="modal-close" onclick="closeMonthCalendarModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            <div class="modal-header">
+              <h2 id="monthCalendarTitle">January 2026</h2>
+            </div>
+            <div class="modal-body">
+              <div id="monthCalendarGrid" class="month-calendar-grid"></div>
+              <div class="month-calendar-plans">
+                <h4>Plans this month</h4>
+                <div id="monthPlansList"></div>
               </div>
-              <ul class="plan-features">
-                <li>✓ Everything in Plus</li>
-                <li><strong>✓ Unlimited AI requests</strong></li>
-                <li><strong>✓ 10 GB photos</strong></li>
-                <li><strong>✓ AI idea templates</strong></li>
-                <li><strong>✓ Advanced analytics</strong></li>
-                <li><strong>✓ Multiple timelines</strong></li>
-                <li><strong>✓ Custom categories</strong></li>
-                <li><strong>✓ Home widgets</strong></li>
-                <li><strong>✓ API access</strong></li>
-                <li><strong>✓ Priority support</strong></li>
-                <li><strong>✓ Early access features</strong></li>
-              </ul>
-              <button class="btn btn-primary plan-btn btn-pro" onclick="startUpgrade('pro')">Upgrade to Pro</button>
+              <button class="btn btn-primary" onclick="addPlanFromCalendar()" style="width: 100%; margin-top: 1rem;">+ Add Adventure</button>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- Year Memories -->
+        <div class="plan-section">
+          <div class="section-header">
+            <h3>📸 MEMORIES THIS YEAR</h3>
+            <div class="memory-controls">
+              <button class="btn btn-small btn-secondary" onclick="showPhotoGallery()">🖼️ Gallery</button>
+              <button class="btn btn-small btn-secondary" onclick="showMemoryModal()">+ Add</button>
             </div>
           </div>
           
-          <p class="plans-note">All plans include 7-day free trial · Cancel anytime</p>
+          <!-- Search & Filters -->
+          <div class="memory-filters">
+            <div class="search-box">
+              <input type="text" id="memorySearch" placeholder="Search memories..." oninput="filterMemoriesBySearch()">
+              <span class="search-icon">🔍</span>
+            </div>
+            <div class="filter-row">
+              <select id="memoryFilter" onchange="filterMemories()" class="memory-filter-select">
+                <option value="all">All Adventures</option>
+              </select>
+              <select id="memoryPeopleFilter" onchange="filterMemories()" class="memory-filter-select">
+                <option value="all">All People</option>
+              </select>
+              <select id="memoryPhotoFilter" onchange="filterMemories()" class="memory-filter-select">
+                <option value="all">All Memories</option>
+                <option value="with-photos">With Photos</option>
+                <option value="without-photos">Without Photos</option>
+              </select>
+            </div>
+          </div>
+          
+          <div id="selectedAdventureInfo" class="selected-adventure-info hidden"></div>
+          <div id="memoryStats" class="memory-stats"></div>
+          <div id="yearMemories" class="memory-feed"></div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- ============================================= -->
-  <!-- PHOTO PROCESSING STATUS MODAL -->
-  <!-- ============================================= -->
-  <div id="photoProcessingModal" class="modal-overlay">
-    <div class="modal modal-small">
-      <div class="modal-content">
-        <div class="photo-processing-content">
-          <div class="processing-spinner"></div>
-          <h3>Processing Photo</h3>
-          <p id="photoProcessingStatus">Scanning for safety...</p>
-          <div class="processing-steps">
-            <div class="processing-step" id="step-upload">
-              <span class="step-icon">📤</span>
-              <span class="step-text">Uploading</span>
-              <span class="step-status">✓</span>
-            </div>
-            <div class="processing-step active" id="step-scan">
-              <span class="step-icon">🔍</span>
-              <span class="step-text">Safety scan</span>
-              <span class="step-status">...</span>
-            </div>
-            <div class="processing-step" id="step-save">
-              <span class="step-icon">💾</span>
-              <span class="step-text">Saving</span>
-              <span class="step-status"></span>
-            </div>
+      <!-- Photo Gallery Modal -->
+      <div id="photoGalleryModal" class="modal-overlay">
+        <div class="modal modal-fullscreen"><div class="modal-content">
+          <button class="modal-close" onclick="closePhotoGallery()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          <div class="modal-header"><h2>📸 Photo Gallery - <span id="galleryYear">2026</span></h2></div>
+          <div class="modal-body">
+            <div id="photoGalleryGrid" class="photo-gallery-grid"></div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- Photo Lightbox -->
+      <div id="photoLightbox" class="lightbox hidden">
+        <button class="lightbox-close" onclick="closeLightbox()">×</button>
+        <button class="lightbox-prev" onclick="lightboxPrev()">‹</button>
+        <button class="lightbox-next" onclick="lightboxNext()">›</button>
+        <div class="lightbox-content">
+          <img id="lightboxImage" src="" alt="">
+          <div id="lightboxCounter" class="lightbox-counter">1 / 1</div>
+          <div class="lightbox-caption">
+            <h3 id="lightboxTitle"></h3>
+            <p id="lightboxDate"></p>
           </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- ============================================= -->
-  <!-- PHOTO REJECTED MODAL -->
-  <!-- ============================================= -->
-  <div id="photoRejectedModal" class="modal-overlay">
-    <div class="modal modal-small">
-      <div class="modal-content">
-        <button class="modal-close" onclick="closePhotoRejectedModal()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-        
-        <div class="photo-rejected-content">
-          <div class="rejected-icon">⚠️</div>
-          <h3>Photo Not Allowed</h3>
-          <p>This photo couldn't be added because it may contain content that violates our <a href="#" onclick="showTermsModal(); return false;">content policy</a>.</p>
-          <p class="rejected-note">If you believe this is an error, please contact support.</p>
-          <button class="btn btn-primary" onclick="closePhotoRejectedModal()">I Understand</button>
+      <!-- Year Review Modal (Enhanced with Map) -->
+      <div id="yearReviewModal" class="modal-overlay">
+        <div class="modal modal-fullscreen"><div class="modal-content">
+          <button class="modal-close" onclick="closeYearReview()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          <div class="modal-header">
+            <h2>📖 Year in Review - <span id="reviewYearTitle">2026</span></h2>
+            <div class="review-tabs">
+              <button class="review-tab active" onclick="switchReviewTab('timeline')">📅 Timeline</button>
+              <button class="review-tab" onclick="switchReviewTab('map')">🗺️ Map</button>
+            </div>
+          </div>
+          <div class="modal-body">
+            <div id="reviewTimelineTab" class="review-tab-content active">
+              <div id="yearReviewContent"></div>
+            </div>
+            <div id="reviewMapTab" class="review-tab-content">
+              <div id="yearReviewMap" class="review-map"></div>
+              <div id="mapMemoryList" class="map-memory-list"></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- Habit Tracking Modal -->
+      <div id="habitTrackingModal" class="modal-overlay">
+        <div class="modal"><div class="modal-content">
+          <button class="modal-close" onclick="closeHabitTracking()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          <div class="modal-header">
+            <h2 id="habitTrackingTitle">Track Habit</h2>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="trackingHabitId">
+            
+            <div class="habit-tracking-stats">
+              <div class="habit-stat">
+                <span class="habit-stat-value" id="habitCurrentStreak">0</span>
+                <span class="habit-stat-label">Current Streak</span>
+              </div>
+              <div class="habit-stat">
+                <span class="habit-stat-value" id="habitLongestStreak">0</span>
+                <span class="habit-stat-label">Longest Streak</span>
+              </div>
+              <div class="habit-stat">
+                <span class="habit-stat-value" id="habitTotalCheckins">0</span>
+                <span class="habit-stat-label">Total Check-ins</span>
+              </div>
+              <div class="habit-stat">
+                <span class="habit-stat-value" id="habitCompletionRate">0%</span>
+                <span class="habit-stat-label">Completion Rate</span>
+              </div>
+            </div>
+            
+            <div class="habit-today-checkin">
+              <button id="habitCheckinBtn" class="btn btn-primary btn-large" onclick="toggleTodayCheckin()">
+                ✓ Check in for Today
+              </button>
+            </div>
+            
+            <div class="habit-calendar-section">
+              <h4>This Quarter</h4>
+              <div id="habitCalendarGrid" class="habit-calendar-grid"></div>
+            </div>
+            
+            <div class="habit-tracking-actions">
+              <button class="btn btn-secondary" onclick="showEditPlanModal(document.getElementById('trackingHabitId').value); closeHabitTracking();">✏️ Edit Habit</button>
+              <button class="btn btn-secondary" onclick="markHabitComplete()">✅ Mark Quarter Complete</button>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- Year Review View (Past Years) -->
+      <div id="yearReviewView" class="year-view hidden">
+        <div class="year-header">
+          <div class="year-header-back" onclick="switchView('dashboard')">← Back to Dashboard</div>
+          <h2>📖 <span id="reviewYear">2025</span> - YEAR IN REVIEW</h2>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card"><span class="stat-icon">🏔️</span><span class="stat-value" id="reviewMisogiCount">0</span><span class="stat-label">Misogi Done</span></div>
+          <div class="stat-card"><span class="stat-icon">🎯</span><span class="stat-value" id="reviewAdventureCount">0/6</span><span class="stat-label">Adventures</span></div>
+          <div class="stat-card"><span class="stat-icon">🔄</span><span class="stat-value" id="reviewHabitCount">0/4</span><span class="stat-label">Habits Stuck</span></div>
+          <div class="stat-card"><span class="stat-icon">📸</span><span class="stat-value" id="reviewMemoryCount">0</span><span class="stat-label">Memories</span></div>
+        </div>
+
+        <div id="reviewContent"></div>
+
+        <div class="review-actions">
+          <button class="btn btn-secondary" onclick="showMemoryModal()">+ Add Memory to <span id="reviewYearBtn">2025</span></button>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- ============================================= -->
-  <!-- BUCKET LIST MODAL (Updated with AI counter and Pro features) -->
-  <!-- ============================================= -->
-  <div id="bucketListModal" class="modal-overlay">
-    <div class="modal modal-large"><div class="modal-content">
-      <button class="modal-close" onclick="closeBucketListModal()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-      
-      <div class="modal-header">
-        <h2>🪣 My Bucket List</h2>
-        <p>Dreams and goals for your lifetime</p>
-        
-        <!-- AI Usage Counter -->
-        <div id="aiUsageCounter" class="usage-counter">
-          <span class="usage-icon">🤖</span>
-          <span id="aiUsageText">AI: 0 of 3 used</span>
-          <a href="#" id="aiUsageUpgrade" class="usage-upgrade hidden" onclick="showUpgradePrompt('ai_limit'); return false;">Get more</a>
+      <!-- Year Locked View (Future Years) -->
+      <div id="yearLockedView" class="year-view hidden">
+        <div class="locked-content">
+          <div class="locked-icon">🔒</div>
+          <h2><span id="lockedYear">2027</span></h2>
+          <p>"Focus on this year first."</p>
+          <p class="locked-message">You can plan <span id="lockedYearMsg">2027</span> starting <span id="unlockDate">December 2026</span>.</p>
+          <button class="btn btn-primary" onclick="goToCurrentYear()">Back to <span id="currentYearBtn">2026</span></button>
         </div>
       </div>
-      
+
+      <!-- Journal View -->
+      <div id="journalView" class="hidden">
+        <section class="section">
+          <div class="section-header">
+            <h2 class="section-title">📓 Journal</h2>
+            <button class="btn btn-primary" onclick="showJournalModal()">+ New Entry</button>
+          </div>
+          
+          <!-- Journal Entries List -->
+          <div id="journalEntries" class="journal-entries">
+            <div class="empty-state">
+              <div class="empty-state-icon">📝</div>
+              <h3>No journal entries yet</h3>
+              <p>Start capturing your thoughts and reflections</p>
+              <button class="btn btn-primary" onclick="showJournalModal()">Write First Entry</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Settings View -->
+      <div id="settingsView" class="hidden">
+        <section class="section">
+          <h2 class="section-title mb-4">Settings</h2>
+          <div class="progress-card">
+            <!-- Avatar Section -->
+            <div class="settings-avatar-section">
+              <div class="settings-avatar-preview" id="settingsAvatarPreview" onclick="document.getElementById('avatarInput').click()">
+                <span id="settingsAvatarInitials">?</span>
+                <img id="settingsAvatarImage" src="" alt="Avatar" style="display: none;">
+                <div class="settings-avatar-overlay">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                </div>
+              </div>
+              <input type="file" id="avatarInput" accept="image/*" hidden onchange="handleAvatarSelect(event)">
+              <p class="settings-avatar-hint">Tap to change photo</p>
+            </div>
+            
+            <div class="form-group"><label>Name</label><input type="text" id="settingsName" readonly></div>
+            <div class="form-group"><label>Email</label><input type="text" id="settingsEmail" readonly></div>
+            <div class="form-group"><label>Birthdate</label><input type="text" id="settingsBirthdate" readonly></div>
+            <div class="form-group"><label>Expected Lifespan</label><input type="text" id="settingsLifespan" readonly></div>
+            <button class="btn btn-secondary" style="width: 100%; margin-top: 1rem;" onclick="showFriendsModal()">👥 Manage Friends</button>
+            <button class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;" onclick="showManagePeopleModal()">🧑 Manage People</button>
+            <button class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;" onclick="clearCacheAndSync()">🔄 Clear Cache & Sync</button>
+            <button id="installAppBtn" class="btn btn-primary hidden" style="width: 100%; margin-top: 0.5rem;" onclick="installApp()">📲 Install App</button>
+            <div id="pwaStatus" class="pwa-status"></div>
+            <button class="btn btn-danger" style="width: 100%; margin-top: 0.5rem;" onclick="signOut()">Sign Out</button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-view="dashboard" onclick="switchView('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></button>
+      <button class="nav-item" data-view="yearDesign" onclick="openCurrentYearDesign()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span>Plan</span></button>
+      <button class="nav-item" data-view="journal" onclick="switchView('journal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="12" y2="15"/></svg><span>Journal</span></button>
+      <button class="nav-item" data-view="settings" onclick="switchView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
+    </nav>
+  </div>
+
+  <!-- Add Plan Modal -->
+  <div id="planModal" class="modal-overlay">
+    <div class="modal"><div class="modal-content">
+      <button class="modal-close" onclick="closePlanModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header"><h2 id="planModalTitle">Add Plan</h2></div>
       <div class="modal-body">
-        <!-- Voice Input Section -->
-        <div class="bucket-list-voice-section">
-          <div class="bucket-voice-prompt">
-            <h3>✨ What are your dreams?</h3>
-            <p>Tap the microphone and tell me what you want to experience in your lifetime</p>
+        <form id="planForm" onsubmit="handlePlanSubmit(event)">
+          <input type="hidden" id="planId" value="">
+          <input type="hidden" id="planType" value="misogi">
+          <input type="hidden" id="planTargetQuarter" value="">
+          <input type="hidden" id="planTargetMonth" value="">
+          <input type="hidden" id="planCategory" value="">
+          
+          <!-- Shared Adventure Info Banner -->
+          <div id="sharedAdventureInfo" style="display: none;"></div>
+          
+          <!-- Category Picker -->
+          <div class="form-group" id="categoryPickerGroup">
+            <label>Category</label>
+            <div class="category-selected" onclick="showCategoryPicker()">
+              <span id="selectedCategoryIcon">🎯</span>
+              <span id="selectedCategoryName">Select category...</span>
+              <span class="category-chevron">▼</span>
+            </div>
           </div>
           
-          <button type="button" id="bucketListVoiceBtn" class="voice-record-btn" onclick="toggleBucketListRecording()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-              <line x1="12" y1="19" x2="12" y2="23"/>
-              <line x1="8" y1="23" x2="16" y2="23"/>
-            </svg>
-            <span id="bucketListVoiceText">Tap to speak</span>
-          </button>
+          <div class="form-group"><label for="planTitle">What's the plan?</label><input type="text" id="planTitle" placeholder="e.g., Run a marathon" required></div>
+          <div class="form-group"><label for="planDescription">Why does this matter? (optional)</label><textarea id="planDescription" placeholder="Describe why this is important to you..."></textarea></div>
           
-          <div id="bucketListVoiceStatus" class="voice-status"></div>
-          <div id="bucketListTranscript" class="bucket-transcript"></div>
-          <div id="bucketListAiMessage" class="bucket-ai-message hidden"></div>
-        </div>
-        
-        <!-- AI Templates Section (Pro Feature) -->
-        <div class="bucket-templates-section">
-          <button type="button" class="bucket-templates-btn" onclick="showBucketTemplates()">
-            <span class="templates-icon">✨</span>
-            <span class="templates-text">Get Ideas</span>
-            <span class="pro-badge">PRO</span>
-          </button>
-          <p class="templates-hint">Templates like "5 things to do in LA under $100"</p>
-        </div>
-        
-        <!-- Manual Add Section -->
-        <details class="bucket-manual-add">
-          <summary>➕ Or add manually</summary>
-          <div class="bucket-manual-form">
-            <input type="text" id="manualBucketTitle" placeholder="What do you want to do?">
-            <select id="manualBucketCategory">
-              <option value="travel">✈️ Travel</option>
-              <option value="adventure">🏔️ Adventure</option>
-              <option value="skills">🎯 Skills</option>
-              <option value="experiences">🎭 Experiences</option>
-              <option value="personal">💫 Personal</option>
-              <option value="health">💪 Health</option>
-              <option value="creative">🎨 Creative</option>
-              <option value="relationships">❤️ Relationships</option>
-              <option value="career">💼 Career</option>
-              <option value="other">📌 Other</option>
-            </select>
-            <button class="btn btn-primary" onclick="addManualBucketItem()">Add</button>
+          <!-- Date Selection - for adventures -->
+          <div class="form-group" id="dateSelectorGroup">
+            <label>When?</label>
+            <div class="date-picker-row">
+              <div>
+                <label for="planStartDate" style="font-size: 0.75rem; color: var(--sage-600);">Start Date</label>
+                <input type="date" id="planStartDate">
+              </div>
+              <div>
+                <label for="planEndDate" style="font-size: 0.75rem; color: var(--sage-600);">End Date (optional)</label>
+                <input type="date" id="planEndDate">
+              </div>
+            </div>
+            <div class="date-range-calendar hidden" id="dateRangeCalendar"></div>
           </div>
-        </details>
-        
-        <!-- Bucket List Items -->
-        <div id="bucketListItems" class="bucket-list-items">
-          <div class="bucket-list-empty">
-            <div class="bucket-list-empty-icon">🪣</div>
-            <h3>Your bucket list is empty</h3>
-            <p>Tap the microphone and tell me your dreams!</p>
-            <p class="bucket-list-hint">Try saying: "I want to travel to Japan, learn to surf, and write a book"</p>
+          
+          <!-- People Selection -->
+          <div class="form-group" id="planPeopleGroup">
+            <label>Who's involved?</label>
+            <div class="people-grid" id="planPeopleGrid">
+              <div class="add-person-chip" onclick="showPeopleSelector('plan')">+ Add people</div>
+            </div>
           </div>
+          
+          <button type="submit" id="planSubmitBtn" class="btn btn-primary" style="width: 100%;">Save Plan</button>
+          <button type="button" id="deletePlanBtn" class="btn btn-danger" style="width: 100%; margin-top: 0.5rem; display: none;" onclick="deletePlanFromModal()">Delete Plan</button>
+        </form>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Category Picker Modal -->
+  <div id="categoryPickerModal" class="modal-overlay" style="z-index: 1100;">
+    <div class="modal modal-medium"><div class="modal-content">
+      <button class="modal-close" onclick="closeCategoryPicker()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header"><h2>Choose Category</h2></div>
+      <div class="modal-body">
+        <input type="text" id="categorySearch" class="category-search" placeholder="Search categories..." oninput="filterCategories()">
+        <div id="categoryGrid" class="category-grid"></div>
+        <div class="category-custom">
+          <button class="btn btn-secondary" onclick="showCustomCategoryInput()">+ Create Custom Category</button>
+        </div>
+        <div id="customCategoryInput" class="custom-category-input hidden">
+          <input type="text" id="customCategoryName" placeholder="Category name">
+          <input type="text" id="customCategoryIcon" placeholder="Emoji (e.g., 🎸)" maxlength="2">
+          <button class="btn btn-primary" onclick="addCustomCategory()">Add</button>
         </div>
       </div>
     </div></div>
   </div>
 
-  <!-- ============================================= -->
-  <!-- AI TEMPLATES MODAL (Pro Feature) -->
-  <!-- ============================================= -->
-  <div id="bucketTemplatesModal" class="modal-overlay">
-    <div class="modal modal-large">
-      <div class="modal-content">
-        <button class="modal-close" onclick="closeBucketTemplatesModal()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-        
-        <div class="modal-header">
-          <h2>✨ Bucket List Ideas</h2>
-          <p>What kind of inspiration do you want?</p>
-        </div>
-        
-        <div class="modal-body">
-          <div id="templateCategories" class="template-categories">
-            <!-- Populated by JavaScript -->
+  <!-- Memory Modal -->
+  <div id="memoryModal" class="modal-overlay">
+    <div class="modal"><div class="modal-content">
+      <button class="modal-close" onclick="closeMemoryModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header"><h2 id="memoryModalTitle">Capture a Memory</h2></div>
+      <div class="modal-body">
+        <div id="sharedMemoryInfo" style="display: none;"></div>
+        <form id="memoryForm">
+          <input type="hidden" id="memoryId" value="">
+          <div class="form-group"><label for="memoryTitle">Title</label><input type="text" id="memoryTitle" placeholder="What happened?" required></div>
+          <div class="form-group"><label for="memoryDate">Date</label><input type="date" id="memoryDate" required></div>
+          <div class="form-group"><label for="memoryText">Description</label><textarea id="memoryText" placeholder="Tell the story..."></textarea></div>
+          
+          <!-- Photo Upload -->
+          <div class="form-group">
+            <label>Photos</label>
+            <div class="photo-upload-area" id="photoUploadArea" onclick="document.getElementById('photoInput').click()">
+              <span>📷 Click or drag photos here</span>
+            </div>
+            <input type="file" id="photoInput" multiple accept="image/*" hidden onchange="handlePhotoSelect(event)">
+            <div id="photoPreview" class="photo-preview"></div>
+            <div id="uploadProgress" class="photo-upload-progress hidden"><div id="uploadProgressBar" class="photo-upload-progress-bar"></div></div>
           </div>
           
-          <div id="templateForm" class="template-form hidden">
-            <!-- Populated by JavaScript when template selected -->
+          <!-- People Selection -->
+          <div class="form-group">
+            <label>Who was there?</label>
+            <div class="people-grid" id="memoryPeopleGrid">
+              <div class="add-person-chip" onclick="showPeopleSelector('memory')">+ Add people</div>
+            </div>
           </div>
           
-          <div id="templateResults" class="template-results hidden">
-            <!-- Populated by JavaScript after generation -->
+          <div class="form-group"><label for="memoryPlanId">Link to Plan (optional)</label>
+            <select id="memoryPlanId"><option value="">-- No plan --</option></select>
           </div>
-        </div>
+          <div class="form-group"><label for="memoryTags">Tags (comma separated)</label><input type="text" id="memoryTags" placeholder="family, travel, milestone"></div>
+          
+          <!-- Location -->
+          <div class="form-group">
+            <label>Location</label>
+            <div class="location-input-wrapper">
+              <div class="location-autocomplete-container">
+                <input type="text" id="memoryLocation" placeholder="Search for a place..." autocomplete="off">
+                <div id="locationAutocomplete" class="location-autocomplete-dropdown"></div>
+              </div>
+              <input type="hidden" id="memoryLat" value="">
+              <input type="hidden" id="memoryLng" value="">
+              <input type="hidden" id="memoryPlaceId" value="">
+              <button type="button" class="location-btn" onclick="captureLocation()" id="locationBtn" title="Get current location">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="10" r="3"/>
+                  <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/>
+                </svg>
+              </button>
+              <button type="button" class="location-clear-btn" onclick="clearLocation()" id="locationClearBtn" title="Clear location" style="display: none;">✕</button>
+            </div>
+            <div id="locationStatus" class="location-status"></div>
+          </div>
+          
+          <button type="button" class="btn btn-primary" style="width: 100%;" onclick="saveMemory()" id="saveMemoryBtn">Save Memory</button>
+          <button type="button" class="btn btn-danger" style="width: 100%; margin-top: 0.5rem; display: none;" onclick="deleteMemory()" id="deleteMemoryBtn">Delete Memory</button>
+        </form>
       </div>
-    </div>
+    </div></div>
   </div>
 
-  <!-- ============================================= -->
-  <!-- MAIN APP CONTAINER (add usage badges to nav) -->
-  <!-- ============================================= -->
-  <!-- This is a placeholder - your existing main app HTML goes here -->
-  <!-- I'm showing the key additions for the navigation -->
+  <!-- Year Modal (for clicking timeline) -->
+  <div id="yearModal" class="modal-overlay">
+    <div class="modal"><div class="modal-content">
+      <button class="modal-close" onclick="closeYearModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header"><h2 id="yearModalTitle">Year 30</h2><p id="yearModalSubtitle">Calendar Year 2026</p></div>
+      <div class="modal-body"><div id="yearMemoriesList"></div></div>
+    </div></div>
+  </div>
+
+  <!-- People Selector Modal -->
+  <div id="peopleSelectorModal" class="modal-overlay">
+    <div class="modal"><div class="modal-content">
+      <button class="modal-close" onclick="closePeopleSelector()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header">
+        <h2 id="peopleSelectorTitle">Select People</h2>
+        <p id="peopleSelectorSubtitle">Who was involved?</p>
+      </div>
+      <div class="modal-body">
+        <div id="peopleList" class="people-list"></div>
+        <button id="addPersonBtn" class="btn btn-secondary" style="width: 100%; margin-top: 1rem;" onclick="handleAddPersonFromSelector()">+ Add New Person</button>
+        <button class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" onclick="confirmPeopleSelection()">Done</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Calendar Export Modal -->
+  <div id="calendarExportModal" class="modal-overlay">
+    <div class="modal modal-small"><div class="modal-content">
+      <button class="modal-close" onclick="closeCalendarExport()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header">
+        <h2>📆 Add to Calendar</h2>
+        <p id="calendarExportTitle"></p>
+      </div>
+      <div class="modal-body">
+        <div class="calendar-export-options">
+          <button class="calendar-export-btn" onclick="exportToGoogleCalendar()">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span>Google Calendar</span>
+          </button>
+          <button class="calendar-export-btn" onclick="exportToAppleCalendar()">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/>
+            </svg>
+            <span>Apple Calendar (.ics)</span>
+          </button>
+          <button class="calendar-export-btn" onclick="exportToOutlook()">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span>Outlook (.ics)</span>
+          </button>
+        </div>
+        <p class="calendar-export-hint">The .ics file works with most calendar apps including Apple Calendar, Outlook, and others.</p>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Journal Entry Modal -->
+  <div id="journalModal" class="modal-overlay">
+    <div class="modal"><div class="modal-content">
+      <button class="modal-close" onclick="closeJournalModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header">
+        <h2 id="journalModalTitle">📝 New Journal Entry</h2>
+        <p id="journalModalDate"></p>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="journalEntryId" value="">
+        
+        <!-- Voice Recording Section -->
+        <div class="voice-record-section">
+          <button type="button" id="voiceRecordBtn" class="voice-record-btn" onclick="toggleVoiceRecording()">
+            <svg id="voiceMicIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+            <span id="voiceRecordText">Tap to speak</span>
+          </button>
+          <div id="voiceStatus" class="voice-status"></div>
+        </div>
+        
+        <!-- Journal Text -->
+        <div class="form-group">
+          <label for="journalText">Your thoughts</label>
+          <textarea id="journalText" rows="8" placeholder="What's on your mind? How are you feeling today?"></textarea>
+        </div>
+        
+        <!-- Mood Selector (optional) -->
+        <div class="form-group">
+          <label>How are you feeling?</label>
+          <div class="mood-selector" id="moodSelector">
+            <button type="button" class="mood-btn" data-mood="great" onclick="selectMood('great')">😊 Great</button>
+            <button type="button" class="mood-btn" data-mood="good" onclick="selectMood('good')">🙂 Good</button>
+            <button type="button" class="mood-btn" data-mood="okay" onclick="selectMood('okay')">😐 Okay</button>
+            <button type="button" class="mood-btn" data-mood="low" onclick="selectMood('low')">😔 Low</button>
+            <button type="button" class="mood-btn" data-mood="stressed" onclick="selectMood('stressed')">😰 Stressed</button>
+          </div>
+        </div>
+        
+        <!-- Tags -->
+        <div class="form-group">
+          <label for="journalTags">Tags (optional)</label>
+          <input type="text" id="journalTags" placeholder="gratitude, reflection, goals">
+        </div>
+        
+        <button type="button" class="btn btn-primary" style="width: 100%;" onclick="saveJournalEntry()" id="saveJournalBtn">Save Entry</button>
+        <button type="button" class="btn btn-danger" style="width: 100%; margin-top: 0.5rem; display: none;" onclick="deleteJournalEntry()" id="deleteJournalBtn">Delete Entry</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Add Person Modal -->
+  <div id="addPersonModal" class="modal-overlay">
+    <div class="modal"><div class="modal-content">
+      <button class="modal-close" onclick="closeAddPersonModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header"><h2>Add Person</h2><p>Family member or friend</p></div>
+      <div class="modal-body">
+        <form id="addPersonForm" onsubmit="handleAddPerson(event)">
+          <div class="form-group"><label for="personName">Name</label><input type="text" id="personName" placeholder="e.g., Sarah" required></div>
+          
+          <div class="form-group">
+            <label>Avatar</label>
+            <div class="avatar-picker" id="avatarPicker">
+              <button type="button" class="avatar-option selected" data-avatar="👨">👨</button>
+              <button type="button" class="avatar-option" data-avatar="👩">👩</button>
+              <button type="button" class="avatar-option" data-avatar="👦">👦</button>
+              <button type="button" class="avatar-option" data-avatar="👧">👧</button>
+              <button type="button" class="avatar-option" data-avatar="👴">👴</button>
+              <button type="button" class="avatar-option" data-avatar="👵">👵</button>
+              <button type="button" class="avatar-option" data-avatar="🧑">🧑</button>
+              <button type="button" class="avatar-option" data-avatar="👶">👶</button>
+              <button type="button" class="avatar-option" data-avatar="🐕">🐕</button>
+              <button type="button" class="avatar-option" data-avatar="🐈">🐈</button>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Relationship</label>
+            <div class="relationship-picker" id="relationshipPicker">
+              <button type="button" class="relationship-option selected" data-rel="friend">Friend</button>
+              <button type="button" class="relationship-option" data-rel="spouse">Spouse</button>
+              <button type="button" class="relationship-option" data-rel="child">Child</button>
+              <button type="button" class="relationship-option" data-rel="parent">Parent</button>
+              <button type="button" class="relationship-option" data-rel="sibling">Sibling</button>
+              <button type="button" class="relationship-option" data-rel="other">Other</button>
+            </div>
+          </div>
+          
+          <div class="form-group"><label for="personKnownSince">Known Since <span style="color: var(--sage-500);">(when did you meet?)</span></label><input type="date" id="personKnownSince"></div>
+          
+          <div class="form-group"><label for="personBirthdate">Birthday (optional)</label><input type="date" id="personBirthdate"></div>
+          
+          <div class="form-group"><label for="personNotes">Notes (optional)</label><input type="text" id="personNotes" placeholder="e.g., College roommate"></div>
+          
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Add Person</button>
+        </form>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Manage People Modal (from settings) -->
+  <div id="managePeopleModal" class="modal-overlay">
+    <div class="modal"><div class="modal-content">
+      <button class="modal-close" onclick="closeManagePeopleModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header"><h2>My People</h2><p>Family & friends</p></div>
+      <div class="modal-body">
+        <div id="managePeopleList" class="people-list"></div>
+        <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="showAddPersonModal()">+ Add Person</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Share Modal -->
+  <div id="shareModal" class="modal-overlay">
+    <div class="modal modal-medium"><div class="modal-content">
+      <button class="modal-close" onclick="closeShareModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header"><h2>🔗 Share Your Plan</h2><p>Choose what to share with family or friends</p></div>
+      <div class="modal-body">
+        <form id="shareForm" onsubmit="handleShareSubmit(event)">
+          
+          <!-- What to Share -->
+          <div class="share-options-section">
+            <label class="share-section-label">What do you want to share?</label>
+            <div class="share-checkboxes">
+              <label class="share-checkbox">
+                <input type="checkbox" id="shareEverything" onchange="toggleShareAll(this)">
+                <span class="checkbox-label">📋 Everything (Full Year Plan)</span>
+              </label>
+              <div class="share-checkbox-divider">— or select specific sections —</div>
+              <label class="share-checkbox">
+                <input type="checkbox" id="shareMisogi" class="share-item-check">
+                <span class="checkbox-label">🏔️ Misogi Challenges</span>
+              </label>
+              <label class="share-checkbox">
+                <input type="checkbox" id="shareHabits" class="share-item-check">
+                <span class="checkbox-label">🔄 Winning Habits</span>
+              </label>
+              <label class="share-checkbox">
+                <input type="checkbox" id="shareAdventures" class="share-item-check">
+                <span class="checkbox-label">🎯 Adventures Calendar</span>
+              </label>
+              <label class="share-checkbox">
+                <input type="checkbox" id="shareMemories" class="share-item-check">
+                <span class="checkbox-label">📸 Memories</span>
+              </label>
+            </div>
+          </div>
+          
+          <!-- Permission Level -->
+          <div class="share-options-section">
+            <label class="share-section-label">Permission level</label>
+            <div class="share-permission-options">
+              <label class="share-permission-option">
+                <input type="radio" name="sharePermission" value="view" checked>
+                <div class="permission-card">
+                  <span class="permission-icon">👁️</span>
+                  <span class="permission-title">View Only</span>
+                  <span class="permission-desc">They can see your plans but not change anything</span>
+                </div>
+              </label>
+              <label class="share-permission-option">
+                <input type="radio" name="sharePermission" value="collaborate">
+                <div class="permission-card">
+                  <span class="permission-icon">👥</span>
+                  <span class="permission-title">Be Part of It</span>
+                  <span class="permission-desc">They join your plan and can add to it together</span>
+                </div>
+              </label>
+            </div>
+          </div>
+          
+          <!-- Recipient -->
+          <div class="form-group">
+            <label for="shareContact">Send invite to</label>
+            <input type="text" id="shareContact" placeholder="Email or phone number" required>
+          </div>
+          
+          <button type="submit" id="shareSubmitBtn" class="btn btn-primary" style="width: 100%;">Create Share Link</button>
+        </form>
+        
+        <div id="shareResult" class="share-result hidden">
+          <p class="share-success">✓ Share link created!</p>
+          <div class="share-link-container">
+            <input type="text" id="shareInviteLink" readonly>
+            <button type="button" class="btn btn-primary" onclick="copyShareLink()">📋 Copy</button>
+          </div>
+          <p class="share-instructions">Send this link to invite them. They'll need to sign in to accept.</p>
+          <button type="button" class="btn btn-secondary" style="width: 100%; margin-top: 1rem;" onclick="closeShareModal()">Done</button>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Manage Shares Modal -->
+  <div id="manageSharesModal" class="modal-overlay">
+    <div class="modal modal-large"><div class="modal-content">
+      <button class="modal-close" onclick="closeManageSharesModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header"><h2>👥 Manage Shares</h2><p>View and manage who you share with</p></div>
+      <div class="modal-body">
+        <div class="shares-section">
+          <h3>📤 Shares I've Sent</h3>
+          <div id="sharesSentList" class="shares-list"></div>
+        </div>
+        
+        <div class="shares-section">
+          <h3>📥 Shares I've Received</h3>
+          <div id="sharesReceivedList" class="shares-list"></div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Friends Modal -->
+  <div id="friendsModal" class="modal-overlay">
+    <div class="modal modal-large"><div class="modal-content">
+      <button class="modal-close" onclick="closeFriendsModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header"><h2>👥 Friends</h2><p>Manage your connections</p></div>
+      <div class="modal-body">
+        <!-- Pending Requests Section -->
+        <div id="pendingRequestsSection" class="friends-section hidden">
+          <h3>📬 Friend Requests</h3>
+          <div id="pendingRequestsList" class="friends-list"></div>
+        </div>
+        
+        <!-- My Friends Section -->
+        <div class="friends-section">
+          <div class="friends-section-header">
+            <h3>My Friends</h3>
+            <button class="btn btn-primary btn-small" onclick="showAddFriendModal()">+ Add Friend</button>
+          </div>
+          <div id="friendsList" class="friends-list">
+            <p class="friends-empty-state">No friends yet. Add someone to get started!</p>
+          </div>
+        </div>
+        
+        <!-- Pending Sent Section -->
+        <div id="pendingSentSection" class="friends-section hidden">
+          <h3>⏳ Pending Requests Sent</h3>
+          <div id="pendingSentList" class="friends-list"></div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Add Friend Modal -->
+  <div id="addFriendModal" class="modal-overlay">
+    <div class="modal modal-medium"><div class="modal-content">
+      <button class="modal-close" onclick="closeAddFriendModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header"><h2>➕ Add Friend</h2><p>Connect with someone on LifeStack</p></div>
+      <div class="modal-body">
+        <form id="addFriendForm" onsubmit="handleAddFriend(event)">
+          <!-- Email Search -->
+          <div class="form-group">
+            <label for="friendEmail">Their email address</label>
+            <div class="friend-search-group">
+              <input type="email" id="friendEmail" placeholder="friend@example.com" required>
+              <button type="button" class="btn btn-secondary" onclick="searchFriendByEmail()">Search</button>
+            </div>
+          </div>
+          
+          <!-- Search Result -->
+          <div id="friendSearchResult" class="friend-search-result hidden"></div>
+          
+          <!-- Relationship Details (shown after search) -->
+          <div id="friendDetailsSection" class="hidden">
+            <div class="form-group">
+              <label for="friendRelationship">Relationship</label>
+              <select id="friendRelationship">
+                <option value="friend">Friend</option>
+                <option value="spouse">Spouse / Partner</option>
+                <option value="family">Family</option>
+                <option value="colleague">Colleague</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="friendKnownSince">Known since (optional)</label>
+              <input type="date" id="friendKnownSince">
+            </div>
+            
+            <div class="form-group">
+              <label for="friendNotes">Notes (optional)</label>
+              <input type="text" id="friendNotes" placeholder="How you met, nickname, etc.">
+            </div>
+          </div>
+          
+          <!-- SMS Invite Section (shown if not found) -->
+          <div id="smsInviteSection" class="hidden">
+            <div class="form-group">
+              <label for="invitePhone">Their phone number</label>
+              <input type="tel" id="invitePhone" placeholder="+1 (555) 123-4567">
+            </div>
+            <p class="form-help-text">We'll send them a text to join LifeStack</p>
+          </div>
+          
+          <!-- Hidden fields for found user -->
+          <input type="hidden" id="foundUserId">
+          <input type="hidden" id="foundUserName">
+          
+          <button type="submit" id="addFriendBtn" class="btn btn-primary" style="width: 100%;" disabled>Send Friend Request</button>
+        </form>
+      </div>
+    </div></div>
+  </div>
 
   <!-- Toast -->
   <div id="toast" class="toast"></div>
 
   <!-- JavaScript -->
-  <script src="app.js?v=20260207"></script>
-   <script>
-    // Check if running in native Capacitor app
-    const isNativeApp = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
-    
-    // Debug logging
-    console.log('LifeStack starting...');
-    console.log('Is native app:', isNativeApp);
-    console.log('CONFIG:', typeof CONFIG !== 'undefined' ? CONFIG : 'NOT DEFINED');
-    
-    // Global error handler for debugging
-    window.onerror = function(msg, url, line, col, error) {
-      console.error('JS Error:', msg, 'at', url, 'line', line);
-      alert('Error: ' + msg + '\nLine: ' + line);
-      return false;
-    };
-    
-    // Register service worker for PWA (skip for native app)
-    if ('serviceWorker' in navigator && !isNativeApp) {
+  <script src="app.js?v=20260123"></script>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/service-worker.js')
           .then(registration => {
@@ -812,24 +1093,20 @@
           })
           .catch(err => console.log('SW registration failed:', err));
       });
-    } else {
-      console.log('Service worker skipped (native app or not supported)');
     }
     
-    // Handle PWA install prompt (skip for native app)
+    // Handle PWA install prompt
     let deferredPrompt;
-    if (!isNativeApp) {
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        
-        // Show install button if not already installed
-        const installBtn = document.getElementById('installAppBtn');
-        if (installBtn) {
-          installBtn.classList.remove('hidden');
-        }
-      });
-    }
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      
+      // Show install button if not already installed
+      const installBtn = document.getElementById('installAppBtn');
+      if (installBtn) {
+        installBtn.classList.remove('hidden');
+      }
+    });
     
     // Install app function
     function installApp() {
@@ -850,37 +1127,14 @@
              window.navigator.standalone === true;
     }
     
-    // Handle app shortcuts (skip for native app)
-    if (!isNativeApp) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const action = urlParams.get('action');
-      if (action === 'new-memory') {
-        window.addEventListener('load', () => setTimeout(() => showMemoryModal(), 500));
-      } else if (action === 'new-adventure') {
-        window.addEventListener('load', () => setTimeout(() => showAddPlanModal('adventure'), 500));
-      }
+    // Handle app shortcuts
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+    if (action === 'new-memory') {
+      window.addEventListener('load', () => setTimeout(() => showMemoryModal(), 500));
+    } else if (action === 'new-adventure') {
+      window.addEventListener('load', () => setTimeout(() => showAddPlanModal('adventure'), 500));
     }
-  </script> 
-
-  <script>
-    // EMERGENCY TIMEOUT - Force show landing after 5 seconds if nothing visible
-    setTimeout(function() {
-      try {
-        var app = document.getElementById('app');
-        var landing = document.getElementById('landing');
-        var loading = document.getElementById('loadingScreen');
-        var appVisible = app && !app.classList.contains('hidden');
-        var landingVisible = landing && !landing.classList.contains('hidden');
-        
-        if (!appVisible && !landingVisible) {
-          alert('Emergency: nothing visible after 5s');
-          if (loading) loading.classList.add('hidden');
-          if (landing) landing.classList.remove('hidden');
-        }
-      } catch(e) {
-        alert('Emergency timeout error: ' + e.message);
-      }
-    }, 5000);
   </script>
 </body>
 </html>
