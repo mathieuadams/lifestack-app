@@ -74,12 +74,17 @@ function buildWeekView(){
   // Build plan cards for this week
   const pc=document.getElementById('planCards');if(!pc)return;
   const safePlans=typeof plans!=='undefined'&&Array.isArray(plans)?plans:[];
+  const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;
   const weekPlans=safePlans.filter(p=>{
-    if(p.type==='habit')return false;
-    const sd=p.startDate?parseWeekDate(p.startDate):null;
-    const ed=p.endDate?parseWeekDate(p.endDate):sd;
-    if(!sd)return false;
-    return sd<=range.end&&(ed||sd)>=range.start;
+    if(p.type==='habit'||p.type==='theme')return false;
+    const pYear=parseInt(p.year);if(pYear&&pYear!==yr)return false;
+    if(p.startDate){
+      const sd=parseWeekDate(p.startDate);if(!sd)return false;
+      const ed=p.endDate?parseWeekDate(p.endDate):sd;
+      return sd<=range.end&&(ed||sd)>=range.start;
+    }
+    if(p.targetMonth){const tm=parseInt(p.targetMonth)-1;return range.start.getMonth()===tm||range.end.getMonth()===tm}
+    return false;
   });
   if(weekPlans.length===0){
     pc.innerHTML='<p style="color:var(--text-tertiary);text-align:center;padding:12px 0;font-size:.85rem">No activities planned this week</p>';
@@ -125,19 +130,21 @@ function togglePlanDone(planId,btn){
 const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DIM=[31,28,31,30,31,30,31,31,30,31,30,31];
 let curM=new Date().getMonth();
-function getMonthEvents(month){
+function getPlansForMonth(month0){
+  const month1=month0+1;
+  const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;
   const safePlans=typeof plans!=='undefined'&&Array.isArray(plans)?plans:[];
   return safePlans.filter(p=>{
-    if(p.type==='habit')return false;
-    if(!p.startDate)return false;
-    const sd=parseWeekDate(p.startDate);if(!sd)return false;
-    if(sd.getMonth()===month)return true;
-    if(p.endDate){const ed=parseWeekDate(p.endDate);if(ed&&ed.getMonth()>=month&&sd.getMonth()<=month)return true}
-    if(p.targetMonth&&parseInt(p.targetMonth)===month+1)return true;
+    if(p.type==='habit'||p.type==='theme')return false;
+    const pYear=parseInt(p.year);if(pYear&&pYear!==yr)return false;
+    if(p.startDate){
+      const sd=parseWeekDate(p.startDate);if(!sd)return false;
+      if(sd.getFullYear()!==yr)return false;
+      const ed=p.endDate?parseWeekDate(p.endDate):sd;
+      return month0>=sd.getMonth()&&month0<=(ed?ed.getMonth():sd.getMonth());
+    }
+    if(p.targetMonth)return parseInt(p.targetMonth)===month1;
     return false;
-  }).map(p=>{
-    const sd=parseWeekDate(p.startDate);
-    return {d:sd?sd.getDate():1,c:p.category||p.type||'adventure',n:p.title,id:p.id};
   });
 }
 let calS=null,calE=null;
@@ -147,28 +154,25 @@ function buildMG(){
   const title=document.getElementById('cmTitle');if(title)title.textContent=MN[curM]+' '+yr;
   const fd=(new Date(yr,curM,1).getDay()+6)%7;
   const dim=curM===1&&yr%4===0?29:DIM[curM];
-  const evts=getMonthEvents(curM);
-  const evMap={};evts.forEach(e=>{if(!evMap[e.d])evMap[e.d]=[];evMap[e.d].push(e)});
+  const mp=getPlansForMonth(curM);
+  // Map day -> plans
+  const pbd={};mp.forEach(p=>{if(p.startDate){const sd=parseWeekDate(p.startDate);const ed=p.endDate?parseWeekDate(p.endDate):sd;if(!sd)return;const s1=sd.getMonth()===curM?sd.getDate():1;const e1=ed&&ed.getMonth()===curM?ed.getDate():dim;for(let d=s1;d<=e1;d++){if(!pbd[d])pbd[d]=[];pbd[d].push(p)}}});
   let html='<div class="mgh">M</div><div class="mgh">T</div><div class="mgh">W</div><div class="mgh">T</div><div class="mgh">F</div><div class="mgh">S</div><div class="mgh">S</div>';
   for(let b=0;b<fd;b++)html+='<div class="mgc blank"></div>';
   const today=new Date();
   for(let d=1;d<=dim;d++){
     const isToday=d===today.getDate()&&curM===today.getMonth()&&yr===today.getFullYear();
-    const dayEvts=evMap[d]||[];
-    const evtDots=dayEvts.map(e=>`<div class="mgev" style="background:var(--cat-${e.c});overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.55rem;color:var(--white);padding:1px 3px;border-radius:2px">${escapeHtmlUI(e.n).substring(0,8)}${e.n&&e.n.length>8?'…':''}</div>`).join('');
-    html+=`<div class="mgc${isToday?' today':''}" data-day="${d}" onclick="openQuickAdd(${d})">${d}${evtDots}</div>`;
+    const dayPlans=pbd[d]||[];
+    const dots=dayPlans.slice(0,2).map(p=>{const cat=(p.category||p.type||'adventure').toLowerCase();return `<div class="mgev" style="background:var(--cat-${cat},var(--sage-400));font-size:.55rem;color:white;padding:1px 3px;border-radius:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escapeHtmlUI(p.title).substring(0,8)}</div>`}).join('');
+    html+=`<div class="mgc${isToday?' today':''}" data-day="${d}" onclick="openQuickAdd(${d})">${d}${dots}</div>`;
   }
   g.innerHTML=html;calS=null;calE=null;
   // Activity list
-  const actList=document.getElementById('actList');
-  const actTitle=document.getElementById('actListTitle');
+  const actList=document.getElementById('actList');const actTitle=document.getElementById('actListTitle');
   if(actList&&actTitle){
     actTitle.textContent='Activities in '+MN[curM];
-    const monthEvts=getMonthEvents(curM);
-    if(monthEvts.length===0){actList.innerHTML='<p style="color:var(--text-tertiary);font-size:.85rem;padding:8px 0">No activities this month</p>';return}
-    const catIcons={travel:'✈️',food:'🍽️',adventure:'🏔️',roadtrip:'🚗',culture:'🎭',date:'💕',health:'💪',birthday:'🎂'};
-    const catBgs={travel:'var(--cat-travel-bg)',food:'var(--cat-food-bg)',adventure:'var(--cat-adventure-bg)',roadtrip:'var(--cat-roadtrip-bg)',culture:'var(--cat-culture-bg)',date:'var(--cat-date-bg)',health:'var(--cat-health-bg)',birthday:'var(--cat-birthday-bg)'};
-    actList.innerHTML=monthEvts.map(e=>`<div class="act-item" onclick="openPlanDetail('${e.id}')"><div class="act-icon" style="background:${catBgs[e.c]||'var(--sage-100)'}">${catIcons[e.c]||'📋'}</div><div class="act-body"><div class="act-name">${escapeHtmlUI(e.n)}</div><div class="act-meta">${MN[curM]} ${e.d} <span class="tag tag-${e.c}">${e.c}</span></div></div><span class="act-arrow">›</span></div>`).join('');
+    if(mp.length===0){actList.innerHTML='<p style="color:var(--text-tertiary);font-size:.85rem;padding:8px 0">No activities this month</p>';return}
+    actList.innerHTML=mp.map(p=>{const cat=(p.category||p.type||'adventure').toLowerCase();const icon=catIcons[cat]||'📋';const bg=catBgs[cat]||'var(--sage-100)';const sd=p.startDate?parseWeekDate(p.startDate):null;const ds=sd?MN[curM]+' '+sd.getDate():'';return `<div class="act-item" onclick="openPlanDetail('${p.id}')"><div class="act-icon" style="background:${bg}">${icon}</div><div class="act-body"><div class="act-name">${escapeHtmlUI(p.title)}</div><div class="act-meta">${ds} <span class="tag tag-${cat}">${escapeHtmlUI(cat)}</span></div></div><span class="act-arrow">›</span></div>`}).join('');
   }
 }
 function hlRange(){document.querySelectorAll('#mGrid .mgc').forEach(c=>{c.classList.remove('rs','rstart','rend');const d=parseInt(c.dataset.day);if(!d)return;if(calS&&!calE&&d===calS){c.classList.add('rstart','rend')}else if(calS&&calE){if(d===calS)c.classList.add('rstart');else if(d===calE)c.classList.add('rend');else if(d>calS&&d<calE)c.classList.add('rs')}})}
@@ -182,7 +186,7 @@ function buildYV(){
   const cm=new Date().getMonth();
   MN.forEach((m,i)=>{
     const card=document.createElement('div');card.className='ym'+(i===cm?' cur':'');
-    const evts=getMonthEvents(i);const evMap={};evts.forEach(e=>evMap[e.d]=e.c);
+    const evts=getPlansForMonth(i);const evMap={};evts.forEach(p=>{if(p.startDate){const sd2=parseWeekDate(p.startDate);if(sd2&&sd2.getMonth()===i)evMap[sd2.getDate()]=(p.category||p.type||'adventure').toLowerCase()}});
     let cells='';const sd=(new Date(yr,i,1).getDay()+6)%7;
     for(let b=0;b<sd;b++)cells+='<div class="ymc blank"></div>';
     for(let d=1;d<=DIM[i];d++){const c=evMap[d];cells+=`<div class="ymc ${c?'e-'+c:'day'}"></div>`}
@@ -612,6 +616,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   buildWeekView();buildMG();buildYV();
   setTimeout(()=>{refreshPlanView()},1000);
   setTimeout(()=>{refreshPlanView()},3000);
+  setTimeout(()=>{refreshPlanView()},6000);
+  setTimeout(()=>{refreshPlanView()},10000);
 });
 
 // Helper: parseLocalDate fallback

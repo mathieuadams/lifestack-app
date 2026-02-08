@@ -623,3 +623,40 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .acct-field{margin-bottom:14px}
 .acct-field label{display:block;font-size:.8rem;font-weight:600;color:var(--text-secondary);margin-bottom:4px}
 .acct-hint{font-size:.7rem;color:var(--text-tertiary);margin-top:2px}
+
+/* PLAN FLOW PANEL — taller for keyboard */
+#planFlowPanel{max-height:95vh;min-height:70vh}
+
+/* HABIT TRACKING CALENDAR */
+.habit-calendar-header{display:inline-block;width:calc(100%/7);text-align:center;font-size:.7rem;font-weight:700;color:var(--text-tertiary);padding:4px 0;text-transform:uppercase}
+.habit-calendar-day{display:inline-flex;align-items:center;justify-content:center;width:calc(100%/7);aspect-ratio:1;font-size:.75rem;color:var(--text-primary);cursor:pointer;border-radius:50%;transition:var(--transition);position:relative}
+.habit-calendar-day.checked{background:var(--sage-500);color:white;font-weight:700}
+.habit-calendar-day.checked::after{content:'✓';position:absolute;font-size:.5rem}
+.habit-calendar-day.today{border:2px solid var(--sage-600);font-weight:700}
+.habit-calendar-day.future{opacity:.3;cursor:default}
+.habit-calendar-day.other-month{opacity:.2}
+.habit-calendar-day:active:not(.future){transform:scale(.85)}
+#habitCalendarGrid{display:flex;flex-wrap:wrap}
+
+/* HABIT TRACKING MODAL STATS */
+#habitTrackingModal .modal-body{padding:1.25rem 1.5rem}
+.btn.checked{background:var(--sage-700)!important;opacity:.8}
+
+/* BUCKET LIST MODAL */
+.bucket-list-stats{display:flex;justify-content:center;gap:24px;padding:12px 0 16px}
+.bucket-stat{text-align:center}
+.bucket-stat-value{display:block;font-size:1.3rem;font-weight:700;color:var(--sage-700)}
+.bucket-stat-label{font-size:.7rem;color:var(--text-tertiary);text-transform:uppercase}
+.bucket-category-header{display:flex;align-items:center;gap:6px;padding:10px 0 6px;font-weight:600;font-size:.9rem;color:var(--sage-700);border-bottom:1px solid var(--sand-200)}
+.bucket-category-icon{font-size:1.1rem}
+.bucket-category-count{margin-left:auto;font-size:.75rem;color:var(--text-tertiary);font-weight:400}
+.bucket-item{display:flex;align-items:flex-start;gap:10px;padding:12px 8px;border-bottom:1px solid var(--sand-100)}
+.bucket-item-header{display:flex;align-items:center;gap:8px}
+.bucket-item-status{font-size:1rem}
+.bucket-item-title{font-weight:500;font-size:.9rem}
+.bucket-item-desc{font-size:.8rem;color:var(--text-tertiary);margin-top:4px}
+.bucket-item-actions{display:flex;gap:6px;margin-top:6px}
+.bucket-difficulty{font-size:.65rem;padding:2px 8px;border-radius:10px;background:var(--sand-100);color:var(--text-secondary);text-transform:capitalize}
+.bucket-list-empty{text-align:center;padding:40px 20px}
+.bucket-list-empty-icon{font-size:3rem;margin-bottom:12px}
+.bucket-list-hint{font-size:.8rem;color:var(--text-tertiary);font-style:italic;margin-top:8px}
