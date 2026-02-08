@@ -1,0 +1,323 @@
+<!-- ============================================================
+     MAIN APP — V4 DESIGN (shown after login via showApp())
+     ============================================================ -->
+<div id="app" class="app hidden">
+<div class="app-shell">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="hb"><div class="hl">🏔️</div><span class="ht">LifeStack</span></div>
+    <div class="ha">
+      <button class="hbtn" id="syncBtn" onclick="typeof syncAllData==='function'&&syncAllData()" title="Sync">🔄</button>
+      <button class="hbtn" onclick="openPanel('notif')">🔔<span class="nb" id="friendRequestBadge"></span></button>
+      <div class="hav" id="userAvatar" onclick="toggleProfile()">
+        <span id="userAvatarInitials">👤</span>
+        <img id="userAvatarImage" src="" alt="" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover">
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <div class="mc">
+
+    <!-- ===== PLAN VIEW ===== -->
+    <div id="planView" class="v active"><div class="vp">
+      <!-- Year Banner -->
+      <div class="yb">
+        <div class="yn" id="yearBannerYear">2026</div>
+        <div class="yth" id="yearBannerTheme">"Life by Design"</div>
+        <div class="ys">
+          <div class="ysi"><span class="ysn" id="statAdventures">0</span><span class="ysl">Adventures</span></div>
+          <div class="ysi"><span class="ysn" id="statBucket">0</span><span class="ysl">Bucket list</span></div>
+          <div class="ysi"><span class="ysn" id="statMisogi">0</span><span class="ysl">Misogi</span></div>
+        </div>
+      </div>
+
+      <!-- View Tabs -->
+      <div class="pt">
+        <button class="ptb active" onclick="swTab('week',this)">📋 Week</button>
+        <button class="ptb" onclick="swTab('month',this)">📅 Month</button>
+        <button class="ptb" onclick="swTab('year',this)">🗓️ Year</button>
+        <button class="ptb" onclick="swTab('bucket',this)">🪣 Bucket</button>
+      </div>
+
+      <!-- Week Tab -->
+      <div id="st-week" class="ps active">
+        <div class="wn"><button class="wnb" onclick="navWeek(-1)">‹</button><span class="wnt" id="weekTitle">This Week</span><button class="wnb" onclick="navWeek(1)">›</button></div>
+        <div class="wd" id="weekDays"></div>
+        <div class="slsm">Plans</div>
+        <div id="planCards"></div>
+        <div style="background:linear-gradient(135deg,var(--sand-100),var(--sage-50));border-radius:var(--radius-lg);padding:20px;margin-top:20px">
+          <div style="font-family:'Fraunces',serif;font-size:1.05rem;font-weight:500;color:var(--sage-700);margin-bottom:4px">✨ Plan your weekend</div>
+          <div style="font-size:.8rem;color:var(--text-tertiary);margin-bottom:14px">Tap to start planning</div>
+          <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px" class="ideas-scroll">
+            <button class="fo" onclick="pfQuick('adventure')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">🏔️ Day hike</button>
+            <button class="fo" onclick="pfQuick('food')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">🍳 Brunch spot</button>
+            <button class="fo" onclick="pfQuick('culture')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">📸 Photo walk</button>
+            <button class="fo" onclick="pfQuick('health')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">🧘 Yoga</button>
+            <button class="fo" onclick="pfQuick('date')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">💕 Date idea</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Month Tab -->
+      <div id="st-month" class="ps">
+        <div class="cmn"><button class="wnb" onclick="navMonth(-1)">‹</button><span class="cmt" id="cmTitle">February 2026</span><button class="wnb" onclick="navMonth(1)">›</button></div>
+        <div class="cl">
+          <div class="cli"><div class="cld" style="background:var(--cat-travel)"></div>Travel</div>
+          <div class="cli"><div class="cld" style="background:var(--cat-food)"></div>Food</div>
+          <div class="cli"><div class="cld" style="background:var(--cat-adventure)"></div>Adventure</div>
+          <div class="cli"><div class="cld" style="background:var(--cat-roadtrip)"></div>Road trip</div>
+          <div class="cli"><div class="cld" style="background:var(--cat-birthday)"></div>Birthday</div>
+          <div class="cli"><div class="cld" style="background:var(--cat-date)"></div>Date</div>
+        </div>
+        <div class="mg" id="mGrid"></div>
+        <div class="slsm" id="actListTitle">Activities this month</div>
+        <div class="act-list" id="actList"></div>
+      </div>
+
+      <!-- Year Tab -->
+      <div id="st-year" class="ps">
+        <div class="sl" style="margin-bottom:4px">2026 at a Glance</div>
+        <p style="font-size:.82rem;color:var(--text-tertiary);margin-bottom:12px">Tap a month to view details</p>
+        <div class="yg" id="yearGrid"></div>
+      </div>
+
+      <!-- Bucket Tab -->
+      <div id="st-bucket" class="ps">
+        <div class="bh"><div class="sl" style="margin-bottom:0">🪣 Bucket List</div><button class="bab" onclick="typeof showBucketListModal==='function'&&showBucketListModal()">+ Add</button></div>
+        <div id="bucketListContainer"></div>
+      </div>
+    </div></div>
+
+    <!-- ===== HABITS VIEW ===== -->
+    <div id="habitsView" class="v"><div class="vp">
+      <div class="sl">Winning Habits</div>
+      <p style="font-size:.85rem;color:var(--text-tertiary);margin-bottom:20px;margin-top:-8px">One powerful habit per quarter.</p>
+      <div id="habitsContainer"></div>
+      <div style="margin-top:28px">
+        <div class="sl">🏔️ Misogi Challenge</div>
+        <div id="misogiContainer"></div>
+      </div>
+    </div></div>
+
+    <!-- ===== MEMORIES VIEW ===== -->
+    <div id="memoriesView" class="v"><div class="vp">
+      <div id="onThisDayContainer"></div>
+      <div class="sl">Memories</div>
+      <div class="mem-yearly-tabs" style="margin-bottom:16px">
+        <button class="mem-yearly-tab active" onclick="switchMemView('timeline',this)">📅 Timeline</button>
+        <button class="mem-yearly-tab" onclick="switchMemView('yearly',this)">🗓️ Yearly</button>
+        <button class="mem-yearly-tab" onclick="switchMemView('map',this)">🗺️ Map</button>
+      </div>
+      <div id="memTimelineView"><div class="mmt" id="memoriesTimeline"></div></div>
+      <div id="memYearlyView" style="display:none"><div class="mem-year-grid" id="memYearGrid"></div></div>
+      <div id="memMapView" style="display:none"><div class="mem-map-container" id="memMapContainer"></div><div class="mem-map-list" id="memMapList"></div></div>
+    </div></div>
+
+  </div><!-- end .mc -->
+
+  <!-- ===== FAB ===== -->
+  <div class="fm" id="fabMenu">
+    <button class="fo" onclick="startPlanFlow();closeFab()"><div class="fi" style="background:var(--sage-100)">📋</div>Plan Activity</button>
+    <button class="fo" onclick="startRecurring();closeFab()"><div class="fi" style="background:var(--lavender-light)">🔁</div>Recurring Event</button>
+    <button class="fo" onclick="captureMemory();closeFab()"><div class="fi" style="background:var(--coral-bg)">📸</div>Capture Memory</button>
+  </div>
+  <button class="fab" id="fabBtn" onclick="toggleFab()">+</button>
+
+  <!-- ===== BOTTOM NAV ===== -->
+  <nav class="bn">
+    <button class="ni active" onclick="swView('plan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nl">Plan</span></button>
+    <button class="ni" onclick="swView('habits')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nl">Habits</span></button>
+    <button class="ni" onclick="swView('memories')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span class="nl">Memories</span></button>
+  </nav>
+
+  <!-- ===== SLIDE-UP PANELS ===== -->
+
+  <!-- Plan Flow Panel -->
+  <div class="po" id="planFlowOverlay" onclick="closePanel('planFlow')"></div>
+  <div class="sp" id="planFlowPanel">
+    <div class="ph"></div>
+    <div class="phd"><span class="ptl" id="pfTitle">Plan Activity</span><button class="pcl" onclick="closePanel('planFlow')">✕</button></div>
+    <div class="pbd">
+      <div class="steps" id="pfSteps"><div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div></div>
+      <!-- Step 1: Name + Type -->
+      <div id="pf1" class="pf-step">
+        <div class="fl">Activity name</div>
+        <input class="tinp" id="pfActName" placeholder="e.g., Dinner at The Kitchen">
+        <div class="fl">What kind of activity?</div>
+        <div class="tcr" id="pfTypes">
+          <button class="tc" onclick="pfSelType(this,'travel')">✈️ Travel</button>
+          <button class="tc" onclick="pfSelType(this,'food')">🍽️ Food</button>
+          <button class="tc" onclick="pfSelType(this,'adventure')">🏔️ Adventure</button>
+          <button class="tc" onclick="pfSelType(this,'roadtrip')">🚗 Road trip</button>
+          <button class="tc" onclick="pfSelType(this,'culture')">🎭 Culture</button>
+          <button class="tc" onclick="pfSelType(this,'health')">💪 Health</button>
+          <button class="tc" onclick="pfSelType(this,'birthday')">🎂 Birthday</button>
+          <button class="tc" onclick="pfSelType(this,'date')">💕 Date night</button>
+        </div>
+        <button class="btn-p" onclick="pfNext(2)" id="pfNext1" style="opacity:.5;pointer-events:none">Next →</button>
+      </div>
+      <!-- Step 2: Date -->
+      <div id="pf2" class="pf-step" style="display:none">
+        <div class="fl">When?</div>
+        <div class="tcr">
+          <button class="tc" onclick="selTC(this)">Tomorrow</button>
+          <button class="tc sel" onclick="selTC(this)">This Saturday</button>
+          <button class="tc" onclick="selTC(this)">This Sunday</button>
+          <button class="tc" onclick="selTC(this)">Next weekend</button>
+        </div>
+        <div class="fl" style="margin-top:8px">Or pick specific dates</div>
+        <div class="tdr">
+          <div class="tdb"><div class="tdl">Start</div><input class="tinp" type="date" style="margin:0;padding:8px;font-size:.8rem" id="pfDateStart"></div>
+          <div class="tdb"><div class="tdl">End</div><input class="tinp" type="date" style="margin:0;padding:8px;font-size:.8rem" id="pfDateEnd"></div>
+        </div>
+        <button class="btn-p" onclick="pfNext(3)">See AI Recommendations →</button>
+      </div>
+      <!-- Step 3: AI Recs + Visit + Friends -->
+      <div id="pf3" class="pf-step" style="display:none">
+        <div class="air" style="margin-top:0">
+          <div class="airt">🤖 AI Recommendations · <span id="pfLocLabel">Near Sacramento</span></div>
+          <div id="pfAiRecs"></div>
+          <div class="airc-custom" id="pfCustomOption" onclick="pfSelCustom()">
+            <div class="airi" style="background:var(--sand-100)">📍</div>
+            <input class="tinp" id="pfCustomPlace" placeholder="Type your own place..." style="margin:0;border:none;background:transparent;padding:4px 0" onclick="event.stopPropagation();pfSelCustom()" oninput="pfUpdateCustom()">
+          </div>
+        </div>
+        <div class="fl" style="margin-top:16px">Visit history</div>
+        <div class="tcr" id="pfVisitHistory">
+          <button class="tc sel" onclick="selTC(this)">🆕 First time</button>
+          <button class="tc" onclick="selTC(this)">🔄 Been before</button>
+        </div>
+        <div class="fl">👥 Friends</div>
+        <div class="fr" id="pfFriends"><button class="afb" onclick="openFriendSelector('plan')">+ Add friend</button></div>
+        <button class="btn-p" onclick="pfFinish()">Add to Plan →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recurring Event Panel -->
+  <div class="po" id="recurOverlay" onclick="closePanel('recur')"></div>
+  <div class="sp" id="recurPanel">
+    <div class="ph"></div>
+    <div class="phd"><span class="ptl">🔁 Recurring Event</span><button class="pcl" onclick="closePanel('recur')">✕</button></div>
+    <div class="pbd">
+      <div class="fl">Event type</div>
+      <div class="tcr"><button class="tc sel" onclick="selTC(this)">💕 Date night</button><button class="tc" onclick="selTC(this)">🍽️ Family dinner</button><button class="tc" onclick="selTC(this)">🏋️ Gym</button><button class="tc" onclick="selTC(this)">📖 Book club</button></div>
+      <div class="fl">Frequency</div>
+      <div class="tcr"><button class="tc" onclick="selTC(this)">Weekly</button><button class="tc sel" onclick="selTC(this)">Bi-weekly</button><button class="tc" onclick="selTC(this)">Monthly</button></div>
+      <div class="fl">Preferred day</div>
+      <div class="tcr"><button class="tc" onclick="selTC(this)">Mon</button><button class="tc" onclick="selTC(this)">Tue</button><button class="tc" onclick="selTC(this)">Wed</button><button class="tc" onclick="selTC(this)">Thu</button><button class="tc" onclick="selTC(this)">Fri</button><button class="tc sel" onclick="selTC(this)">Sat</button><button class="tc" onclick="selTC(this)">Sun</button></div>
+      <div class="fl">👥 With</div>
+      <div class="fr" id="recurFriends"><button class="afb" onclick="openFriendSelector('recur')">+ Add</button></div>
+      <button class="btn-p" onclick="closePanel('recur');toast('🔁 Event added!')">Create Recurring Event</button>
+    </div>
+  </div>
+
+  <!-- Trip Detail Panel -->
+  <div class="po" id="tripOverlay" onclick="closePanel('trip')"></div>
+  <div class="sp" id="tripPanel">
+    <div class="ph"></div>
+    <div class="phd"><span class="ptl" id="tripTitle">Activity Detail</span><button class="pcl" onclick="closePanel('trip')">✕</button></div>
+    <div class="pbd">
+      <div class="tdr">
+        <div class="tdb"><div class="tdl">Start</div><input type="date" class="tdv-edit" id="tripStartDate"></div>
+        <div class="tdb"><div class="tdl">End</div><input type="date" class="tdv-edit" id="tripEndDate"></div>
+        <div class="tdb" style="background:var(--blue-light)"><div class="tdl">Duration</div><div class="tdv" id="tripDuration" style="color:var(--blue)">—</div></div>
+      </div>
+      <div class="fl">👥 Friends</div>
+      <div class="fr" id="tripFriends"><button class="afb" onclick="openFriendSelector('trip')">+ Add friend</button></div>
+      <div class="fl">📋 Checklist & Reminders</div>
+      <div id="remList"></div>
+      <div class="fl" style="margin-top:16px">Add reminder</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px"><input class="tinp" id="nri" style="flex:1;margin:0" placeholder="e.g., Buy adapter..."></div>
+      <div class="tcr" id="trTiming"><button class="tc" onclick="selTC(this)">24h</button><button class="tc sel" onclick="selTC(this)">1 week</button><button class="tc" onclick="selTC(this)">1 month</button><button class="tc" onclick="selTC(this)">3 months</button></div>
+      <button class="btn-s" onclick="addRem()">+ Add Reminder</button>
+      <button class="btn-p" onclick="saveTripDetail()">Save</button>
+    </div>
+  </div>
+
+  <!-- Friend Selector Panel -->
+  <div class="po" id="friendSelOverlay" onclick="closePanel('friendSel')"></div>
+  <div class="sp" id="friendSelPanel">
+    <div class="ph"></div>
+    <div class="phd"><span class="ptl">Select Friends</span><button class="pcl" onclick="closePanel('friendSel')">✕</button></div>
+    <div class="pbd">
+      <div class="friend-selector-list" id="friendSelectorList"></div>
+      <button class="btn-p" onclick="confirmFriendSelection()">Done</button>
+    </div>
+  </div>
+
+  <!-- Notifications Panel -->
+  <div class="po" id="notifOverlay" onclick="closePanel('notif')"></div>
+  <div class="sp" id="notifPanel">
+    <div class="ph"></div>
+    <div class="phd"><span class="ptl">Notifications</span><button class="pcl" onclick="closePanel('notif')">✕</button></div>
+    <div class="pbd" id="notifList"></div>
+  </div>
+
+  <!-- Profile Panel -->
+  <div class="pro" id="profileOverlay" onclick="toggleProfile()"></div>
+  <div class="prp" id="profilePanel">
+    <div class="prn" id="profileName">User</div>
+    <div class="pre">Sacramento, CA</div>
+    <div class="prst">Account</div>
+    <div class="prl" onclick="typeof showFriendsModal==='function'&&showFriendsModal()"><span class="prli">🤝</span> Manage Friends</div>
+    <div class="prl" onclick="typeof showManagePeopleModal==='function'&&showManagePeopleModal()"><span class="prli">👥</span> Manage People</div>
+    <div class="prl" onclick="typeof clearCacheAndSync==='function'&&clearCacheAndSync()"><span class="prli">🔄</span> Clear Cache & Sync</div>
+    <button class="prso" onclick="typeof signOut==='function'&&signOut()">Sign Out</button>
+  </div>
+
+  <div class="toast" id="toastEl"></div>
+</div><!-- end .app-shell -->
+
+<!-- ===== HIDDEN DATA CONTAINERS (app.js reads/writes these) ===== -->
+
+<!-- Dashboard data -->
+<div id="dashboardView" class="hidden">
+  <div class="progress-year" id="currentYear">2026</div>
+  <span id="currentAge">30</span><span id="lifespanDisplay">80</span>
+  <svg class="progress-ring" width="0" height="0"><circle id="progressRing" cx="0" cy="0" r="0"/></svg>
+  <span id="yearPercent"></span><span id="yearsLived">30</span><span id="yearsLeft">50</span><span id="memoriesCount">0</span>
+  <div id="timelineGrid"></div>
+  <div id="memoriesList"></div>
+</div>
+
+<!-- Year Design data -->
+<div id="yearDesignView" class="hidden">
+  <span id="designYear">2026</span>
+  <input type="hidden" id="yearTheme" onchange="saveYearTheme()">
+  <div id="misogiList"></div><div id="habitsGrid"></div><div id="monthGrid"></div>
+  <div id="selectedAdventureInfo" class="hidden"></div><div id="memoryStats"></div>
+  <input type="hidden" id="memorySearch"><select id="memoryFilter" style="display:none"><option value="all">All</option></select>
+  <select id="memoryPeopleFilter" style="display:none"><option value="all">All</option></select>
+  <select id="memoryPhotoFilter" style="display:none"><option value="all">All</option></select>
+  <div id="yearMemories"></div>
+</div>
+
+<!-- Year Review data -->
+<div id="yearReviewView" class="hidden">
+  <span id="reviewYear"></span><span id="reviewMisogiCount"></span><span id="reviewAdventureCount"></span>
+  <span id="reviewHabitCount"></span><span id="reviewMemoryCount"></span><div id="reviewContent"></div><span id="reviewYearBtn"></span>
+</div>
+
+<!-- Year Locked data -->
+<div id="yearLockedView" class="hidden">
+  <span id="lockedYear"></span><span id="lockedYearMsg"></span><span id="unlockDate"></span><span id="currentYearBtn"></span>
+</div>
+
+<!-- Settings data -->
+<div id="settingsView" class="hidden">
+  <span id="settingsName"></span><span id="settingsEmail"></span><span id="settingsBirthdate"></span><span id="settingsLifespan"></span>
+  <span id="settingsAvatarInitials"></span><img id="settingsAvatarImage" src="" style="display:none">
+  <input type="checkbox" id="notifEmailToggle" style="display:none" checked>
+  <input type="checkbox" id="notifPushToggle" style="display:none">
+  <div id="pushNotifStatus" style="display:none"></div>
+  <div id="pwaStatus" style="display:none"></div>
+  <button id="installAppBtn" class="hidden" style="display:none"></button>
+</div>
+
+<!-- Journal data -->
+<div id="journalView" class="hidden"><div id="journalEntries"></div></div>
+
+</div><!-- end #app -->

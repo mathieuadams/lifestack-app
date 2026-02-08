@@ -1,0 +1,353 @@
+<!-- ============================================================
+     ALL MODALS (shown via classList.add('active'))
+     Edit each modal independently without touching the shell
+     ============================================================ -->
+
+<!-- Plan Modal -->
+<div id="planModal" class="modal-overlay">
+  <div class="modal"><div class="modal-content">
+    <button class="modal-close" onclick="closePlanModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-header"><h2 id="planModalTitle">Add Plan</h2></div>
+    <div class="modal-body">
+      <form id="planForm" onsubmit="handlePlanSubmit(event)">
+        <input type="hidden" id="planId" value="">
+        <input type="hidden" id="planType" value="misogi">
+        <input type="hidden" id="planTargetQuarter" value="">
+        <input type="hidden" id="planTargetMonth" value="">
+        <input type="hidden" id="planCategory" value="">
+        <div id="sharedAdventureInfo" style="display:none;"></div>
+        <div class="form-group" id="categoryPickerGroup">
+          <label>Category</label>
+          <div class="category-selected" onclick="showCategoryPicker()">
+            <span id="selectedCategoryIcon">🎯</span>
+            <span id="selectedCategoryName">Select category...</span>
+            <span>▼</span>
+          </div>
+        </div>
+        <div class="form-group"><label for="planTitle">What's the plan?</label><input type="text" id="planTitle" placeholder="e.g., Run a marathon" required></div>
+        <div class="form-group"><label for="planDescription">Why? (optional)</label><textarea id="planDescription" placeholder="Describe why..."></textarea></div>
+        <div class="form-group" id="dateSelectorGroup">
+          <label>When?</label>
+          <div class="date-picker-row">
+            <div><label style="font-size:.75rem;">Start</label><input type="date" id="planStartDate"></div>
+            <div><label style="font-size:.75rem;">End</label><input type="date" id="planEndDate"></div>
+          </div>
+        </div>
+        <div class="form-group" id="planPeopleGroup">
+          <label>Who's involved?</label>
+          <div id="planPeopleGrid"><div class="add-person-chip" onclick="showPeopleSelector('plan')">+ Add people</div></div>
+        </div>
+        <button type="submit" id="planSubmitBtn" class="btn btn-primary" style="width:100%;">Save Plan</button>
+        <button type="button" id="deletePlanBtn" class="btn btn-danger" style="width:100%;margin-top:.5rem;display:none;" onclick="deletePlanFromModal()">Delete Plan</button>
+      </form>
+    </div>
+  </div></div>
+</div>
+
+<!-- Category Picker Modal -->
+<div id="categoryPickerModal" class="modal-overlay" style="z-index:1100;">
+  <div class="modal"><div class="modal-content">
+    <button class="modal-close" onclick="closeCategoryPicker()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-header"><h2>Choose Category</h2></div>
+    <div class="modal-body">
+      <input type="text" id="categorySearch" placeholder="Search categories..." oninput="filterCategories()">
+      <div id="categoryGrid"></div>
+      <div id="customCategoryInput" class="hidden">
+        <input type="text" id="customCategoryName" placeholder="Category name">
+        <input type="text" id="customCategoryIcon" placeholder="Emoji" maxlength="2">
+        <button class="btn btn-primary" onclick="addCustomCategory()">Add</button>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- Memory Modal -->
+<div id="memoryModal" class="modal-overlay">
+  <div class="modal"><div class="modal-content">
+    <button class="modal-close" onclick="closeMemoryModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-header"><h2 id="memoryModalTitle">Capture a Memory</h2></div>
+    <div class="modal-body">
+      <div id="sharedMemoryInfo" style="display:none;"></div>
+      <form id="memoryForm">
+        <input type="hidden" id="memoryId" value="">
+        <div class="form-group"><label for="memoryTitle">Title</label><input type="text" id="memoryTitle" placeholder="What happened?" required></div>
+        <div class="form-group"><label for="memoryDate">Date</label><input type="date" id="memoryDate" required></div>
+        <div class="form-group"><label for="memoryText">Description</label><textarea id="memoryText" placeholder="Tell the story..."></textarea></div>
+        <div class="form-group">
+          <label>Photos</label>
+          <div id="photoUploadArea" onclick="document.getElementById('photoInput').click()"><span>📷 Click or drag photos</span></div>
+          <input type="file" id="photoInput" multiple accept="image/*" hidden onchange="handlePhotoSelect(event)">
+          <div id="photoPreview"></div>
+          <div id="uploadProgress" class="hidden"><div id="uploadProgressBar"></div></div>
+        </div>
+        <div class="form-group">
+          <label>Who was there?</label>
+          <div id="memoryPeopleGrid"><div class="add-person-chip" onclick="showPeopleSelector('memory')">+ Add people</div></div>
+        </div>
+        <div class="form-group"><label for="memoryPlanId">Link to Plan</label><select id="memoryPlanId"><option value="">-- No plan --</option></select></div>
+        <div class="form-group"><label for="memoryTags">Tags</label><input type="text" id="memoryTags" placeholder="family, travel"></div>
+        <div class="form-group">
+          <label>Location</label>
+          <div class="location-input-wrapper">
+            <input type="text" id="memoryLocation" placeholder="Search for a place..." autocomplete="off">
+            <div id="locationAutocomplete"></div>
+            <input type="hidden" id="memoryLat"><input type="hidden" id="memoryLng"><input type="hidden" id="memoryPlaceId">
+            <button type="button" id="locationBtn" onclick="captureLocation()" title="Get location">📍</button>
+            <button type="button" id="locationClearBtn" onclick="clearLocation()" style="display:none;">✕</button>
+          </div>
+          <div id="locationStatus"></div>
+        </div>
+        <button type="button" class="btn btn-primary" style="width:100%;" onclick="saveMemory()" id="saveMemoryBtn">Save Memory</button>
+        <button type="button" class="btn btn-danger" style="width:100%;margin-top:.5rem;display:none;" onclick="deleteMemory()" id="deleteMemoryBtn">Delete Memory</button>
+      </form>
+    </div>
+  </div></div>
+</div>
+
+<!-- Year Modal -->
+<div id="yearModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closeYearModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header"><h2 id="yearModalTitle">Year</h2><p id="yearModalSubtitle"></p></div>
+  <div class="modal-body"><div id="yearMemoriesList"></div></div>
+</div></div></div>
+
+<!-- Month Calendar Modal -->
+<div id="monthCalendarModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closeMonthCalendarModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header"><h2 id="monthCalendarTitle">Month</h2></div>
+  <div class="modal-body"><div id="monthCalendarGrid"></div><div id="monthPlansList"></div></div>
+</div></div></div>
+
+<!-- People Selector Modal -->
+<div id="peopleSelectorModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closePeopleSelector()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header"><h2 id="peopleSelectorTitle">Select People</h2><p id="peopleSelectorSubtitle">Who was involved?</p></div>
+  <div class="modal-body">
+    <div id="peopleList"></div>
+    <button id="addPersonBtn" class="btn btn-secondary" style="width:100%;margin-top:1rem;" onclick="handleAddPersonFromSelector()">+ Add New Person</button>
+    <button class="btn btn-primary" style="width:100%;margin-top:.5rem;" onclick="confirmPeopleSelection()">Done</button>
+  </div>
+</div></div></div>
+
+<!-- Calendar Export Modal -->
+<div id="calendarExportModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closeCalendarExport()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header"><h2>📆 Add to Calendar</h2><p id="calendarExportTitle"></p></div>
+  <div class="modal-body"></div>
+</div></div></div>
+
+<!-- Journal Modal -->
+<div id="journalModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closeJournalModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header"><h2 id="journalModalTitle">📝 Journal</h2><p id="journalModalDate"></p></div>
+  <div class="modal-body">
+    <input type="hidden" id="journalEntryId" value="">
+    <div class="voice-record-section">
+      <button type="button" id="voiceRecordBtn" onclick="toggleVoiceRecording()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <span id="voiceRecordText">Tap to speak</span>
+      </button>
+      <div id="voiceStatus"></div>
+    </div>
+    <div class="form-group"><label for="journalText">Your thoughts</label><textarea id="journalText" rows="8" placeholder="What's on your mind?"></textarea></div>
+    <div class="form-group"><label for="journalTags">Tags</label><input type="text" id="journalTags" placeholder="gratitude, reflection"></div>
+    <button type="button" class="btn btn-primary" style="width:100%;" onclick="saveJournalEntry()" id="saveJournalBtn">Save Entry</button>
+    <button type="button" class="btn btn-danger" style="width:100%;margin-top:.5rem;display:none;" onclick="deleteJournalEntry()" id="deleteJournalBtn">Delete Entry</button>
+  </div>
+</div></div></div>
+
+<!-- Add Person Modal -->
+<div id="addPersonModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closeAddPersonModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header"><h2>Add Person</h2></div>
+  <div class="modal-body">
+    <form id="addPersonForm" onsubmit="handleAddPerson(event)">
+      <div class="form-group"><label for="personName">Name</label><input type="text" id="personName" placeholder="e.g., Sarah" required></div>
+      <div class="form-group"><label>Avatar</label>
+        <div id="avatarPicker">
+          <button type="button" class="avatar-option selected" data-avatar="👨">👨</button>
+          <button type="button" class="avatar-option" data-avatar="👩">👩</button>
+          <button type="button" class="avatar-option" data-avatar="👦">👦</button>
+          <button type="button" class="avatar-option" data-avatar="👧">👧</button>
+          <button type="button" class="avatar-option" data-avatar="👴">👴</button>
+          <button type="button" class="avatar-option" data-avatar="👵">👵</button>
+          <button type="button" class="avatar-option" data-avatar="🧑">🧑</button>
+          <button type="button" class="avatar-option" data-avatar="👶">👶</button>
+          <button type="button" class="avatar-option" data-avatar="🐕">🐕</button>
+          <button type="button" class="avatar-option" data-avatar="🐈">🐈</button>
+        </div>
+      </div>
+      <div class="form-group"><label>Relationship</label>
+        <div id="relationshipPicker">
+          <button type="button" class="relationship-option selected" data-rel="friend">Friend</button>
+          <button type="button" class="relationship-option" data-rel="spouse">Spouse</button>
+          <button type="button" class="relationship-option" data-rel="child">Child</button>
+          <button type="button" class="relationship-option" data-rel="parent">Parent</button>
+          <button type="button" class="relationship-option" data-rel="sibling">Sibling</button>
+          <button type="button" class="relationship-option" data-rel="other">Other</button>
+        </div>
+      </div>
+      <div class="form-group"><label for="personKnownSince">Known Since</label><input type="date" id="personKnownSince"></div>
+      <div class="form-group"><label for="personBirthdate">Birthday (optional)</label><input type="date" id="personBirthdate"></div>
+      <div class="form-group"><label for="personNotes">Notes</label><input type="text" id="personNotes" placeholder="e.g., College roommate"></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">Add Person</button>
+    </form>
+  </div>
+</div></div></div>
+
+<!-- Manage People Modal -->
+<div id="managePeopleModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closeManagePeopleModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header"><h2>My People</h2></div>
+  <div class="modal-body">
+    <div id="managePeopleList"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="showAddPersonModal()">+ Add Person</button>
+  </div>
+</div></div></div>
+
+<!-- Friends Modal -->
+<div id="friendsModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closeFriendsModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header"><h2>👥 Friends</h2></div>
+  <div class="modal-body">
+    <div id="pendingRequestsSection" class="hidden"><h3>📬 Friend Requests</h3><div id="pendingRequestsList"></div></div>
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <h3>My Friends</h3>
+        <button class="btn btn-primary btn-small" onclick="showAddFriendModal()">+ Add Friend</button>
+      </div>
+      <div id="friendsList"><p>No friends yet. Add someone to get started!</p></div>
+    </div>
+    <div id="pendingSentSection" class="hidden"><h3>⏳ Pending Sent</h3><div id="pendingSentList"></div></div>
+  </div>
+</div></div></div>
+
+<!-- Add Friend Modal -->
+<div id="addFriendModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closeAddFriendModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header"><h2>➕ Add Friend</h2></div>
+  <div class="modal-body">
+    <form id="addFriendForm" onsubmit="handleAddFriend(event)">
+      <div class="form-group"><label for="friendEmail">Their email</label>
+        <div style="display:flex;gap:.5rem;"><input type="email" id="friendEmail" placeholder="friend@example.com" required style="flex:1;"><button type="button" class="btn btn-secondary" onclick="searchFriendByEmail()">Search</button></div>
+      </div>
+      <div id="friendSearchResult" class="hidden"></div>
+      <div id="friendDetailsSection" class="hidden">
+        <div class="form-group"><label for="friendRelationship">Relationship</label>
+          <select id="friendRelationship"><option value="friend">Friend</option><option value="spouse">Spouse / Partner</option><option value="family">Family</option><option value="colleague">Colleague</option><option value="other">Other</option></select>
+        </div>
+        <div class="form-group"><label for="friendKnownSince">Known since</label><input type="date" id="friendKnownSince"></div>
+        <div class="form-group"><label for="friendNotes">Notes</label><input type="text" id="friendNotes" placeholder="How you met..."></div>
+      </div>
+      <div id="smsInviteSection" class="hidden"><div class="form-group"><label for="invitePhone">Phone number</label><input type="tel" id="invitePhone" placeholder="+1 (555) 123-4567"></div></div>
+      <input type="hidden" id="foundUserId"><input type="hidden" id="foundUserName">
+      <button type="submit" id="addFriendBtn" class="btn btn-primary" style="width:100%;" disabled>Send Friend Request</button>
+    </form>
+  </div>
+</div></div></div>
+
+<!-- Share Modal -->
+<div id="shareModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closeShareModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header"><h2>🔗 Share</h2></div>
+  <div class="modal-body">
+    <form id="shareForm" onsubmit="handleShareSubmit(event)">
+      <div><input type="checkbox" id="shareEverything" onchange="toggleShareAll(this)"><label> 📋 Everything</label></div>
+      <div><input type="checkbox" id="shareMisogi" class="share-item-check"><label> 🏔️ Misogi</label></div>
+      <div><input type="checkbox" id="shareHabits" class="share-item-check"><label> 🔄 Habits</label></div>
+      <div><input type="checkbox" id="shareAdventures" class="share-item-check"><label> 🎯 Adventures</label></div>
+      <div><input type="checkbox" id="shareMemories" class="share-item-check"><label> 📸 Memories</label></div>
+      <div class="form-group"><label for="shareContact">Send to</label><input type="text" id="shareContact" placeholder="Email or phone" required></div>
+      <button type="submit" id="shareSubmitBtn" class="btn btn-primary" style="width:100%;">Create Share Link</button>
+    </form>
+    <div id="shareResult" class="hidden"><input type="text" id="shareInviteLink" readonly></div>
+  </div>
+</div></div></div>
+
+<!-- Manage Shares Modal -->
+<div id="manageSharesModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closeManageSharesModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header"><h2>Manage Shares</h2></div>
+  <div class="modal-body"><div id="sharesSentList"></div><div id="sharesReceivedList"></div></div>
+</div></div></div>
+
+<!-- Photo Gallery Modal -->
+<div id="photoGalleryModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closePhotoGallery()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header"><h2>📸 Gallery - <span id="galleryYear">2026</span></h2></div>
+  <div class="modal-body"><div id="photoGalleryGrid"></div></div>
+</div></div></div>
+
+<!-- Photo Lightbox -->
+<div id="photoLightbox" class="lightbox hidden">
+  <button class="lightbox-close" onclick="closeLightbox()">×</button>
+  <button class="lightbox-prev" onclick="lightboxPrev()">‹</button>
+  <button class="lightbox-next" onclick="lightboxNext()">›</button>
+  <div class="lightbox-content">
+    <img id="lightboxImage" src="" alt="">
+    <div id="lightboxCounter">1 / 1</div>
+    <h3 id="lightboxTitle"></h3>
+    <p id="lightboxDate"></p>
+  </div>
+</div>
+
+<!-- Year Review Modal -->
+<div id="yearReviewModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closeYearReview()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header">
+    <h2>📖 Year in Review - <span id="reviewYearTitle">2026</span></h2>
+    <div class="review-tabs">
+      <button class="review-tab active" onclick="switchReviewTab('timeline')">📅 Timeline</button>
+      <button class="review-tab" onclick="switchReviewTab('map')">🗺️ Map</button>
+    </div>
+  </div>
+  <div class="modal-body">
+    <div id="reviewTimelineTab"><div id="yearReviewContent"></div></div>
+    <div id="reviewMapTab" style="display:none"><div id="yearReviewMap" style="height:300px"></div><div id="mapMemoryList"></div></div>
+  </div>
+</div></div></div>
+
+<!-- Habit Tracking Modal -->
+<div id="habitTrackingModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closeHabitTracking()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header"><h2 id="habitTrackingTitle">Track Habit</h2></div>
+  <div class="modal-body">
+    <input type="hidden" id="trackingHabitId">
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <div><span id="habitCurrentStreak">0</span> Current Streak</div>
+      <div><span id="habitLongestStreak">0</span> Longest</div>
+      <div><span id="habitTotalCheckins">0</span> Total</div>
+      <div><span id="habitCompletionRate">0%</span> Rate</div>
+    </div>
+    <button id="habitCheckinBtn" class="btn btn-primary" style="width:100%;" onclick="toggleTodayCheckin()">✓ Check in Today</button>
+    <div id="habitCalendarGrid" style="margin-top:1rem;"></div>
+  </div>
+</div></div></div>
+
+<!-- Bucket List Modal -->
+<div id="bucketListModal" class="modal-overlay"><div class="modal"><div class="modal-content">
+  <button class="modal-close" onclick="closeBucketListModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal-header"><h2>🪣 Bucket List</h2></div>
+  <div class="modal-body">
+    <div>
+      <button type="button" id="bucketListVoiceBtn" onclick="toggleBucketListRecording()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <span id="bucketListVoiceText">Tap to speak</span>
+      </button>
+      <div id="bucketListVoiceStatus"></div>
+      <div id="bucketListTranscript"></div>
+      <div id="bucketListAiMessage" class="hidden"></div>
+    </div>
+    <div style="display:flex;gap:.5rem;margin:1rem 0;">
+      <input type="text" id="manualBucketTitle" placeholder="Add a dream..." style="flex:1;">
+      <select id="manualBucketCategory">
+        <option value="travel">✈️ Travel</option><option value="adventure">🏔️ Adventure</option>
+        <option value="skills">🎯 Skills</option><option value="experiences">🎭 Experiences</option>
+        <option value="personal">💫 Personal</option><option value="health">💪 Health</option>
+        <option value="creative">🎨 Creative</option><option value="other">📌 Other</option>
+      </select>
+      <button class="btn btn-primary" onclick="addManualBucketItem()">Add</button>
+    </div>
+    <div id="bucketListItems"></div>
+  </div>
+</div></div></div>
