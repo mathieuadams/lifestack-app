@@ -131,7 +131,6 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
     <form id="onboardingForm">
       <div class="form-group"><label for="name">Your Name</label><input type="text" id="name" placeholder="Enter your name" required></div>
       <div class="form-group"><label for="birthdate">Date of Birth</label><input type="date" id="birthdate" required></div>
-      <div class="form-group"><label for="lifespan">Expected Lifespan (years)</label><input type="number" id="lifespan" value="80" min="50" max="120"></div>
       <div class="form-group"><label for="goal">Primary Life Goal</label>
         <select id="goal"><option value="family">Family & Relationships</option><option value="adventure">Adventure & Travel</option><option value="health">Health & Wellness</option><option value="creativity">Creativity & Art</option><option value="career">Career & Achievement</option><option value="community">Community & Impact</option></select>
       </div>
@@ -458,6 +457,11 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
       <div class="acct-field">
         <label>Date of Birth</label>
         <input type="date" id="acctBirthdate" class="tinp">
+      </div>
+      <div class="pf-section">
+        <label class="pf-label">🏠 Hometown</label>
+        <input class="pf-input" id="settingsHometown" placeholder="e.g., Sacramento, CA">
+        <button class="btn-s" onclick="saveHometown()" style="margin-top:8px">Save</button>
       </div>
       <button class="btn-p" onclick="saveAccountSettings()">Save Changes</button>
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--sand-200)">

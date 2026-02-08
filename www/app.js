@@ -108,6 +108,47 @@ function ensureArray(data) {
 }
 
 // =====================================================
+// HOMETOWN
+// =====================================================
+
+async function saveHometown() {
+  const input = document.getElementById('settingsHometown');
+  if (!input) return;
+  const hometown = input.value.trim();
+  if (!hometown) { showToast('Please enter your hometown'); return; }
+
+  const tokens = await getValidTokens();
+  if (!tokens?.idToken) { showToast('Please log in'); return; }
+
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/users`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokens.idToken}`
+      },
+      body: JSON.stringify({ hometown: { name: hometown } })
+    });
+
+    if (response.ok) {
+      currentUser = { ...currentUser, hometown: { name: hometown } };
+      localStorage.setItem('lifestack_user', JSON.stringify(currentUser));
+      showToast('✓ Hometown saved!');
+    }
+  } catch (error) {
+    console.error('Save hometown error:', error);
+    showToast('Failed to save');
+  }
+}
+
+function loadHometown() {
+  const input = document.getElementById('settingsHometown');
+  if (input && currentUser?.hometown?.name) {
+    input.value = currentUser.hometown.name;
+  }
+}
+
+// =====================================================
 // AUTH API CALLS
 // =====================================================
 
@@ -5774,7 +5815,7 @@ function renderSettings() {
   document.getElementById('settingsEmail').value = auth.email || currentUser?.email || '';
   document.getElementById('settingsBirthdate').value = currentUser?.birthdate ? new Date(currentUser.birthdate).toLocaleDateString() : '';
   document.getElementById('settingsLifespan').value = currentUser?.lifespanYears ? currentUser.lifespanYears + ' years' : '';
-  
+  const htEl = document.getElementById('settingsHometown'); if (htEl) htEl.value = currentUser?.hometown?.name || '';
   // Update avatar display
   updateAvatarDisplay();
   
