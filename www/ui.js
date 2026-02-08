@@ -328,26 +328,31 @@ function buildPfRecs(){
   c.innerHTML=recs.map((r,i)=>`<div class="airc${i===0?' sel':''}" onclick="pfSelRec(this)"><div class="airi" style="background:${r.bg}">${r.e}</div><div class="aird"><div class="airn">${r.n}</div><div class="airt2">${r.d}</div><div class="airdist">${r.dist}</div></div></div>`).join('');
 }
 
-function pfSelRec(el){document.querySelectorAll('.airc,.airc-custom').forEach(r=>r.classList.remove('sel'));el.classList.add('sel');document.getElementById('pfCustomPlace').value=''}
+function pfSelRec(el){document.querySelectorAll('.airc').forEach(r=>r.classList.remove('sel'));el.classList.add('sel')}
 function pfSelCustom(){document.querySelectorAll('.airc').forEach(r=>r.classList.remove('sel'));document.getElementById('pfCustomOption').classList.add('sel')}
-function pfUpdateCustom(){if(document.getElementById('pfCustomPlace').value.trim())pfSelCustom()}
+function pfUpdateCustom(){}
 function pfQuick(type){pfState.type=type;startPlanFlow(1);setTimeout(()=>{document.querySelectorAll('#pfTypes .pf-cat,#pfTypes .tc').forEach(t=>{if(t.textContent.toLowerCase().includes(type))t.classList.add('sel')})},50)}
 function startRecurring(){openPanel('recur')}
 
 function pfFinish(){
-  const selRec=document.querySelector('.airc.sel .airn');
-  const custom=document.getElementById('pfCustomPlace').value.trim();
-  const title=document.getElementById('pfActName').value.trim()||custom||(selRec?selRec.textContent:'New Activity');
+  const title=document.getElementById('pfActName').value.trim()||'New Activity';
   const startDate=document.getElementById('pfDateStart').value;
   const endDate=document.getElementById('pfDateEnd').value;
+  const notes=document.getElementById('pfNotes');
+  const desc=notes?notes.value.trim():'';
+  const locInput=document.getElementById('pfLocation');
+  const location=locInput?locInput.value.trim():'';
+  const fullDesc=location?(desc?location+' — '+desc:location):desc;
+  if(!title||title==='New Activity'){toast('Please enter an activity name');return}
   if(typeof handlePlanSubmit==='function'){
     document.getElementById('planId').value='';
     document.getElementById('planType').value='adventure';
     document.getElementById('planTitle').value=title;
-    document.getElementById('planDescription').value='';
+    document.getElementById('planDescription').value=fullDesc;
     document.getElementById('planStartDate').value=startDate;
     document.getElementById('planEndDate').value=endDate;
     document.getElementById('planCategory').value=pfState.type||'adventure';
+    const locField=document.getElementById('planLocation');if(locField)locField.value=location;
     if(typeof selectedCategory!=='undefined')window.selectedCategory=pfState.type||'adventure';
     handlePlanSubmit(new Event('submit'));
   }
@@ -360,7 +365,7 @@ function saveTripDetail(){closePanel('trip');toast('✓ Saved');setTimeout(()=>{
 
 // Friend selector
 let friendSelContext=null;
-function openFriendSelector(ctx){friendSelContext=ctx;buildFriendSelectorList();openPanel('friendSel')}
+function openFriendSelector(ctx){if(typeof showPeopleSelector==='function'){showPeopleSelector(ctx)}else{friendSelContext=ctx;buildFriendSelectorList();openPanel('friendSel')}}
 function buildFriendSelectorList(){
   const list=document.getElementById('friendSelectorList');if(!list)return;
   const ppl=typeof people!=='undefined'&&Array.isArray(people)?people:[];
@@ -684,11 +689,18 @@ document.addEventListener('DOMContentLoaded',()=>{
   setTimeout(()=>{refreshPlanView()},3000);
   setTimeout(()=>{refreshPlanView()},6000);
   setTimeout(()=>{refreshPlanView()},10000);
-  // Theme editing - click to edit
+  // Theme editing
   const themeEl=document.getElementById('yearBannerTheme');
   if(themeEl){themeEl.onclick=function(){editYearTheme()}}
-  // Keyboard scroll fix for all modals
-  document.addEventListener('focusin',function(e){if(e.target.matches('.sp input,.sp textarea,.modal input,.modal textarea')){setTimeout(()=>{e.target.scrollIntoView({behavior:'smooth',block:'center'})},300)}});
+  // Keyboard scroll fix
+  document.addEventListener('focusin',function(e){if(e.target.matches('.pf-fullscreen input,.pf-fullscreen textarea,.sp input,.sp textarea,.modal input,.modal textarea')){setTimeout(()=>{e.target.scrollIntoView({behavior:'smooth',block:'center'})},300)}});
+  // Hook: after app.js renderHabits, also refresh our habits view
+  setTimeout(()=>{
+    if(typeof renderHabits==='function'){
+      const origRenderHabits=renderHabits;
+      window.renderHabits=function(){origRenderHabits();try{renderHabitsView()}catch(e){}}
+    }
+  },2000);
 });
 
 // Helper: parseLocalDate fallback

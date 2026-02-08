@@ -328,11 +328,17 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
         </div>
       </div>
 
+      <!-- Location -->
+      <div class="pf-section">
+        <label class="pf-label">📍 Location</label>
+        <input class="pf-input" id="pfLocation" placeholder="e.g., Paris, Lake Tahoe, The Kitchen">
+      </div>
+
       <!-- Friends -->
       <div class="pf-section">
         <label class="pf-label">👥 Who's joining?</label>
         <div class="pf-friends" id="pfFriends">
-          <button class="pf-add-friend" onclick="openFriendSelector('plan')">+ Add people</button>
+          <button class="pf-add-friend" onclick="if(typeof showPeopleSelector==='function')showPeopleSelector('plan');else toast('Add friends first in profile')">+ Add people</button>
         </div>
       </div>
 
@@ -828,7 +834,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 <!-- Habit Tracking Modal -->
 <div id="habitTrackingModal" class="modal-overlay"><div class="modal"><div class="modal-content">
   <button class="modal-close" onclick="closeHabitTracking()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-  <div class="modal-header"><h2 id="habitTrackingTitle">Track Habit</h2></div>
+  <div class="modal-header"><h2 id="habitTrackingTitle">Track Habit</h2><button style="background:none;border:none;color:var(--sage-600);font-size:.85rem;cursor:pointer;padding:4px 8px" onclick="var id=document.getElementById('trackingHabitId').value;closeHabitTracking();if(typeof showEditPlanModal==='function')showEditPlanModal(id)">✏️ Edit</button></div>
   <div class="modal-body">
     <input type="hidden" id="trackingHabitId">
     <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
