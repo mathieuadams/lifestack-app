@@ -227,6 +227,52 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
     <div class="prl" onclick="typeof clearCacheAndSync==='function'&&clearCacheAndSync()"><span class="prli">🔄</span> Clear Cache & Sync</div>
     <button class="prso" onclick="typeof signOut==='function'&&signOut()">Sign Out</button>
   </div>
+    <!-- Bucket List Modal -->
+  <div id="bucketListModal" class="modal-overlay">
+    <div class="modal modal-large"><div class="modal-content">
+      <button class="modal-close" onclick="closeBucketListModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="modal-header"><h2>🪣 Bucket List</h2><p>Dreams, goals & adventures you want to experience</p></div>
+      <div class="modal-body">
+        
+        <!-- Voice Input Section -->
+        <div class="voice-input-section">
+          <button type="button" id="bucketListVoiceBtn" class="voice-record-btn" onclick="toggleBucketListRecording()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+            <span id="bucketListVoiceText">Tap to speak your dreams</span>
+          </button>
+          <div id="bucketListVoiceStatus" class="voice-status"></div>
+          <div id="bucketListTranscript" class="voice-transcript"></div>
+          <div id="bucketListAiMessage" class="ai-message hidden"></div>
+        </div>
+        
+        <!-- Manual Add -->
+        <div class="bucket-manual-add" style="display: flex; gap: 0.5rem; margin: 1rem 0;">
+          <input type="text" id="manualBucketTitle" placeholder="Add a dream manually..." style="flex: 1;">
+          <select id="manualBucketCategory" style="width: auto;">
+            <option value="travel">✈️ Travel</option>
+            <option value="adventure">🏔️ Adventure</option>
+            <option value="skills">🎯 Skills</option>
+            <option value="experiences">🎭 Experiences</option>
+            <option value="personal">💫 Personal</option>
+            <option value="health">💪 Health</option>
+            <option value="creative">🎨 Creative</option>
+            <option value="relationships">❤️ Relationships</option>
+            <option value="career">💼 Career</option>
+            <option value="other">📌 Other</option>
+          </select>
+          <button class="btn btn-primary" onclick="addManualBucketItem()">Add</button>
+        </div>
+        
+        <!-- Bucket List Items -->
+        <div id="bucketListItems"></div>
+      </div>
+    </div></div>
+  </div>
   <div class="toast" id="toastEl"></div>
 </div>
 <script src="ui.js"></script>
