@@ -5378,6 +5378,248 @@ function handleSwipe() {
 }
 
 // =====================================================
+// AI ADVENTURE PREP
+// =====================================================
+
+async function getAIPrepTips(planId) {
+  const tokens = await getValidTokens();
+  if (!tokens?.idToken) { showToast('Please log in'); return; }
+
+  showToast('🤖 Generating prep checklist...');
+
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/plans/${planId}/ai-prep`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokens.idToken}`
+      },
+      body: JSON.stringify({})
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const plan = plans.find(p => p.id === planId);
+      if (plan) {
+        plan.aiChecklist = data.checklist;
+        localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
+      }
+      showAIPrepChecklist(planId, data.checklist);
+      showToast(`✨ ${data.checklist.length} prep tasks generated!`);
+    } else {
+      const err = await response.json();
+      showToast('Error: ' + (err.error || 'Failed'));
+    }
+  } catch (error) {
+    console.error('AI prep error:', error);
+    showToast('Network error: ' + error.message);
+  }
+}
+
+function showAIPrepChecklist(planId, checklist) {
+  const plan = plans.find(p => p.id === planId);
+  const title = plan?.title || 'Adventure';
+
+  const timeGroups = [
+    { key: '6months', label: '6 Months Before', icon: '📅' },
+    { key: '3months', label: '3 Months Before', icon: '📅' },
+    { key: '1month',  label: '1 Month Before',  icon: '📋' },
+    { key: '1week',   label: '1 Week Before',   icon: '⏰' },
+    { key: '1day',    label: 'Day Before',       icon: '⚡' },
+    { key: 'day-of',  label: 'Day Of',           icon: '🎯' }
+  ];
+
+  const catIcons = {
+    documents:'📄', booking:'🏨', packing:'🧳', health:'💊',
+    transport:'🚗', research:'🔍', finance:'💳', gear:'🎒', other:'📌'
+  };
+
+  const done = checklist.filter(t => t.completed).length;
+  const pct = checklist.length > 0 ? Math.round((done / checklist.length) * 100) : 0;
+
+  let html = `<div style="padding:4px 0">`;
+  html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">`;
+  html += `<h3 style="margin:0;font-family:'Fraunces',serif;font-size:1.1rem">✨ Prep: ${title}</h3>`;
+  html += `<button style="background:none;border:none;font-size:.8rem;color:var(--sage-600);cursor:pointer" onclick="getAIPrepTips('${planId}')">🔄 Refresh</button></div>`;
+
+  // Progress
+  html += `<div style="background:var(--sand-100);border-radius:10px;height:8px;margin-bottom:8px;overflow:hidden">`;
+  html += `<div style="background:var(--sage-500);height:100%;width:${pct}%;border-radius:10px"></div></div>`;
+  html += `<p style="font-size:.78rem;color:var(--text-tertiary);margin-bottom:16px">${done}/${checklist.length} complete</p>`;
+
+  for (const group of timeGroups) {
+    const items = checklist.filter(t => t.leadTime === group.key);
+    if (items.length === 0) continue;
+
+    html += `<div style="margin-bottom:14px">`;
+    html += `<div style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--sage-600);margin-bottom:6px">${group.icon} ${group.label}</div>`;
+
+    items.forEach(item => {
+      const ck = item.completed;
+      const icon = catIcons[item.category] || '📌';
+      const pc = item.priority==='high'?'#d9534f':item.priority==='medium'?'#f0ad4e':'#5bc0de';
+
+      html += `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px;margin-bottom:4px;background:${ck?'var(--sand-50)':'white'};border:1px solid var(--sand-100);border-radius:10px;cursor:pointer;${ck?'opacity:.6':''}" onclick="togglePrepTask('${planId}','${item.id}')">`;
+      html += `<div style="font-size:1.1rem;margin-top:1px">${ck?'✅':'⬜'}</div>`;
+      html += `<div style="flex:1"><div style="font-weight:500;font-size:.85rem;${ck?'text-decoration:line-through':''}">${icon} ${item.title}</div>`;
+      html += `<div style="font-size:.75rem;color:var(--text-tertiary);margin-top:2px">${item.description}</div></div>`;
+      html += `<span style="font-size:.55rem;padding:2px 6px;border-radius:8px;background:${pc}20;color:${pc};font-weight:600">${item.priority}</span>`;
+      html += `</div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Reminders
+  html += `<div style="border-top:1px solid var(--sand-100);padding-top:14px;margin-top:8px">`;
+  html += `<div style="font-weight:600;font-size:.9rem;margin-bottom:6px">🔔 Reminders</div>`;
+  html += `<p style="font-size:.75rem;color:var(--text-tertiary);margin-bottom:8px">Email me when it's time for each group of tasks</p>`;
+  const prefs = plan?.reminderPrefs || {};
+  ['6months','3months','1month','1week','1day'].forEach(t => {
+    const labels = {'6months':'6 months before','3months':'3 months before','1month':'1 month before','1week':'1 week before','1day':'Day before'};
+    if (!checklist.some(i => i.leadTime === t)) return;
+    html += `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:.82rem;cursor:pointer"><input type="checkbox" id="remind_${t}" ${prefs[t]!==false?'checked':''}> ${labels[t]}</label>`;
+  });
+  html += `<button class="btn-p" onclick="savePrepReminders('${planId}')" style="margin-top:10px;width:100%">Save Reminders</button>`;
+  html += `</div></div>`;
+
+  // Display in plan modal
+  const modal = document.getElementById('planModal');
+  if (modal) {
+    const body = modal.querySelector('.modal-body') || modal.querySelector('.modal-content');
+    if (body) { body.innerHTML = html; modal.classList.add('active'); }
+  }
+}
+
+async function togglePrepTask(planId, taskId) {
+  const plan = plans.find(p => p.id === planId);
+  if (!plan?.aiChecklist) return;
+
+  const task = plan.aiChecklist.find(t => t.id === taskId);
+  if (!task) return;
+  task.completed = !task.completed;
+
+  showAIPrepChecklist(planId, plan.aiChecklist);
+
+  const tokens = await getValidTokens();
+  if (tokens?.idToken) {
+    try {
+      await fetch(`${CONFIG.API_URL}/plans/${planId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${tokens.idToken}` },
+        body: JSON.stringify({ aiChecklist: plan.aiChecklist })
+      });
+    } catch (e) { console.error('Save checklist error:', e); }
+  }
+  localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
+}
+
+async function savePrepReminders(planId) {
+  const plan = plans.find(p => p.id === planId);
+  if (!plan) return;
+
+  const reminderPrefs = {};
+  ['6months','3months','1month','1week','1day'].forEach(t => {
+    const cb = document.getElementById('remind_' + t);
+    if (cb) reminderPrefs[t] = cb.checked;
+  });
+
+  plan.reminderPrefs = reminderPrefs;
+
+  const tokens = await getValidTokens();
+  if (tokens?.idToken) {
+    try {
+      await fetch(`${CONFIG.API_URL}/plans/${planId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${tokens.idToken}` },
+        body: JSON.stringify({ reminderPrefs })
+      });
+    } catch (e) { console.error('Save reminders error:', e); }
+  }
+
+  localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
+  showToast('🔔 Reminders saved!');
+}
+// =====================================================
+// AI PLACE RECOMMENDATIONS
+// =====================================================
+
+async function getAIRecommendations(category) {
+  const tokens = await getValidTokens();
+  if (!tokens?.idToken) { showToast('Please log in'); return null; }
+
+  // Check hometown
+  if (!currentUser?.hometown?.name) {
+    showToast('Set your hometown in Profile to get AI recommendations!');
+    return null;
+  }
+
+  const titleInput = document.getElementById('pfActName');
+  const title = titleInput ? titleInput.value.trim() : '';
+
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/ai-recommend`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokens.idToken}`
+      },
+      body: JSON.stringify({ category, title })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.message && data.recommendations.length === 0) {
+        showToast(data.message);
+        return null;
+      }
+      return data.recommendations;
+    } else {
+      const err = await response.json();
+      showToast('Error: ' + (err.error || 'Failed'));
+      return null;
+    }
+  } catch (error) {
+    console.error('AI recommend error:', error);
+    showToast('Network error');
+    return null;
+  }
+}
+
+function showAIRecommendations(recs, container) {
+  if (!recs || recs.length === 0 || !container) return;
+
+  const catBgs = {
+    food:'var(--amber-light)', adventure:'var(--teal-light)', travel:'var(--blue-light)',
+    roadtrip:'var(--blue-light)', culture:'var(--lavender-light)', date:'var(--coral-bg)',
+    health:'var(--teal-light)', birthday:'var(--pink-light)', hiking:'var(--sage-100)',
+    skiing:'var(--blue-light)'
+  };
+
+  container.innerHTML = recs.map(r => {
+    const bg = catBgs[r.category] || 'var(--sage-100)';
+    return `<div class="airc" onclick="pfSelRec(this)" data-name="${r.name}" data-desc="${r.description}">
+      <div class="airc-icon" style="background:${bg}">${r.emoji}</div>
+      <div class="airc-body">
+        <div class="airn">${r.name}</div>
+        <div class="aird">${r.description}</div>
+        <div class="airdist">${r.distance}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// When user taps a recommendation, fill in the activity name
+function pfSelRec(el) {
+  document.querySelectorAll('.airc').forEach(r => r.classList.remove('sel'));
+  el.classList.add('sel');
+  const name = el.getAttribute('data-name');
+  const desc = el.getAttribute('data-desc');
+  const nameInput = document.getElementById('pfActName');
+  if (nameInput && name) nameInput.value = name;
+  const notesInput = document.getElementById('pfNotes');
+  if (notesInput && desc && !notesInput.value) notesInput.value = desc;
+}
+// =====================================================
 // YEAR IN REVIEW
 // =====================================================
 

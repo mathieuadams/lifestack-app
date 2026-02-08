@@ -176,7 +176,7 @@ function buildMG(){
   if(actList&&actTitle){
     actTitle.textContent='Activities in '+MN[curM];
     if(mp.length===0){actList.innerHTML='<p style="color:var(--text-tertiary);font-size:.85rem;padding:8px 0">No activities this month</p>';return}
-    actList.innerHTML=mp.map(p=>{const cat=(p.category||p.type||'adventure').toLowerCase();const icon=catIcons[cat]||'📋';const bg=catBgs[cat]||'var(--sage-100)';const sd=p.startDate?parseWeekDate(p.startDate):null;const ds=sd?MN[curM]+' '+sd.getDate():'';return `<div class="act-item" onclick="openPlanDetail('${p.id}')"><div class="act-icon" style="background:${bg}">${icon}</div><div class="act-body"><div class="act-name">${escapeHtmlUI(p.title)}</div><div class="act-meta">${ds} <span class="tag tag-${cat}">${escapeHtmlUI(cat)}</span></div></div><span class="act-arrow">›</span></div>`}).join('');
+    actList.innerHTML=mp.map(p=>{const cat=(p.category||p.type||'adventure').toLowerCase();const icon=catIcons[cat]||'📋';const bg=catBgs[cat]||'var(--sage-100)';const sd=p.startDate?parseWeekDate(p.startDate):null;const ds=sd?MN[curM]+' '+sd.getDate():'';return `<div class="act-item" onclick="openPlanDetail('${p.id}')"><div class="act-icon" style="background:${bg}">${icon}</div><div class="act-body"><div class="act-name">${escapeHtmlUI(p.title)}</div><div class="act-meta">${ds} <span class="tag tag-${cat}">${escapeHtmlUI(cat)}</span></div></div><button style="background:none;border:none;font-size:.9rem;padding:4px;cursor:pointer" onclick="event.stopPropagation();getAIPrepTips('${p.id}')" title="AI Prep Tips">✨</button><span class="act-arrow">›</span></div>`}).join('');
   }
 }
 function hlRange(){document.querySelectorAll('#mGrid .mgc').forEach(c=>{c.classList.remove('rs','rstart','rend');const d=parseInt(c.dataset.day);if(!d)return;if(calS&&!calE&&d===calS){c.classList.add('rstart','rend')}else if(calS&&calE){if(d===calS)c.classList.add('rstart');else if(d===calE)c.classList.add('rend');else if(d>calS&&d<calE)c.classList.add('rs')}})}
@@ -264,27 +264,7 @@ function scheduleBucket(id){
 // ===== PLANNING FLOW =====
 let pfState={type:null,loc:null,locName:'Near Sacramento',selectedFriends:[],visitType:'first'};
 
-const aiDB={
-  'food':[{n:'The Kitchen',d:'Award-winning Sacramento restaurant.',dist:'Downtown · 12 min',e:'🍳',bg:'var(--amber-light)'},{n:'Kru Contemporary Japanese',d:'Omakase and creative sushi.',dist:'East Sac · 8 min',e:'🍣',bg:'var(--cat-food-bg)'},{n:"Mulvaney's B&L",d:'Farm-to-fork fine dining.',dist:'Midtown · 10 min',e:'🥂',bg:'var(--sage-100)'}],
-  'adventure':[{n:'American River Trail',d:'Paved path along the river.',dist:'10 min drive',e:'🌲',bg:'var(--teal-light)'},{n:'Auburn SRA',d:'Canyon trails with river views.',dist:'35 min drive',e:'🏔️',bg:'var(--sage-100)'},{n:'Folsom Lake Loop',d:'Lakeside trail with wildflowers.',dist:'25 min drive',e:'💧',bg:'var(--blue-light)'}],
-  'travel':[{n:'Napa Valley',d:'World-class wine tasting.',dist:'1.5h drive',e:'🍷',bg:'var(--amber-light)'},{n:'Lake Tahoe',d:'Crystal clear alpine lake.',dist:'2h drive',e:'🏔️',bg:'var(--blue-light)'},{n:'San Francisco',d:'Golden Gate, amazing food.',dist:'1.5h drive',e:'🌉',bg:'var(--coral-bg)'}],
-  'roadtrip':[{n:'Pacific Coast Highway',d:'Big Sur coastal drive.',dist:'3.5h to Big Sur',e:'🌊',bg:'var(--blue-light)'},{n:'Napa → Sonoma Loop',d:'Wine country road trip.',dist:'1.5h start',e:'🍷',bg:'var(--amber-light)'},{n:'Lassen Volcanic NP',d:'Geothermal features, hot springs.',dist:'3h drive',e:'🌋',bg:'var(--coral-bg)'}],
-  'culture':[{n:'Crocker Art Museum',d:'Oldest art museum in the West.',dist:'Downtown · 12 min',e:'🎨',bg:'var(--lavender-light)'},{n:'Sacramento Philharmonic',d:'World-class orchestra.',dist:'Downtown · 10 min',e:'🎵',bg:'var(--sage-100)'},{n:'B Street Theatre',d:'Intimate local theater.',dist:'Midtown · 8 min',e:'🎭',bg:'var(--coral-bg)'}],
-  'date':[{n:'The Firehouse Restaurant',d:'Romantic fine dining.',dist:'Downtown · 12 min',e:'🕯️',bg:'var(--coral-bg)'},{n:'Hawks Public House',d:'Craft cocktails, cozy.',dist:'Midtown · 8 min',e:'🍸',bg:'var(--amber-light)'},{n:'Sac River Sunset Cruise',d:'Evening boat cruise.',dist:'Old Sac · 15 min',e:'🚤',bg:'var(--blue-light)'}],
-  'health':[{n:'Sol Yoga Sacramento',d:'Hot yoga and vinyasa.',dist:'Midtown · 7 min',e:'🧘',bg:'var(--teal-light)'},{n:'Sacramento Rock Climbing',d:'Indoor bouldering gym.',dist:'Arden · 15 min',e:'🧗',bg:'var(--sage-100)'},{n:'Folsom Lake Open Water',d:'Open water swimming.',dist:'Folsom · 25 min',e:'🏊',bg:'var(--blue-light)'}],
-  'birthday':[{n:'Iron Horse Tavern',d:'Private dining, great for groups.',dist:'Downtown · 10 min',e:'🎂',bg:'var(--pink-light)'},{n:'Topgolf Roseville',d:'Fun group activity.',dist:'Roseville · 20 min',e:'⛳',bg:'var(--sage-100)'},{n:'River Cats Game',d:'Minor league baseball.',dist:'West Sac · 12 min',e:'⚾',bg:'var(--amber-light)'}],
-};
 
-const aiReminders={
-  'travel':['Check passport expiry','Book flights','Reserve hotel','Pack luggage','Arrange airport transfer'],
-  'food':['Make reservation','Check dress code','Review menu','Book babysitter if needed'],
-  'adventure':['Check weather forecast','Pack gear & water','Charge phone & battery pack','Share trail plan with someone'],
-  'roadtrip':['Check tire pressure & oil','Download offline maps','Pack snacks & drinks','Create playlist'],
-  'culture':['Buy tickets online','Check venue hours','Plan parking'],
-  'date':['Book restaurant','Plan outfit','Arrange babysitter if needed','Buy flowers or small gift'],
-  'health':['Pack workout clothes','Set alarm','Prepare water bottle','Warm up playlist'],
-  'birthday':['Buy gift','Order cake','Send invitations','Book venue','Plan decorations'],
-};
 
 function startPlanFlow(startStep){
   pfState={type:null};
@@ -304,6 +284,27 @@ function updateSteps(n){document.querySelectorAll('#pfSteps .step-dot').forEach(
 function pfSelType(btn,type){
   document.querySelectorAll('#pfTypes .tc,#pfTypes .pf-cat').forEach(t=>t.classList.remove('sel'));
   btn.classList.add('sel');pfState.type=type;
+    // Show the AI recommendations section
+  const recsSection = document.getElementById('pfRecsSection');
+  if (recsSection) recsSection.style.display = 'block';
+  // Clear previous recommendations
+  const recsContainer = document.getElementById('pfRecsContainer');
+  if (recsContainer) recsContainer.innerHTML = '';
+}
+
+async function pfGetIdeas() {
+  const btn = document.getElementById('pfGetIdeasBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '🤖 Loading...'; }
+
+  const category = pfState.type || 'adventure';
+  const recs = await getAIRecommendations(category);
+
+  if (btn) { btn.disabled = false; btn.textContent = '🤖 Get Ideas'; }
+
+  const container = document.getElementById('pfRecsContainer');
+  if (recs && container) {
+    showAIRecommendations(recs, container);
+  }
 }
 function pfSetQuickDate(which,btn){
   document.querySelectorAll('.pf-qd').forEach(t=>t.classList.remove('sel'));btn.classList.add('sel');
