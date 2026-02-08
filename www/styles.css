@@ -716,3 +716,37 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 /* PLAN FLOW - scroll fix for keyboard */
 #planFlowPanel{max-height:95vh;min-height:70vh;padding-bottom:calc(env(safe-area-inset-bottom,16px) + 20px)}
 #planFlowPanel .pbd{padding-bottom:40px}
+
+/* ===== FULL-SCREEN PLAN CREATION PAGE ===== */
+.pf-fullscreen{position:fixed;inset:0;background:var(--white);z-index:201;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;max-width:430px;margin:0 auto}
+.pf-fullscreen.open{transform:translateY(0)}
+.pf-header{display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,20px) + 8px) 16px 12px;border-bottom:1px solid var(--sand-100);background:var(--white);flex-shrink:0}
+.pf-back{background:none;border:none;font-size:.95rem;color:var(--sage-600);font-weight:500;cursor:pointer;padding:4px 0}
+.pf-htitle{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:600;color:var(--sage-800)}
+.pf-scroll{flex:1;overflow-y:auto;padding:0 20px;-webkit-overflow-scrolling:touch}
+.pf-section{padding:18px 0;border-bottom:1px solid var(--sand-50)}
+.pf-section:last-of-type{border-bottom:none}
+.pf-label{display:block;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin-bottom:10px}
+.pf-input{width:100%;padding:14px 16px;border:1.5px solid var(--sand-200);border-radius:var(--radius-sm);font-size:1rem;font-family:'DM Sans',sans-serif;background:var(--sand-50);transition:var(--transition);box-sizing:border-box}
+.pf-input:focus{border-color:var(--sage-400);outline:none;background:var(--white)}
+.pf-cats{display:flex;flex-wrap:wrap;gap:8px}
+.pf-cat{padding:8px 14px;border:1.5px solid var(--sand-200);border-radius:20px;background:var(--white);font-size:.82rem;cursor:pointer;transition:var(--transition);white-space:nowrap}
+.pf-cat.sel{background:var(--sage-500);color:white;border-color:var(--sage-500)}
+.pf-quick-dates{display:flex;gap:8px;margin-bottom:12px}
+.pf-qd{padding:7px 14px;border:1.5px solid var(--sand-200);border-radius:20px;background:var(--white);font-size:.8rem;cursor:pointer;transition:var(--transition)}
+.pf-qd.sel{background:var(--sage-100);border-color:var(--sage-400)}
+.pf-date-row{display:flex;gap:12px}
+.pf-date-field{flex:1}
+.pf-date-label{display:block;font-size:.7rem;font-weight:500;color:var(--text-tertiary);margin-bottom:4px}
+.pf-date-input{width:100%;padding:10px 12px;border:1.5px solid var(--sand-200);border-radius:var(--radius-sm);font-size:.9rem;background:var(--sand-50);box-sizing:border-box}
+.pf-date-input:focus{border-color:var(--sage-400);outline:none}
+.pf-friends{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pf-add-friend{padding:8px 16px;border:1.5px dashed var(--sage-300);border-radius:20px;background:none;color:var(--sage-600);font-size:.82rem;cursor:pointer}
+.pf-textarea{width:100%;padding:12px 14px;border:1.5px solid var(--sand-200);border-radius:var(--radius-sm);font-size:.9rem;font-family:'DM Sans',sans-serif;background:var(--sand-50);min-height:60px;resize:vertical;box-sizing:border-box}
+.pf-textarea:focus{border-color:var(--sage-400);outline:none}
+.pf-footer{padding:12px 20px calc(env(safe-area-inset-bottom,16px) + 12px);border-top:1px solid var(--sand-100);background:var(--white);flex-shrink:0}
+.pf-save{width:100%;padding:14px;border:none;border-radius:var(--radius-sm);background:var(--sage-600);color:white;font-size:1rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.pf-save:active{background:var(--sage-700);transform:scale(.98)}
+
+/* Override: planFlowPanel is now pf-fullscreen, not .sp */
+#planFlowPanel{max-height:none!important}

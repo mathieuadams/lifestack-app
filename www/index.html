@@ -276,64 +276,86 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
   <!-- ===== SLIDE-UP PANELS ===== -->
 
   <!-- Plan Flow Panel -->
+  <!-- Full-Screen Plan Creation Page -->
   <div class="po" id="planFlowOverlay" onclick="closePanel('planFlow')"></div>
-  <div class="sp" id="planFlowPanel">
-    <div class="ph"></div>
-    <div class="phd"><span class="ptl" id="pfTitle">Plan Activity</span><button class="pcl" onclick="closePanel('planFlow')">✕</button></div>
-    <div class="pbd">
-      <div class="steps" id="pfSteps"><div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div></div>
-      <!-- Step 1: Name + Type -->
-      <div id="pf1" class="pf-step">
-        <div class="fl">Activity name</div>
-        <input class="tinp" id="pfActName" placeholder="e.g., Dinner at The Kitchen">
-        <div class="fl">What kind of activity?</div>
-        <div class="tcr" id="pfTypes">
-          <button class="tc" onclick="pfSelType(this,'travel')">✈️ Travel</button>
-          <button class="tc" onclick="pfSelType(this,'food')">🍽️ Food</button>
-          <button class="tc" onclick="pfSelType(this,'adventure')">🏔️ Adventure</button>
-          <button class="tc" onclick="pfSelType(this,'roadtrip')">🚗 Road trip</button>
-          <button class="tc" onclick="pfSelType(this,'culture')">🎭 Culture</button>
-          <button class="tc" onclick="pfSelType(this,'health')">💪 Health</button>
-          <button class="tc" onclick="pfSelType(this,'birthday')">🎂 Birthday</button>
-          <button class="tc" onclick="pfSelType(this,'date')">💕 Date night</button>
-        </div>
-        <button class="btn-p" onclick="pfNext(2)" id="pfNext1" style="opacity:.5;pointer-events:none">Next →</button>
+  <div class="pf-fullscreen" id="planFlowPanel">
+    <div class="pf-header">
+      <button class="pf-back" onclick="closePanel('planFlow')">← Back</button>
+      <span class="pf-htitle" id="pfTitle">New Adventure</span>
+      <div style="width:60px"></div>
+    </div>
+    <div class="pf-scroll">
+      <!-- Activity Name -->
+      <div class="pf-section">
+        <label class="pf-label">What are you planning?</label>
+        <input class="pf-input" id="pfActName" placeholder="e.g., Trip to Paris, Dinner at The Kitchen">
       </div>
-      <!-- Step 2: Date -->
-      <div id="pf2" class="pf-step" style="display:none">
-        <div class="fl">When?</div>
-        <div class="tcr">
-          <button class="tc" onclick="selTC(this)">Tomorrow</button>
-          <button class="tc sel" onclick="selTC(this)">This Saturday</button>
-          <button class="tc" onclick="selTC(this)">This Sunday</button>
-          <button class="tc" onclick="selTC(this)">Next weekend</button>
+
+      <!-- Category -->
+      <div class="pf-section">
+        <label class="pf-label">Category</label>
+        <div class="pf-cats" id="pfTypes">
+          <button class="pf-cat" onclick="pfSelType(this,'travel')">✈️ Travel</button>
+          <button class="pf-cat" onclick="pfSelType(this,'food')">🍽️ Food</button>
+          <button class="pf-cat" onclick="pfSelType(this,'adventure')">🏔️ Adventure</button>
+          <button class="pf-cat" onclick="pfSelType(this,'roadtrip')">🚗 Road trip</button>
+          <button class="pf-cat" onclick="pfSelType(this,'culture')">🎭 Culture</button>
+          <button class="pf-cat" onclick="pfSelType(this,'health')">💪 Health</button>
+          <button class="pf-cat" onclick="pfSelType(this,'birthday')">🎂 Birthday</button>
+          <button class="pf-cat" onclick="pfSelType(this,'date')">💕 Date night</button>
+          <button class="pf-cat" onclick="pfSelType(this,'hiking')">🥾 Hiking</button>
+          <button class="pf-cat" onclick="pfSelType(this,'skiing')">⛷️ Skiing</button>
         </div>
-        <div class="fl" style="margin-top:8px">Or pick specific dates</div>
-        <div class="tdr">
-          <div class="tdb"><div class="tdl">Start</div><input class="tinp" type="date" style="margin:0;padding:8px;font-size:.8rem" id="pfDateStart"></div>
-          <div class="tdb"><div class="tdl">End</div><input class="tinp" type="date" style="margin:0;padding:8px;font-size:.8rem" id="pfDateEnd"></div>
-        </div>
-        <button class="btn-p" onclick="pfNext(3)">See AI Recommendations →</button>
       </div>
-      <!-- Step 3: AI Recs + Visit + Friends -->
-      <div id="pf3" class="pf-step" style="display:none">
-        <div class="air" style="margin-top:0">
-          <div class="airt">🤖 AI Recommendations · <span id="pfLocLabel">Near Sacramento</span></div>
-          <div id="pfAiRecs"></div>
-          <div class="airc-custom" id="pfCustomOption" onclick="pfSelCustom()">
-            <div class="airi" style="background:var(--sand-100)">📍</div>
-            <input class="tinp" id="pfCustomPlace" placeholder="Type your own place..." style="margin:0;border:none;background:transparent;padding:4px 0" onclick="event.stopPropagation();pfSelCustom()" oninput="pfUpdateCustom()">
+
+      <!-- Dates -->
+      <div class="pf-section">
+        <label class="pf-label">When?</label>
+        <div class="pf-quick-dates">
+          <button class="pf-qd" onclick="pfSetQuickDate('tomorrow',this)">Tomorrow</button>
+          <button class="pf-qd" onclick="pfSetQuickDate('saturday',this)">This Saturday</button>
+          <button class="pf-qd" onclick="pfSetQuickDate('nextweek',this)">Next weekend</button>
+        </div>
+        <div class="pf-date-row">
+          <div class="pf-date-field">
+            <label class="pf-date-label">Start</label>
+            <input type="date" class="pf-date-input" id="pfDateStart">
+          </div>
+          <div class="pf-date-field">
+            <label class="pf-date-label">End</label>
+            <input type="date" class="pf-date-input" id="pfDateEnd">
           </div>
         </div>
-        <div class="fl" style="margin-top:16px">Visit history</div>
-        <div class="tcr" id="pfVisitHistory">
-          <button class="tc sel" onclick="selTC(this)">🆕 First time</button>
-          <button class="tc" onclick="selTC(this)">🔄 Been before</button>
-        </div>
-        <div class="fl">👥 Friends</div>
-        <div class="fr" id="pfFriends"><button class="afb" onclick="openFriendSelector('plan')">+ Add friend</button></div>
-        <button class="btn-p" onclick="pfFinish()">Add to Plan →</button>
       </div>
+
+      <!-- Friends -->
+      <div class="pf-section">
+        <label class="pf-label">👥 Who's joining?</label>
+        <div class="pf-friends" id="pfFriends">
+          <button class="pf-add-friend" onclick="openFriendSelector('plan')">+ Add people</button>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="pf-section">
+        <label class="pf-label">Notes (optional)</label>
+        <textarea class="pf-textarea" id="pfNotes" placeholder="Any details..."></textarea>
+      </div>
+
+      <!-- Hidden fields for compatibility -->
+      <div id="pfSteps" style="display:none"><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div></div>
+      <div id="pf1" style="display:none"></div>
+      <div id="pf2" style="display:none"></div>
+      <div id="pf3" style="display:none"></div>
+      <div id="pfAiRecs" style="display:none"></div>
+      <div id="pfCustomPlace" style="display:none"></div>
+      <button id="pfNext1" style="display:none"></button>
+
+      <div style="height:100px"></div>
+    </div>
+    <!-- Fixed bottom save button -->
+    <div class="pf-footer">
+      <button class="pf-save" onclick="pfFinish()">Save Adventure</button>
     </div>
   </div>
 

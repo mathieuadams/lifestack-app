@@ -180,7 +180,7 @@ function buildMG(){
   }
 }
 function hlRange(){document.querySelectorAll('#mGrid .mgc').forEach(c=>{c.classList.remove('rs','rstart','rend');const d=parseInt(c.dataset.day);if(!d)return;if(calS&&!calE&&d===calS){c.classList.add('rstart','rend')}else if(calS&&calE){if(d===calS)c.classList.add('rstart');else if(d===calE)c.classList.add('rend');else if(d>calS&&d<calE)c.classList.add('rs')}})}
-function openQuickAdd(d){const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;document.getElementById('pfDateStart').value=`${yr}-${String(curM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;document.getElementById('pfDateEnd').value=document.getElementById('pfDateStart').value;startPlanFlow(1)}
+function openQuickAdd(d){const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;const dateStr=`${yr}-${String(curM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;startPlanFlow(1);setTimeout(()=>{document.getElementById('pfDateStart').value=dateStr;document.getElementById('pfDateEnd').value=dateStr},50)}
 function navMonth(dir){curM=(curM+dir+12)%12;buildMG()}
 
 // ===== YEARLY VIEW =====
@@ -190,7 +190,22 @@ function buildYV(){
   const cm=new Date().getMonth();
   MN.forEach((m,i)=>{
     const card=document.createElement('div');card.className='ym'+(i===cm?' cur':'');
-    const evts=getPlansForMonth(i);const evMap={};evts.forEach(p=>{if(p.startDate){const sd2=parseWeekDate(p.startDate);if(sd2&&sd2.getMonth()===i)evMap[sd2.getDate()]=(p.category||p.type||'adventure').toLowerCase()}});
+    const evts=getPlansForMonth(i);const evMap={};
+    // Map plans to days - include targetMonth plans on day 15 as fallback
+    evts.forEach(p=>{
+      const cat=(p.category||p.type||'adventure').toLowerCase();
+      if(p.startDate){
+        const sd2=parseWeekDate(p.startDate);const ed2=p.endDate?parseWeekDate(p.endDate):sd2;
+        if(sd2){
+          const startDay=sd2.getMonth()===i?sd2.getDate():1;
+          const endDay=ed2&&ed2.getMonth()===i?ed2.getDate():(i===1&&yr%4===0?29:DIM[i]);
+          for(let dd=startDay;dd<=endDay;dd++)evMap[dd]=cat;
+        }
+      } else if(p.targetMonth){
+        // No specific date - place dot on day 15
+        if(!evMap[15])evMap[15]=cat;else if(!evMap[16])evMap[16]=cat;
+      }
+    });
     let cells='';const sd=(new Date(yr,i,1).getDay()+6)%7;
     for(let b=0;b<sd;b++)cells+='<div class="ymc blank"></div>';
     for(let d=1;d<=DIM[i];d++){const c=evMap[d];cells+=`<div class="ymc ${c?'e-'+c:'day'}"></div>`}
@@ -272,23 +287,31 @@ const aiReminders={
 };
 
 function startPlanFlow(startStep){
-  pfState={type:null,loc:null,locName:'Near Sacramento',selectedFriends:[],visitType:'first'};
-  document.querySelectorAll('.pf-step').forEach(s=>s.style.display='none');
-  const step=startStep||1;
-  document.getElementById('pf'+step).style.display='block';
-  updateSteps(step);
-  if(step===1){document.querySelectorAll('#pfTypes .tc').forEach(t=>t.classList.remove('sel'));document.getElementById('pfNext1').style.opacity='.5';document.getElementById('pfNext1').style.pointerEvents='none';document.getElementById('pfActName').value='';const ds=document.getElementById('pfDateStart');if(ds)ds.value='';const de=document.getElementById('pfDateEnd');if(de)de.value=''}
+  pfState={type:null};
+  document.getElementById('pfActName').value='';
+  var ds=document.getElementById('pfDateStart');if(ds)ds.value='';
+  var de=document.getElementById('pfDateEnd');if(de)de.value='';
+  var notes=document.getElementById('pfNotes');if(notes)notes.value='';
+  document.querySelectorAll('#pfTypes .pf-cat,#pfTypes .tc').forEach(function(t){t.classList.remove('sel')});
+  document.querySelectorAll('.pf-qd').forEach(function(t){t.classList.remove('sel')});
   openPanel('planFlow');
-  document.getElementById('pfTitle').textContent='Plan Activity';
+  document.getElementById('pfTitle').textContent='New Adventure';
   setTimeout(()=>{document.querySelectorAll('#planFlowPanel input,#planFlowPanel textarea').forEach(inp=>{inp.onfocus=function(){setTimeout(()=>{this.scrollIntoView({behavior:'smooth',block:'center'})},300)}})},100);
 }
 
 function updateSteps(n){document.querySelectorAll('#pfSteps .step-dot').forEach((d,i)=>{d.className='step-dot';if(i+1<n)d.classList.add('done');if(i+1===n)d.classList.add('active')})}
 
 function pfSelType(btn,type){
-  document.querySelectorAll('#pfTypes .tc').forEach(t=>t.classList.remove('sel'));
+  document.querySelectorAll('#pfTypes .tc,#pfTypes .pf-cat').forEach(t=>t.classList.remove('sel'));
   btn.classList.add('sel');pfState.type=type;
-  document.getElementById('pfNext1').style.opacity='1';document.getElementById('pfNext1').style.pointerEvents='auto';
+}
+function pfSetQuickDate(which,btn){
+  document.querySelectorAll('.pf-qd').forEach(t=>t.classList.remove('sel'));btn.classList.add('sel');
+  const now=new Date();let d;
+  if(which==='tomorrow'){d=new Date(now);d.setDate(d.getDate()+1)}
+  else if(which==='saturday'){d=new Date(now);d.setDate(d.getDate()+((6-d.getDay()+7)%7)||7)}
+  else if(which==='nextweek'){d=new Date(now);d.setDate(d.getDate()+((6-d.getDay()+7)%7)+7)}
+  if(d){const ds=d.toISOString().split('T')[0];document.getElementById('pfDateStart').value=ds;document.getElementById('pfDateEnd').value=ds}
 }
 
 function pfNext(step){
@@ -308,7 +331,7 @@ function buildPfRecs(){
 function pfSelRec(el){document.querySelectorAll('.airc,.airc-custom').forEach(r=>r.classList.remove('sel'));el.classList.add('sel');document.getElementById('pfCustomPlace').value=''}
 function pfSelCustom(){document.querySelectorAll('.airc').forEach(r=>r.classList.remove('sel'));document.getElementById('pfCustomOption').classList.add('sel')}
 function pfUpdateCustom(){if(document.getElementById('pfCustomPlace').value.trim())pfSelCustom()}
-function pfQuick(type){pfState.type=type;startPlanFlow(1);document.querySelectorAll('#pfTypes .tc').forEach(t=>{if(t.textContent.toLowerCase().includes(type)||t.onclick?.toString().includes(type))t.classList.add('sel')});pfState.type=type;document.getElementById('pfNext1').style.opacity='1';document.getElementById('pfNext1').style.pointerEvents='auto'}
+function pfQuick(type){pfState.type=type;startPlanFlow(1);setTimeout(()=>{document.querySelectorAll('#pfTypes .pf-cat,#pfTypes .tc').forEach(t=>{if(t.textContent.toLowerCase().includes(type))t.classList.add('sel')})},50)}
 function startRecurring(){openPanel('recur')}
 
 function pfFinish(){
@@ -387,7 +410,7 @@ function renderHabitsView(){
         <div class="hinf"><div class="hnam">${escapeHtmlUI(h.title)}</div><div class="hstr">Q${h.targetQuarter||'?'}</div></div>
         <button class="hci${h.status==='completed'?' chk':''}" onclick="event.stopPropagation();quickCheckinUI('${h.id}',this)">✓</button>
       </div>`;
-    }).join('');
+    }).join('')+`<div style="text-align:center;padding:12px 0"><button class="btn-s" onclick="if(typeof showAddPlanModal==='function'){const q=Math.ceil((new Date().getMonth()+1)/3);showAddPlanModal('habit',q)}">+ Add Another Habit</button></div>`;
   }
   
   if(misogis.length===0){
@@ -627,10 +650,9 @@ function initCalendarDrag(){
     const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;
     const startStr=`${yr}-${String(curM+1).padStart(2,'0')}-${String(calS).padStart(2,'0')}`;
     const endStr=calE?`${yr}-${String(curM+1).padStart(2,'0')}-${String(calE).padStart(2,'0')}`:startStr;
-    document.getElementById('pfDateStart').value=startStr;
-    document.getElementById('pfDateEnd').value=endStr;
-    calDragStart=null;
     startPlanFlow(1);
+    setTimeout(()=>{document.getElementById('pfDateStart').value=startStr;document.getElementById('pfDateEnd').value=endStr},50);
+    calDragStart=null;
   });
 }
 
