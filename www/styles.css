@@ -527,3 +527,99 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 #photoPreview{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .photo-upload-progress{height:4px;background:var(--sand-200);border-radius:2px;overflow:hidden;margin-top:8px}
 .photo-upload-progress-bar{height:100%;background:var(--sage-500);transition:width .3s}
+
+
+/* =====================================================
+   ADDITIONAL STYLES — Week cards, bucket list, etc.
+   Append to styles.css after the compat styles
+   ===================================================== */
+
+/* WEEK VIEW - Day bar */
+.wd{display:flex;gap:4px;margin-bottom:16px}
+.wdi{flex:1;text-align:center;padding:6px 2px;border-radius:var(--radius-sm);transition:var(--transition)}
+.wdi.today{background:var(--sage-600);color:var(--white);border-radius:var(--radius-sm)}
+.wdi.past{opacity:.5}
+.wdl{font-size:.65rem;font-weight:600;text-transform:uppercase;color:var(--text-tertiary);display:block}
+.wdi.today .wdl{color:rgba(255,255,255,.7)}
+.wdn{font-size:.9rem;font-weight:700;display:block;margin-top:2px}
+.wdn.today{color:var(--white)}
+
+/* WEEK VIEW - Plan Cards */
+.pc{display:flex;align-items:center;gap:12px;background:var(--white);border-radius:var(--radius-md);padding:14px;margin-bottom:8px;box-shadow:var(--shadow-soft);cursor:pointer;transition:var(--transition)}
+.pc:active{transform:scale(.98)}
+.pcd{flex-shrink:0}
+.pc-color{width:4px;height:40px;border-radius:2px}
+.pcb{flex:1;min-width:0}
+.pct{font-weight:600;font-size:.9rem;color:var(--text-primary);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcm{display:flex;gap:6px;align-items:center;font-size:.75rem;color:var(--text-tertiary);flex-wrap:wrap}
+.tag{padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:600;text-transform:capitalize}
+.tag-travel{background:var(--cat-travel-bg);color:var(--cat-travel)}
+.tag-food{background:var(--cat-food-bg);color:var(--cat-food)}
+.tag-adventure{background:var(--cat-adventure-bg);color:var(--cat-adventure)}
+.tag-roadtrip{background:var(--cat-roadtrip-bg);color:var(--cat-roadtrip)}
+.tag-culture{background:var(--cat-culture-bg);color:var(--cat-culture)}
+.tag-date{background:var(--cat-date-bg);color:var(--cat-date)}
+.tag-health{background:var(--cat-health-bg);color:var(--cat-health)}
+.tag-birthday{background:var(--cat-birthday-bg);color:var(--cat-birthday)}
+.tag-misogi{background:var(--coral-bg);color:var(--coral)}
+.pcchk{width:32px;height:32px;border-radius:50%;border:2px solid var(--sage-200);background:transparent;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--sage-300);cursor:pointer;flex-shrink:0;transition:var(--transition)}
+.pcchk.done{background:var(--sage-500);border-color:var(--sage-500);color:var(--white)}
+
+/* ACTIVITY LIST (month view) */
+.act-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--white);border-radius:var(--radius-md);margin-bottom:6px;box-shadow:var(--shadow-soft);cursor:pointer}
+.act-item:active{transform:scale(.98)}
+.act-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.act-body{flex:1;min-width:0}
+.act-name{font-weight:600;font-size:.85rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act-meta{font-size:.72rem;color:var(--text-tertiary);display:flex;gap:6px;align-items:center;margin-top:2px}
+.act-arrow{color:var(--text-tertiary);font-size:1.2rem}
+
+/* BUCKET LIST */
+.bucket-summary{text-align:center;font-size:.82rem;color:var(--text-tertiary);padding:8px 0 16px;font-weight:500}
+.bucket-cat-header{font-family:'Fraunces',serif;font-size:.95rem;font-weight:600;color:var(--sage-700);padding:12px 0 8px;border-bottom:1px solid var(--sand-200);margin-bottom:8px}
+.bucket-cat-count{font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:400;color:var(--text-tertiary);margin-left:4px}
+.bucket-item{display:flex;align-items:center;gap:10px;padding:12px;background:var(--white);border-radius:var(--radius-md);margin-bottom:6px;box-shadow:var(--shadow-soft);transition:var(--transition)}
+.bucket-item.done{opacity:.6}
+.bucket-check{width:28px;height:28px;border-radius:50%;border:2px solid var(--sage-300);display:flex;align-items:center;justify-content:center;font-size:.8rem;color:var(--sage-300);cursor:pointer;flex-shrink:0}
+.bucket-check.checked{background:var(--sage-500);border-color:var(--sage-500);color:var(--white)}
+.bucket-info{flex:1;min-width:0}
+.bucket-title{font-weight:600;font-size:.85rem;color:var(--text-primary)}
+.bucket-title.done{text-decoration:line-through;opacity:.6}
+.bucket-desc{font-size:.75rem;color:var(--text-tertiary);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bucket-diff{font-size:.65rem;color:var(--text-tertiary);margin-top:2px;text-transform:capitalize}
+.bucket-actions{display:flex;gap:4px;flex-shrink:0}
+.bucket-schedule,.bucket-delete{background:none;border:none;font-size:1rem;cursor:pointer;padding:4px;border-radius:6px}
+.bucket-schedule:active,.bucket-delete:active{background:var(--sand-100)}
+
+/* MEMORY TIMELINE — photo count badge */
+.mphoto-count{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);color:white;font-size:.65rem;padding:2px 6px;border-radius:8px}
+
+/* FRIEND SELECTOR */
+.fsl-item{display:flex;align-items:center;gap:10px;padding:12px;border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition)}
+.fsl-item:active,.fsl-item.sel{background:var(--sage-50)}
+.fsl-avatar{font-size:1.4rem}
+.fsl-name{flex:1;font-size:.9rem;font-weight:500}
+.fsl-check{opacity:0;color:var(--sage-600);font-weight:700;transition:var(--transition)}
+.fsl-item.sel .fsl-check{opacity:1}
+.friend-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:var(--sage-50);border:1px solid var(--sage-200);border-radius:16px;font-size:.8rem;margin:2px}
+.friend-chip span{cursor:pointer;opacity:.6}
+
+/* REMINDER ITEMS */
+.ri{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--sand-100)}
+.rchk{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--sage-300);background:transparent;font-size:.7rem;color:var(--sage-300);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.rchk.done{background:var(--sage-500);border-color:var(--sage-500);color:white}
+.rbd{flex:1}
+.rtx{font-size:.85rem;font-weight:500}
+.rwh{font-size:.72rem;color:var(--text-tertiary)}
+.rdl{background:none;border:none;font-size:.9rem;cursor:pointer;padding:4px}
+
+/* PROFILE — account link */
+.prl-account{display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition)}
+.prl-account:active{background:var(--sand-100)}
+
+/* ACCOUNT SETTINGS */
+.acct-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--sage-300),var(--sage-500));display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 20px;position:relative;cursor:pointer;overflow:hidden}
+.acct-avatar-edit{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);color:white;text-align:center;font-size:.7rem;padding:2px 0}
+.acct-field{margin-bottom:14px}
+.acct-field label{display:block;font-size:.8rem;font-weight:600;color:var(--text-secondary);margin-bottom:4px}
+.acct-hint{font-size:.7rem;color:var(--text-tertiary);margin-top:2px}

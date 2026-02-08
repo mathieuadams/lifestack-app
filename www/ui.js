@@ -22,129 +22,220 @@ function swTab(t,b){
   document.querySelectorAll('.ps').forEach(x=>x.classList.remove('active'));
   b.classList.add('active');
   document.getElementById('st-'+t).classList.add('active');
+  if(t==='week') buildWeekView();
+  if(t==='bucket') buildBucketView();
 }
 function openPanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.add('open');if(p)p.classList.add('open')}
 function closePanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.remove('open');if(p)p.classList.remove('open')}
 function toggleFab(){const m=document.getElementById('fabMenu'),b=document.getElementById('fabBtn');m.classList.toggle('open');b.textContent=m.classList.contains('open')?'×':'+'}
 function closeFab(){document.getElementById('fabMenu').classList.remove('open');document.getElementById('fabBtn').textContent='+'}
 function toggleProfile(){document.getElementById('profileOverlay').classList.toggle('open');document.getElementById('profilePanel').classList.toggle('open')}
-function toast(m){const t=document.getElementById('toastEl');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function toast(m){const t=document.getElementById('toastEl');if(!t)return;t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
 function tgChk(b){b.classList.toggle('done');if(b.classList.contains('done'))toast('✓ Done!')}
-function tgHab(b){b.classList.toggle('chk');toast(b.classList.contains('chk')?'🔥 Checked in!':'Unchecked')}
 function selTC(c){c.parentElement.querySelectorAll('.tc').forEach(x=>x.classList.remove('sel'));c.classList.add('sel')}
 function captureMemory(){if(typeof showMemoryModal==='function')showMemoryModal();else toast('📸 Memory captured!')}
+
+// ===== WEEK VIEW =====
+let weekOffset=0;
+function getWeekRange(offset){
+  const now=new Date();
+  const day=now.getDay();
+  const mon=new Date(now);mon.setDate(now.getDate()-((day+6)%7)+(offset*7));
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  return {start:mon,end:sun};
+}
+function formatWeekTitle(range){
+  const now=new Date();const todayMon=new Date(now);todayMon.setDate(now.getDate()-((now.getDay()+6)%7));
+  if(range.start.toDateString()===todayMon.toDateString())return 'This Week';
+  const opts={month:'short',day:'numeric'};
+  return range.start.toLocaleDateString('en-US',opts)+' — '+range.end.toLocaleDateString('en-US',opts);
+}
+function navWeek(dir){weekOffset+=dir;buildWeekView()}
+function buildWeekView(){
+  const range=getWeekRange(weekOffset);
+  const wt=document.getElementById('weekTitle');if(wt)wt.textContent=formatWeekTitle(range);
+  // Build day bar
+  const wd=document.getElementById('weekDays');
+  if(wd){
+    const dayNames=['M','T','W','T','F','S','S'];
+    const today=new Date();today.setHours(0,0,0,0);
+    let html='';
+    for(let i=0;i<7;i++){
+      const d=new Date(range.start);d.setDate(range.start.getDate()+i);
+      const isToday=d.toDateString()===today.toDateString();
+      const isPast=d<today;
+      html+=`<div class="wdi${isToday?' today':''}${isPast?' past':''}">
+        <span class="wdl">${dayNames[i]}</span>
+        <span class="wdn${isToday?' today':''}">${d.getDate()}</span>
+      </div>`;
+    }
+    wd.innerHTML=html;
+  }
+  // Build plan cards for this week
+  const pc=document.getElementById('planCards');if(!pc)return;
+  const safePlans=typeof plans!=='undefined'&&Array.isArray(plans)?plans:[];
+  const weekPlans=safePlans.filter(p=>{
+    if(p.type==='habit')return false;
+    const sd=p.startDate?parseWeekDate(p.startDate):null;
+    const ed=p.endDate?parseWeekDate(p.endDate):sd;
+    if(!sd)return false;
+    return sd<=range.end&&(ed||sd)>=range.start;
+  });
+  if(weekPlans.length===0){
+    pc.innerHTML='<p style="color:var(--text-tertiary);text-align:center;padding:12px 0;font-size:.85rem">No activities planned this week</p>';
+    return;
+  }
+  const catIcons={travel:'✈️',food:'🍽️',adventure:'🏔️',roadtrip:'🚗',culture:'🎭',date:'💕',health:'💪',birthday:'🎂',misogi:'🏔️'};
+  const catColors={travel:'var(--cat-travel)',food:'var(--cat-food)',adventure:'var(--cat-adventure)',roadtrip:'var(--cat-roadtrip)',culture:'var(--cat-culture)',date:'var(--cat-date)',health:'var(--cat-health)',birthday:'var(--cat-birthday)'};
+  pc.innerHTML=weekPlans.map(p=>{
+    const icon=catIcons[p.category||p.type]||'📋';
+    const cat=p.category||p.type||'';
+    const color=catColors[cat]||'var(--sage-500)';
+    const sd=p.startDate?parseWeekDate(p.startDate):null;
+    const dateStr=sd?sd.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}):'';
+    const isDone=p.status==='completed';
+    return `<div class="pc t-${cat}" onclick="openPlanDetail('${p.id}')">
+      <div class="pcd"><div class="pc-color" style="background:${color}"></div></div>
+      <div class="pcb">
+        <div class="pct">${icon} ${escapeHtmlUI(p.title)}</div>
+        <div class="pcm"><span>${dateStr}</span><span class="tag tag-${cat}">${cat}</span>${p.type==='misogi'?'<span class="tag tag-misogi">Misogi</span>':''}</div>
+      </div>
+      <button class="pcchk${isDone?' done':''}" onclick="event.stopPropagation();togglePlanDone('${p.id}',this)">✓</button>
+    </div>`;
+  }).join('');
+}
+function parseWeekDate(s){if(!s)return null;const p=s.split('T')[0].split('-');if(p.length!==3)return null;return new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]))}
+function escapeHtmlUI(s){if(!s)return '';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function openPlanDetail(planId){
+  // Try app.js showEditPlanModal first, then fall back to trip panel
+  if(typeof showEditPlanModal==='function'){showEditPlanModal(planId);return}
+  const p=(typeof plans!=='undefined'?plans:[]).find(x=>x.id===planId);if(!p)return;
+  document.getElementById('tripTitle').textContent=p.title||'Activity Detail';
+  if(p.startDate)document.getElementById('tripStartDate').value=p.startDate;
+  if(p.endDate)document.getElementById('tripEndDate').value=p.endDate;
+  openPanel('trip');
+}
+function togglePlanDone(planId,btn){
+  btn.classList.toggle('done');
+  if(btn.classList.contains('done')){toast('✓ Completed!');if(typeof quickCompletePlan==='function')quickCompletePlan(planId)}
+  else{toast('Marked incomplete')}
+}
 
 // ===== MONTH CALENDAR =====
 const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DIM=[31,28,31,30,31,30,31,31,30,31,30,31];
 let curM=new Date().getMonth();
-let calS=null,calE=null,lpT=null;
-
-function buildMG(){
-  const g=document.getElementById('mGrid');if(!g)return;g.innerHTML='';
-  const year=typeof currentViewYear!=='undefined'?currentViewYear:2026;
-  document.getElementById('cmTitle').textContent=MN[curM]+' '+year;
-  ['M','T','W','T','F','S','S'].forEach(d=>{const h=document.createElement('div');h.className='mgh';h.textContent=d;g.appendChild(h)});
-  let sd=(new Date(year,curM,1).getDay()+6)%7;
-  for(let i=0;i<sd;i++){const e=document.createElement('div');e.className='mgc empty';g.appendChild(e)}
-  const evts=getMonthEvents(curM);
-  const today=new Date();
-  for(let d=1;d<=DIM[curM];d++){
-    const c=document.createElement('div');c.className='mgc';c.dataset.day=d;
-    if(curM===today.getMonth()&&d===today.getDate())c.classList.add('today');
-    const n=document.createElement('div');n.className='mgn';n.textContent=d;c.appendChild(n);
-    const de=evts.filter(e=>e.d===d);
-    de.slice(0,2).forEach(e=>{const v=document.createElement('div');v.className='mge c-'+e.c;v.textContent=e.n;c.appendChild(v)});
-    if(de.length>2){const m=document.createElement('div');m.className='mgmore';m.textContent='+'+(de.length-2);c.appendChild(m)}
-    c.addEventListener('click',()=>calClick(d));
-    c.addEventListener('touchstart',ev=>{lpT=setTimeout(()=>{ev.preventDefault();openQuickAdd(d)},600)},{passive:false});
-    c.addEventListener('touchend',()=>clearTimeout(lpT));
-    c.addEventListener('touchmove',()=>clearTimeout(lpT));
-    g.appendChild(c);
-  }
-  calS=null;calE=null;
-  buildActList(evts);
-}
-
 function getMonthEvents(month){
-  if(typeof plans!=='undefined'&&Array.isArray(plans)&&plans.length>0){
-    const evts=[];
-    plans.forEach(p=>{
-      if(p.type==='habit')return;
-      const sd=p.startDate?parseLocalDate(p.startDate):null;
-      const ed=p.endDate?parseLocalDate(p.endDate):sd;
-      if(sd&&sd.getMonth()===month){
-        const endDay=(ed&&ed.getMonth()===month)?ed.getDate():sd.getDate();
-        for(let d=sd.getDate();d<=endDay;d++){
-          evts.push({d,n:p.title,c:mapCat(p.category||p.type),id:p.id});
-        }
-      }else if(p.targetMonth&&parseInt(p.targetMonth)-1===month){
-        evts.push({d:15,n:p.title,c:mapCat(p.category||p.type),id:p.id});
-      }
-    });
-    if(evts.length>0)return evts;
-  }
-  return getMockEvents(month);
-}
-
-function mapCat(c){
-  const m={travel:'travel',hiking:'adventure',camping:'adventure',beach:'adventure',running:'health',marathon:'health',cycling:'health',concert:'culture',festival:'culture',theater:'culture',museum:'culture',dining:'food',cooking:'food',wine:'food',spa:'health',yoga:'health',roadtrip:'roadtrip',birthday:'birthday',anniversary:'date',food:'food',adventure:'adventure',health:'health',culture:'culture',date:'date',misogi:'adventure'};
-  return m[c]||'adventure';
-}
-
-function getMockEvents(month){
-  const mock={
-    0:[{d:1,n:'New Year Run',c:'health'}],
-    1:[{d:7,n:'Morning run',c:'health'},{d:8,n:"Sarah's Bday",c:'birthday'},{d:14,n:"Valentine's",c:'food'},{d:21,n:'Day hike',c:'adventure'}],
-    2:[{d:15,n:'Marseille ✈️',c:'travel'},{d:16,n:'Marseille',c:'travel'},{d:17,n:'Marseille',c:'travel'},{d:18,n:'Marseille',c:'travel'},{d:19,n:'Marseille',c:'travel'},{d:20,n:'Marseille',c:'travel'},{d:21,n:'Marseille',c:'travel'},{d:22,n:'Marseille',c:'travel'}],
-    3:[{d:10,n:'Sushi class',c:'food'}],4:[{d:5,n:'Napa trip',c:'roadtrip'},{d:6,n:'Napa trip',c:'roadtrip'}],
-    11:[{d:6,n:'Marathon 🏃',c:'health'}]
-  };
-  return mock[month]||[];
-}
-
-function buildActList(evts){
-  const al=document.getElementById('actList');if(!al)return;al.innerHTML='';
-  document.getElementById('actListTitle').textContent='Activities in '+MN[curM];
-  const icons={travel:'✈️',food:'🍽️',adventure:'🏔️',roadtrip:'🚗',birthday:'🎂',health:'💪',culture:'🎭',date:'💕'};
-  const bgs={travel:'var(--cat-travel-bg)',food:'var(--cat-food-bg)',adventure:'var(--cat-adventure-bg)',roadtrip:'var(--cat-roadtrip-bg)',birthday:'var(--cat-birthday-bg)',health:'var(--cat-health-bg)',culture:'var(--cat-culture-bg)',date:'var(--cat-date-bg)'};
-  const seen=new Set();const unique=[];
-  evts.forEach(e=>{const k=e.n+e.c;if(!seen.has(k)){seen.add(k);const days=evts.filter(x=>x.n===e.n&&x.c===e.c);unique.push({...e,startD:Math.min(...days.map(x=>x.d)),endD:Math.max(...days.map(x=>x.d)),multi:days.length>1})}});
-  unique.sort((a,b)=>a.startD-b.startD);
-  unique.forEach(e=>{
-    const mn=MN[curM].slice(0,3);
-    const dateStr=e.multi?`${mn} ${e.startD}–${e.endD}`:`${mn} ${e.startD}`;
-    const item=document.createElement('div');item.className='act-item t-'+e.c;
-    item.innerHTML=`<div class="act-icon" style="background:${bgs[e.c]||'var(--sand-100)'}">${icons[e.c]||'📋'}</div><div class="act-body"><div class="act-name">${e.n}</div><div class="act-meta"><span>${dateStr}</span><span class="tag tag-${e.c}">${e.c}</span></div></div><span class="act-edit" onclick="event.stopPropagation();openTripDetail('${e.id||''}')">✏️</span>`;
-    item.onclick=()=>openTripDetail(e.id||'');
-    al.appendChild(item);
+  const safePlans=typeof plans!=='undefined'&&Array.isArray(plans)?plans:[];
+  return safePlans.filter(p=>{
+    if(p.type==='habit')return false;
+    if(!p.startDate)return false;
+    const sd=parseWeekDate(p.startDate);if(!sd)return false;
+    if(sd.getMonth()===month)return true;
+    if(p.endDate){const ed=parseWeekDate(p.endDate);if(ed&&ed.getMonth()>=month&&sd.getMonth()<=month)return true}
+    if(p.targetMonth&&parseInt(p.targetMonth)===month+1)return true;
+    return false;
+  }).map(p=>{
+    const sd=parseWeekDate(p.startDate);
+    return {d:sd?sd.getDate():1,c:p.category||p.type||'adventure',n:p.title,id:p.id};
   });
 }
-
-function calClick(day){
-  if(!calS||(calS&&calE)){calS=day;calE=null;hlRange()}
-  else{if(day<calS){calE=calS;calS=day}else calE=day;hlRange();
-    setTimeout(()=>{const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;document.getElementById('pfDateStart').value=`${yr}-${String(curM+1).padStart(2,'0')}-${String(calS).padStart(2,'0')}`;document.getElementById('pfDateEnd').value=`${yr}-${String(curM+1).padStart(2,'0')}-${String(calE).padStart(2,'0')}`;startPlanFlow(2)},300)}
+let calS=null,calE=null;
+function buildMG(){
+  const g=document.getElementById('mGrid');if(!g)return;
+  const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;
+  const title=document.getElementById('cmTitle');if(title)title.textContent=MN[curM]+' '+yr;
+  const fd=(new Date(yr,curM,1).getDay()+6)%7;
+  const dim=curM===1&&yr%4===0?29:DIM[curM];
+  const evts=getMonthEvents(curM);
+  const evMap={};evts.forEach(e=>{if(!evMap[e.d])evMap[e.d]=[];evMap[e.d].push(e)});
+  let html='<div class="mgh">M</div><div class="mgh">T</div><div class="mgh">W</div><div class="mgh">T</div><div class="mgh">F</div><div class="mgh">S</div><div class="mgh">S</div>';
+  for(let b=0;b<fd;b++)html+='<div class="mgc blank"></div>';
+  const today=new Date();
+  for(let d=1;d<=dim;d++){
+    const isToday=d===today.getDate()&&curM===today.getMonth()&&yr===today.getFullYear();
+    const dayEvts=evMap[d]||[];
+    const evtDots=dayEvts.map(e=>`<div class="mgev" style="background:var(--cat-${e.c});overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.55rem;color:var(--white);padding:1px 3px;border-radius:2px">${escapeHtmlUI(e.n).substring(0,8)}${e.n&&e.n.length>8?'…':''}</div>`).join('');
+    html+=`<div class="mgc${isToday?' today':''}" data-day="${d}" onclick="openQuickAdd(${d})">${d}${evtDots}</div>`;
+  }
+  g.innerHTML=html;calS=null;calE=null;
+  // Activity list
+  const actList=document.getElementById('actList');
+  const actTitle=document.getElementById('actListTitle');
+  if(actList&&actTitle){
+    actTitle.textContent='Activities in '+MN[curM];
+    const monthEvts=getMonthEvents(curM);
+    if(monthEvts.length===0){actList.innerHTML='<p style="color:var(--text-tertiary);font-size:.85rem;padding:8px 0">No activities this month</p>';return}
+    const catIcons={travel:'✈️',food:'🍽️',adventure:'🏔️',roadtrip:'🚗',culture:'🎭',date:'💕',health:'💪',birthday:'🎂'};
+    const catBgs={travel:'var(--cat-travel-bg)',food:'var(--cat-food-bg)',adventure:'var(--cat-adventure-bg)',roadtrip:'var(--cat-roadtrip-bg)',culture:'var(--cat-culture-bg)',date:'var(--cat-date-bg)',health:'var(--cat-health-bg)',birthday:'var(--cat-birthday-bg)'};
+    actList.innerHTML=monthEvts.map(e=>`<div class="act-item" onclick="openPlanDetail('${e.id}')"><div class="act-icon" style="background:${catBgs[e.c]||'var(--sage-100)'}">${catIcons[e.c]||'📋'}</div><div class="act-body"><div class="act-name">${escapeHtmlUI(e.n)}</div><div class="act-meta">${MN[curM]} ${e.d} <span class="tag tag-${e.c}">${e.c}</span></div></div><span class="act-arrow">›</span></div>`).join('');
+  }
 }
 function hlRange(){document.querySelectorAll('#mGrid .mgc').forEach(c=>{c.classList.remove('rs','rstart','rend');const d=parseInt(c.dataset.day);if(!d)return;if(calS&&!calE&&d===calS){c.classList.add('rstart','rend')}else if(calS&&calE){if(d===calS)c.classList.add('rstart');else if(d===calE)c.classList.add('rend');else if(d>calS&&d<calE)c.classList.add('rs')}})}
 function openQuickAdd(d){const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;document.getElementById('pfDateStart').value=`${yr}-${String(curM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;document.getElementById('pfDateEnd').value=document.getElementById('pfDateStart').value;startPlanFlow(1)}
 function navMonth(dir){curM=(curM+dir+12)%12;buildMG()}
-function navWeek(dir){toast(dir>0?'Next week':'Previous week')}
 
 // ===== YEARLY VIEW =====
 function buildYV(){
   const g=document.getElementById('yearGrid');if(!g)return;g.innerHTML='';
+  const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;
   const cm=new Date().getMonth();
   MN.forEach((m,i)=>{
     const card=document.createElement('div');card.className='ym'+(i===cm?' cur':'');
     const evts=getMonthEvents(i);const evMap={};evts.forEach(e=>evMap[e.d]=e.c);
-    let cells='';const sd=(new Date(2026,i,1).getDay()+6)%7;
+    let cells='';const sd=(new Date(yr,i,1).getDay()+6)%7;
     for(let b=0;b<sd;b++)cells+='<div class="ymc blank"></div>';
     for(let d=1;d<=DIM[i];d++){const c=evMap[d];cells+=`<div class="ymc ${c?'e-'+c:'day'}"></div>`}
     card.innerHTML=`<div class="ymn">${m.slice(0,3)}</div><div class="ymg">${cells}</div><div class="ymc-count">${evts.length} event${evts.length!==1?'s':''}</div>`;
     card.onclick=()=>{curM=i;buildMG();swTab('month',document.querySelectorAll('.ptb')[1])};
     g.appendChild(card);
   });
+}
+
+// ===== BUCKET LIST VIEW =====
+function buildBucketView(){
+  const c=document.getElementById('bucketListContainer');if(!c)return;
+  const items=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList:[];
+  if(items.length===0){c.innerHTML='<p style="color:var(--text-tertiary);text-align:center;padding:20px 0">No bucket list items yet. Tap "+ Add" to start!</p>';return}
+  const catIcons={travel:'✈️',adventure:'🏔️',skills:'🎯',experiences:'🎭',personal:'💫',health:'💪',creative:'🎨',other:'📌'};
+  const groups={};items.forEach(i=>{const cat=i.category||'other';if(!groups[cat])groups[cat]=[];groups[cat].push(i)});
+  let html='';
+  html+=`<div class="bucket-summary">${items.length} Dream${items.length!==1?'s':''} · ${items.filter(i=>i.status==='planned').length} Planned · ${items.filter(i=>i.status==='done').length} Done</div>`;
+  Object.keys(groups).forEach(cat=>{
+    const icon=catIcons[cat]||'📌';
+    html+=`<div class="bucket-cat-header">${icon} ${cat.charAt(0).toUpperCase()+cat.slice(1)} <span class="bucket-cat-count">${groups[cat].length}</span></div>`;
+    groups[cat].forEach(item=>{
+      const isDone=item.status==='done'||item.status==='completed';
+      html+=`<div class="bucket-item${isDone?' done':''}" onclick="openBucketItem('${item.id}')">
+        <div class="bucket-check${isDone?' checked':''}" onclick="event.stopPropagation();toggleBucketDone('${item.id}',this)">${isDone?'✓':'○'}</div>
+        <div class="bucket-info">
+          <div class="bucket-title${isDone?' done':''}">${escapeHtmlUI(item.title)}</div>
+          ${item.description?`<div class="bucket-desc">${escapeHtmlUI(item.description).substring(0,60)}</div>`:''}
+          ${item.difficulty?`<div class="bucket-diff">${item.difficulty}</div>`:''}
+        </div>
+        <div class="bucket-actions">
+          ${!isDone&&typeof showAddPlanModal==='function'?`<button class="bucket-schedule" onclick="event.stopPropagation();scheduleBucket('${item.id}')">📅</button>`:''}
+          <button class="bucket-delete" onclick="event.stopPropagation();deleteBucketItem('${item.id}')">🗑</button>
+        </div>
+      </div>`;
+    });
+  });
+  c.innerHTML=html;
+}
+function openBucketItem(id){if(typeof showBucketListModal==='function')showBucketListModal()}
+function toggleBucketDone(id,btn){
+  const items=typeof bucketList!=='undefined'?bucketList:[];
+  const item=items.find(i=>i.id===id);
+  if(item){item.status=item.status==='done'?'pending':'done';buildBucketView();toast(item.status==='done'?'🎉 Dream achieved!':'Unmarked')}
+}
+function deleteBucketItem(id){
+  if(!confirm('Remove this bucket list item?'))return;
+  if(typeof bucketList!=='undefined'){const idx=bucketList.findIndex(i=>i.id===id);if(idx>-1){bucketList.splice(idx,1);buildBucketView();toast('Removed')}}
+}
+function scheduleBucket(id){
+  const items=typeof bucketList!=='undefined'?bucketList:[];
+  const item=items.find(i=>i.id===id);
+  if(item&&typeof showAddPlanModal==='function'){showAddPlanModal('adventure');setTimeout(()=>{const t=document.getElementById('planTitle');if(t)t.value=item.title},200)}
 }
 
 // ===== PLANNING FLOW =====
@@ -161,7 +252,6 @@ const aiDB={
   'birthday':[{n:'Iron Horse Tavern',d:'Private dining, great for groups.',dist:'Downtown · 10 min',e:'🎂',bg:'var(--pink-light)'},{n:'Topgolf Roseville',d:'Fun group activity.',dist:'Roseville · 20 min',e:'⛳',bg:'var(--sage-100)'},{n:'River Cats Game',d:'Minor league baseball.',dist:'West Sac · 12 min',e:'⚾',bg:'var(--amber-light)'}],
 };
 
-// AI-generated reminders matching activity type
 const aiReminders={
   'travel':['Check passport expiry','Book flights','Reserve hotel','Pack luggage','Arrange airport transfer'],
   'food':['Make reservation','Check dress code','Review menu','Book babysitter if needed'],
@@ -200,347 +290,68 @@ function pfNext(step){
 }
 
 function buildPfRecs(){
-  const recs=aiDB[pfState.type]||aiDB['food'];
-  document.getElementById('pfLocLabel').textContent=pfState.locName||'Near Sacramento';
-  const c=document.getElementById('pfAiRecs');c.innerHTML='';
-  recs.forEach((r,i)=>{
-    const div=document.createElement('div');div.className='airc'+(i===0?' selected':'');
-    div.onclick=function(){pfSelRec(this,r.n)};
-    div.innerHTML=`<div class="airi" style="background:${r.bg}">${r.e}</div><div class="airb"><div class="airn">${r.n}</div><div class="aird">${r.d}</div><div class="airdist">📍 ${r.dist}</div></div>`;
-    c.appendChild(div);
-  });
-  // Set default name from first rec
-  if(!document.getElementById('pfActName').value){
-    document.getElementById('pfActName').value=recs[0]?.n||'';
-  }
-  // Reset custom place
-  const custom=document.getElementById('pfCustomOption');if(custom)custom.classList.remove('selected');
-  const customInput=document.getElementById('pfCustomPlace');if(customInput)customInput.value='';
-  // Build reminders for trip detail
-  buildAiReminders(pfState.type);
+  const t=pfState.type||'adventure';
+  const recs=aiDB[t]||aiDB['adventure'];
+  const c=document.getElementById('pfAiRecs');if(!c)return;
+  c.innerHTML=recs.map((r,i)=>`<div class="airc${i===0?' sel':''}" onclick="pfSelRec(this)"><div class="airi" style="background:${r.bg}">${r.e}</div><div class="aird"><div class="airn">${r.n}</div><div class="airt2">${r.d}</div><div class="airdist">${r.dist}</div></div></div>`).join('');
 }
 
-function pfSelRec(el,name){
-  document.querySelectorAll('.airc').forEach(c=>c.classList.remove('selected'));
-  const custom=document.getElementById('pfCustomOption');if(custom)custom.classList.remove('selected');
-  el.classList.add('selected');
-  document.getElementById('pfActName').value=name;
-}
-
-function pfSelCustom(){
-  document.querySelectorAll('.airc').forEach(c=>c.classList.remove('selected'));
-  document.getElementById('pfCustomOption').classList.add('selected');
-  const val=document.getElementById('pfCustomPlace').value;
-  if(val)document.getElementById('pfActName').value=val;
-  document.getElementById('pfCustomPlace').focus();
-}
-
-function pfUpdateCustom(){
-  const val=document.getElementById('pfCustomPlace').value;
-  if(val)document.getElementById('pfActName').value=val;
-}
-
-function pfQuick(type){
-  pfState={type:type,loc:'around',locName:'Near Sacramento',selectedFriends:[],visitType:'first'};
-  document.querySelectorAll('.pf-step').forEach(s=>s.style.display='none');
-  document.getElementById('pf3').style.display='block';
-  updateSteps(3);
-  openPanel('planFlow');
-  document.getElementById('pfTitle').textContent='Plan Activity';
-  document.getElementById('pfActName').value='';
-  buildPfRecs();
-}
-
+function pfSelRec(el){document.querySelectorAll('.airc,.airc-custom').forEach(r=>r.classList.remove('sel'));el.classList.add('sel');document.getElementById('pfCustomPlace').value=''}
+function pfSelCustom(){document.querySelectorAll('.airc').forEach(r=>r.classList.remove('sel'));document.getElementById('pfCustomOption').classList.add('sel')}
+function pfUpdateCustom(){if(document.getElementById('pfCustomPlace').value.trim())pfSelCustom()}
+function pfQuick(type){pfState.type=type;startPlanFlow(1);document.querySelectorAll('#pfTypes .tc').forEach(t=>{if(t.textContent.toLowerCase().includes(type)||t.onclick?.toString().includes(type))t.classList.add('sel')});pfState.type=type;document.getElementById('pfNext1').style.opacity='1';document.getElementById('pfNext1').style.pointerEvents='auto'}
 function startRecurring(){openPanel('recur')}
 
-async function pfFinish(){
-  const name=document.getElementById('pfActName').value||'New Activity';
-  const visitSel=document.querySelector('#pfVisitHistory .tc.sel');
-  const isFirstTime=!visitSel||visitSel.textContent.includes('First');
-  
-  // Create plan via app.js API if available
-  if(typeof createPlan==='function'){
-    const planData={
-      type:'adventure',
-      title:name,
-      description:'',
-      year:typeof currentViewYear!=='undefined'?currentViewYear:2026,
-      startDate:document.getElementById('pfDateStart')?.value||null,
-      endDate:document.getElementById('pfDateEnd')?.value||null,
-      category:pfState.type||'other',
-      targetMonth:null,
-      people:pfState.selectedFriends.map(f=>f.id),
-      visitCount:isFirstTime?1:2,
-      ownerName:typeof currentUser!=='undefined'&&currentUser?currentUser.name:'User'
-    };
-    // Extract month from date
-    if(planData.startDate){
-      const d=new Date(planData.startDate+'T00:00:00');
-      planData.targetMonth=d.getMonth()+1;
-    }
-    const result=await createPlan(planData);
-    if(result){
-      if(typeof plans!=='undefined')plans.push(result);
-      toast('🎉 '+name+' added to plan!');
-    }else{
-      toast('🎉 '+name+' added locally!');
-    }
-  }else{
-    toast('🎉 '+name+' added to plan!');
+function pfFinish(){
+  const selRec=document.querySelector('.airc.sel .airn');
+  const custom=document.getElementById('pfCustomPlace').value.trim();
+  const title=document.getElementById('pfActName').value.trim()||custom||(selRec?selRec.textContent:'New Activity');
+  const startDate=document.getElementById('pfDateStart').value;
+  const endDate=document.getElementById('pfDateEnd').value;
+  if(typeof handlePlanSubmit==='function'){
+    document.getElementById('planId').value='';
+    document.getElementById('planType').value='adventure';
+    document.getElementById('planTitle').value=title;
+    document.getElementById('planDescription').value='';
+    document.getElementById('planStartDate').value=startDate;
+    document.getElementById('planEndDate').value=endDate;
+    document.getElementById('planCategory').value=pfState.type||'adventure';
+    if(typeof selectedCategory!=='undefined')window.selectedCategory=pfState.type||'adventure';
+    handlePlanSubmit(new Event('submit'));
   }
   closePanel('planFlow');
-  // Open trip detail with AI reminders
-  setTimeout(()=>{
-    document.getElementById('tripTitle').textContent=name;
-    buildAiReminders(pfState.type);
-    renderTripFriends(pfState.selectedFriends);
-    openPanel('trip');
-  },400);
+  toast('📋 '+title+' added!');
+  setTimeout(()=>{buildWeekView();buildMG();buildYV()},500);
 }
 
-// ===== AI REMINDERS =====
-function buildAiReminders(type){
-  const list=document.getElementById('remList');if(!list)return;
-  const rems=aiReminders[type]||aiReminders['adventure'];
-  list.innerHTML='';
-  rems.forEach(r=>{
-    const ri=document.createElement('div');ri.className='ri';
-    ri.innerHTML=`<button class="rchk" onclick="tgRem(this)">✓</button><div class="rbd"><div class="rtx">${r}</div><div class="rwh">🔔 1 week prior</div></div><button class="redit" onclick="editRem(this)">✏️</button><button class="rdl" onclick="this.closest('.ri').remove()">🗑</button>`;
-    list.appendChild(ri);
-  });
-}
+function saveTripDetail(){closePanel('trip');toast('✓ Saved');setTimeout(()=>{buildWeekView();buildMG()},300)}
 
-function tgRem(b){b.classList.toggle('done');b.closest('.ri').querySelector('.rtx').classList.toggle('sk');if(b.classList.contains('done'))toast('✓ Done')}
-function editRem(btn){
-  const ri=btn.closest('.ri');if(ri.classList.contains('ri-editing'))return;
-  const txt=ri.querySelector('.rtx');const when=ri.querySelector('.rwh');
-  const oldText=txt.textContent;
-  const timings=['24h','1 week','1 month','3 months'];
-  let curTiming='1 week';timings.forEach(t=>{if(when.textContent.includes(t))curTiming=t});
-  ri.classList.add('ri-editing');
-  const ed=document.createElement('div');ed.className='ri-edit-wrap';
-  ed.innerHTML=`<input class="ri-edit-input" value="${oldText}"><div class="ri-edit-timing">${timings.map(t=>`<button class="tc${t===curTiming?' sel':''}" onclick="selTC(this)">${t}</button>`).join('')}</div><div class="ri-edit-actions"><button class="ri-cancel" onclick="cancelEditRem(this)">Cancel</button><button class="ri-save" onclick="saveEditRem(this)">Save</button></div>`;
-  ri.querySelector('.rbd').appendChild(ed);
-}
-function saveEditRem(btn){const ri=btn.closest('.ri');ri.querySelector('.rtx').textContent=ri.querySelector('.ri-edit-input').value;ri.querySelector('.rwh').textContent='🔔 '+(ri.querySelector('.ri-edit-timing .tc.sel')?.textContent||'1 week')+' prior';ri.querySelector('.ri-edit-wrap').remove();ri.classList.remove('ri-editing');toast('Reminder updated!')}
-function cancelEditRem(btn){const ri=btn.closest('.ri');ri.querySelector('.ri-edit-wrap').remove();ri.classList.remove('ri-editing')}
-function addRem(){const i=document.getElementById('nri'),t=i.value.trim();if(!t)return;const tm=document.querySelector('#trTiming .tc.sel')?.textContent||'1 week';const l=document.getElementById('remList'),it=document.createElement('div');it.className='ri';it.innerHTML=`<button class="rchk" onclick="tgRem(this)">✓</button><div class="rbd"><div class="rtx">${t}</div><div class="rwh">🔔 ${tm} prior</div></div><button class="redit" onclick="editRem(this)">✏️</button><button class="rdl" onclick="this.closest('.ri').remove()">🗑</button>`;l.appendChild(it);i.value='';toast('Reminder added!')}
-
-// ===== TRIP DETAIL =====
-let currentTripPlanId=null;
-
-function openTripDetail(planId){
-  currentTripPlanId=planId;
-  if(planId&&typeof plans!=='undefined'){
-    const plan=plans.find(p=>p.id===planId);
-    if(plan){
-      document.getElementById('tripTitle').textContent=plan.title;
-      document.getElementById('tripStartDate').value=plan.startDate||'';
-      document.getElementById('tripEndDate').value=plan.endDate||'';
-      updateTripDuration();
-      buildAiReminders(mapCat(plan.category||plan.type));
-      // Render friends
-      const friendsList=[];
-      if(plan.people&&Array.isArray(plan.people)){
-        plan.people.forEach(pid=>{
-          const p=typeof people!=='undefined'?people.find(x=>x.id===pid):null;
-          if(p)friendsList.push({id:p.id,name:p.name,avatar:p.avatar||'👤'});
-        });
-      }
-      renderTripFriends(friendsList);
-    }
-  }
-  openPanel('trip');
-}
-
-function updateTripDuration(){
-  const s=document.getElementById('tripStartDate').value;
-  const e=document.getElementById('tripEndDate').value;
-  const dur=document.getElementById('tripDuration');
-  if(s&&e){
-    const diff=Math.ceil((new Date(e)-new Date(s))/(1000*60*60*24));
-    dur.textContent=diff>0?diff+' night'+(diff>1?'s':''):'Same day';
-  }else{dur.textContent='—'}
-}
-// Listen for date changes
-document.addEventListener('DOMContentLoaded',()=>{
-  const sd=document.getElementById('tripStartDate');
-  const ed=document.getElementById('tripEndDate');
-  if(sd)sd.addEventListener('change',updateTripDuration);
-  if(ed)ed.addEventListener('change',updateTripDuration);
-});
-
-async function saveTripDetail(){
-  if(currentTripPlanId&&typeof updatePlan==='function'){
-    const updates={
-      startDate:document.getElementById('tripStartDate').value||null,
-      endDate:document.getElementById('tripEndDate').value||null,
-    };
-    await updatePlan(currentTripPlanId,updates);
-  }
-  closePanel('trip');
-  toast('Saved!');
-  buildMG();buildYV();
-}
-
-// ===== FRIEND SELECTOR =====
-let friendSelTarget='plan'; // 'plan','trip','recur'
-let tempSelectedFriends=[];
-
-function openFriendSelector(target){
-  friendSelTarget=target;
-  tempSelectedFriends=[];
+// Friend selector
+let friendSelContext=null;
+function openFriendSelector(ctx){friendSelContext=ctx;buildFriendSelectorList();openPanel('friendSel')}
+function buildFriendSelectorList(){
   const list=document.getElementById('friendSelectorList');if(!list)return;
-  list.innerHTML='';
-  // Build from people array (from app.js)
-  const ppl=typeof people!=='undefined'?people:[];
-  if(ppl.length===0){
-    list.innerHTML='<p style="color:var(--text-tertiary);font-size:.85rem;padding:20px 0;text-align:center">No people added yet. Add people in Settings.</p>';
-  }else{
-    ppl.forEach(p=>{
-      const item=document.createElement('div');item.className='friend-sel-item';item.dataset.id=p.id;
-      item.innerHTML=`<div class="fav" style="background:var(--sage-50)">${p.avatar||'👤'}</div><span class="friend-sel-name">${p.name}</span><div class="friend-sel-check">✓</div>`;
-      item.onclick=function(){
-        this.classList.toggle('selected');
-        const id=this.dataset.id;
-        if(this.classList.contains('selected')){
-          tempSelectedFriends.push({id:p.id,name:p.name,avatar:p.avatar||'👤'});
-        }else{
-          tempSelectedFriends=tempSelectedFriends.filter(f=>f.id!==id);
-        }
-      };
-      list.appendChild(item);
-    });
-  }
-  openPanel('friendSel');
+  const ppl=typeof people!=='undefined'&&Array.isArray(people)?people:[];
+  if(ppl.length===0){list.innerHTML='<p style="color:var(--text-tertiary);text-align:center;padding:12px">No people added yet</p>';return}
+  list.innerHTML=ppl.map(p=>`<div class="fsl-item" onclick="this.classList.toggle('sel')"><span class="fsl-avatar">${p.avatar||'🧑'}</span><span class="fsl-name">${escapeHtmlUI(p.name)}</span><span class="fsl-check">✓</span></div>`).join('');
 }
-
 function confirmFriendSelection(){
+  const sel=document.querySelectorAll('.fsl-item.sel');
+  const names=Array.from(sel).map(s=>s.querySelector('.fsl-name').textContent);
+  const target=friendSelContext==='plan'?'pfFriends':friendSelContext==='trip'?'tripFriends':'recurFriends';
+  const c=document.getElementById(target);
+  if(c&&names.length>0){c.innerHTML=names.map(n=>`<span class="friend-chip">${n} <span onclick="this.parentElement.remove()">✕</span></span>`).join('')+`<button class="afb" onclick="openFriendSelector('${friendSelContext}')">+</button>`}
   closePanel('friendSel');
-  if(friendSelTarget==='plan'){
-    pfState.selectedFriends=tempSelectedFriends;
-    renderPfFriends();
-  }else if(friendSelTarget==='trip'){
-    renderTripFriends(tempSelectedFriends);
-  }else if(friendSelTarget==='recur'){
-    renderRecurFriends(tempSelectedFriends);
-  }
 }
 
-function renderPfFriends(){
-  const c=document.getElementById('pfFriends');if(!c)return;
-  c.innerHTML='';
-  pfState.selectedFriends.forEach(f=>{
-    c.innerHTML+=`<div class="fc"><div class="fav" style="background:var(--sage-50)">${f.avatar}</div>${f.name}<button class="fc-remove" onclick="removePfFriend('${f.id}')">✕</button></div>`;
-  });
-  c.innerHTML+='<button class="afb" onclick="openFriendSelector(\'plan\')">+ Add friend</button>';
-}
-function removePfFriend(id){pfState.selectedFriends=pfState.selectedFriends.filter(f=>f.id!==id);renderPfFriends()}
-
-function renderTripFriends(friends){
-  const c=document.getElementById('tripFriends');if(!c)return;
-  c.innerHTML='';
-  friends.forEach(f=>{
-    c.innerHTML+=`<div class="fc"><div class="fav" style="background:var(--coral-bg)">${f.avatar||'👤'}</div>${f.name}<button class="fc-remove" onclick="this.closest('.fc').remove()">✕</button></div>`;
-  });
-  c.innerHTML+='<button class="afb" onclick="openFriendSelector(\'trip\')">+ Add friend</button>';
-}
-
-function renderRecurFriends(friends){
-  const c=document.getElementById('recurFriends');if(!c)return;
-  c.innerHTML='';
-  friends.forEach(f=>{c.innerHTML+=`<div class="fc"><div class="fav" style="background:var(--coral-bg)">${f.avatar||'👤'}</div>${f.name}<button class="fc-remove" onclick="this.closest('.fc').remove()">✕</button></div>`});
-  c.innerHTML+='<button class="afb" onclick="openFriendSelector(\'recur\')">+ Add</button>';
-}
-
-// ===== MEMORIES VIEW =====
-let memMap=null;
-
-function switchMemView(view,btn){
-  document.querySelectorAll('.mem-yearly-tab').forEach(b=>b.classList.remove('active'));
-  if(btn)btn.classList.add('active');
-  document.getElementById('memTimelineView').style.display=view==='timeline'?'block':'none';
-  document.getElementById('memYearlyView').style.display=view==='yearly'?'block':'none';
-  document.getElementById('memMapView').style.display=view==='map'?'block':'none';
-  if(view==='yearly')buildMemYearGrid();
-  if(view==='map')setTimeout(()=>initMemMap(),100);
-}
-
-function renderMemoriesView(){
-  buildMemTimeline();
-  buildOnThisDay();
-}
-
-function buildMemTimeline(){
-  const c=document.getElementById('memoriesTimeline');if(!c)return;
-  const mems=typeof memories!=='undefined'?memories:[];
-  if(mems.length===0){
-    c.innerHTML='<p style="color:var(--text-tertiary);padding:20px 0;text-align:center">No memories yet. Capture your first one!</p>';
-    return;
-  }
-  const sorted=[...mems].sort((a,b)=>new Date(b.occurredAt)-new Date(a.occurredAt));
-  let html='';let lastMonth='';
-  sorted.forEach(m=>{
-    const d=new Date(m.occurredAt);
-    const monthKey=MN[d.getMonth()]+' '+d.getFullYear();
-    if(monthKey!==lastMonth){html+=`<div class="mml">${monthKey}</div>`;lastMonth=monthKey}
-    const photo=m.photos&&m.photos.length>0?m.photos[0].url:'';
-    const bgStyle=photo?`background-image:url(${photo})`:'background:linear-gradient(135deg,var(--sage-200),var(--sage-400))';
-    html+=`<div class="mmcd"><div class="mimg" style="${bgStyle}"><span class="mdt">${MN[d.getMonth()].slice(0,3)} ${d.getDate()}</span></div><div class="mbdy"><div class="mbtl">${m.title||'Memory'}</div><div class="mbdsc">${m.text||m.description||''}</div></div></div>`;
-  });
-  c.innerHTML=html;
-}
-
-function buildOnThisDay(){
-  const c=document.getElementById('onThisDayContainer');if(!c)return;
-  const mems=typeof memories!=='undefined'?memories:[];
-  const today=new Date();
-  const otd=mems.filter(m=>{const d=new Date(m.occurredAt);return d.getMonth()===today.getMonth()&&d.getDate()===today.getDate()&&d.getFullYear()!==today.getFullYear()});
-  if(otd.length>0){
-    const m=otd[0];const d=new Date(m.occurredAt);const yearsAgo=today.getFullYear()-d.getFullYear();
-    c.innerHTML=`<div class="otd"><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.8;margin-bottom:8px">On This Day</div><div style="font-family:'Fraunces',serif;font-size:1.1rem;font-weight:500;margin-bottom:4px">${m.title}</div><div style="font-size:.8rem;opacity:.75">${yearsAgo} year${yearsAgo>1?'s':''} ago · ${MN[d.getMonth()].slice(0,3)} ${d.getDate()}, ${d.getFullYear()}</div></div>`;
-  }else{c.innerHTML=''}
-}
-
-function buildMemYearGrid(){
-  const g=document.getElementById('memYearGrid');if(!g)return;
-  const mems=typeof memories!=='undefined'?memories:[];
-  const year=typeof currentViewYear!=='undefined'?currentViewYear:2026;
-  g.innerHTML='';
-  MN.forEach((name,i)=>{
-    const monthMems=mems.filter(m=>{const d=new Date(m.occurredAt);return d.getMonth()===i&&d.getFullYear()===year});
-    const card=document.createElement('div');card.className='mem-month-card';
-    let photoHtml='';
-    const photos=monthMems.flatMap(m=>(m.photos||[]).map(p=>p.url)).slice(0,3);
-    if(photos.length>0){photoHtml=`<div class="mem-month-photos">${photos.map(u=>`<img src="${u}" alt="">`).join('')}</div>`}
-    else{photoHtml=`<div class="mem-month-empty">${monthMems.length===0?'No memories':'No photos'}</div>`}
-    card.innerHTML=`<div class="mem-month-name">${name.slice(0,3)}</div><div class="mem-month-count">${monthMems.length} memor${monthMems.length===1?'y':'ies'}</div>${photoHtml}`;
-    card.onclick=()=>{switchMemView('timeline',document.querySelector('.mem-yearly-tab'));/* TODO: scroll to month */};
-    g.appendChild(card);
-  });
-}
-
-function initMemMap(){
-  const container=document.getElementById('memMapContainer');if(!container)return;
-  const mems=(typeof memories!=='undefined'?memories:[]).filter(m=>m.location&&m.location.lat&&m.location.lng);
-  if(memMap){memMap.remove();memMap=null}
-  let center=[38.58,-121.49],zoom=10;
-  if(mems.length>0){
-    const lats=mems.map(m=>m.location.lat);const lngs=mems.map(m=>m.location.lng);
-    center=[lats.reduce((a,b)=>a+b,0)/lats.length,lngs.reduce((a,b)=>a+b,0)/lngs.length];zoom=8;
-  }
-  memMap=L.map(container).setView(center,zoom);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}).addTo(memMap);
-  const bounds=[];
-  mems.forEach(m=>{
-    bounds.push([m.location.lat,m.location.lng]);
-    L.marker([m.location.lat,m.location.lng]).addTo(memMap).bindPopup(`<b>${m.title||'Memory'}</b><br>${m.location.name||''}`);
-  });
-  if(bounds.length>1)memMap.fitBounds(bounds,{padding:[30,30]});
-  // Render list
-  const list=document.getElementById('memMapList');if(!list)return;
-  if(mems.length===0){list.innerHTML='<p style="text-align:center;color:var(--text-tertiary);padding:20px">No memories with locations yet.</p>';return}
-  list.innerHTML=mems.map(m=>`<div class="mem-map-item" onclick="memMap&&memMap.setView([${m.location.lat},${m.location.lng}],14)"><span class="mem-map-pin">📍</span><div class="mem-map-info"><div class="mem-map-title">${m.title||'Memory'}</div><div class="mem-map-date">${m.location.name||''}</div></div></div>`).join('');
+// Reminder helper
+function addRem(){
+  const i=document.getElementById('nri'),t=i.value.trim();if(!t)return;
+  const tm=document.querySelector('#trTiming .tc.sel')?.textContent||'1 week';
+  const l=document.getElementById('remList');
+  const it=document.createElement('div');it.className='ri';
+  it.innerHTML=`<button class="rchk" onclick="this.classList.toggle('done')">✓</button><div class="rbd"><div class="rtx">${escapeHtmlUI(t)}</div><div class="rwh">🔔 ${tm} prior</div></div><button class="rdl" onclick="this.closest('.ri').remove()">🗑</button>`;
+  l.appendChild(it);i.value='';toast('Reminder added!');
 }
 
 // ===== HABITS VIEW =====
@@ -555,10 +366,224 @@ function renderHabitsView(){
   }
   const habits=plans.filter(p=>p.type==='habit');
   const misogis=plans.filter(p=>p.type==='misogi');
-  if(habits.length===0){hc.innerHTML='<p style="color:var(--text-tertiary);padding:10px 0">No habits set. Add one from the Plan tab.</p>'}
-  else{hc.innerHTML=habits.map(h=>`<div class="hc"><div class="hr"><svg viewBox="0 0 52 52"><circle class="hrbg" cx="26" cy="26" r="22"/><circle class="hrf" cx="26" cy="26" r="22" stroke="var(--teal)" stroke-dasharray="138.23" stroke-dashoffset="${138.23*(1-(h.completionRate||0.5))}"/></svg><div class="hrc">💪</div></div><div class="hinf"><div class="hnam">${h.title}</div><div class="hstr">Q${h.targetQuarter||'?'}</div></div><button class="hci${h.status==='completed'?' chk':''}" onclick="tgHab(this)">✓</button></div>`).join('')}
-  if(misogis.length===0){mc.innerHTML='<p style="color:var(--text-tertiary);padding:10px 0">No misogi set. Define your year\'s biggest challenge!</p>'}
-  else{mc.innerHTML=misogis.map(m=>`<div class="hc" style="border-left:4px solid var(--coral)"><div class="hr"><svg viewBox="0 0 52 52"><circle class="hrbg" cx="26" cy="26" r="22"/><circle class="hrf" cx="26" cy="26" r="22" stroke="var(--coral)" stroke-dasharray="138.23" stroke-dashoffset="${138.23*(1-(m.completionRate||0.3))}"/></svg><div class="hrc">🏔️</div></div><div class="hinf"><div class="hnam">${m.title}</div><div class="hstr">🎯 ${m.status==='completed'?'Complete!':'In Progress'}</div></div></div>`).join('')}
+  
+  if(habits.length===0){
+    hc.innerHTML=`<div style="text-align:center;padding:24px 0"><p style="color:var(--text-tertiary);margin-bottom:12px">No habits set yet.</p><button class="btn-p" onclick="if(typeof showAddPlanModal==='function')showAddPlanModal('habit',${Math.ceil((new Date().getMonth()+1)/3)})">+ Add Habit</button></div>`;
+  } else {
+    hc.innerHTML=habits.map(h=>{
+      const progress=h.completionRate||calculateUIHabitProgress(h);
+      const offset=138.23*(1-progress);
+      return `<div class="hc" onclick="openHabitDetail('${h.id}')" style="cursor:pointer">
+        <div class="hr"><svg viewBox="0 0 52 52"><circle class="hrbg" cx="26" cy="26" r="22"/><circle class="hrf" cx="26" cy="26" r="22" stroke="var(--teal)" stroke-dasharray="138.23" stroke-dashoffset="${offset}"/></svg><div class="hrc">💪</div></div>
+        <div class="hinf"><div class="hnam">${escapeHtmlUI(h.title)}</div><div class="hstr">Q${h.targetQuarter||'?'}</div></div>
+        <button class="hci${h.status==='completed'?' chk':''}" onclick="event.stopPropagation();quickCheckinUI('${h.id}',this)">✓</button>
+      </div>`;
+    }).join('');
+  }
+  
+  if(misogis.length===0){
+    mc.innerHTML=`<div style="text-align:center;padding:24px 0"><p style="color:var(--text-tertiary);margin-bottom:12px">No misogi set. Define your year's biggest challenge!</p><button class="btn-p" onclick="if(typeof showAddPlanModal==='function')showAddPlanModal('misogi')">+ Set Misogi</button></div>`;
+  } else {
+    mc.innerHTML=misogis.map(m=>{
+      const progress=m.completionRate||0.3;
+      return `<div class="hc" style="border-left:4px solid var(--coral);cursor:pointer" onclick="openHabitDetail('${m.id}')">
+        <div class="hr"><svg viewBox="0 0 52 52"><circle class="hrbg" cx="26" cy="26" r="22"/><circle class="hrf" cx="26" cy="26" r="22" stroke="var(--coral)" stroke-dasharray="138.23" stroke-dashoffset="${138.23*(1-progress)}"/></svg><div class="hrc">🏔️</div></div>
+        <div class="hinf"><div class="hnam">${escapeHtmlUI(m.title)}</div><div class="hstr">🎯 ${m.status==='completed'?'Complete!':'In Progress'}</div></div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function openHabitDetail(planId){
+  // Use app.js openHabitTracking if available
+  if(typeof openHabitTracking==='function'){openHabitTracking(planId);return}
+  // Fallback: open edit modal
+  if(typeof showEditPlanModal==='function'){showEditPlanModal(planId);return}
+  toast('Habit detail');
+}
+
+function quickCheckinUI(habitId,btn){
+  btn.classList.toggle('chk');
+  if(btn.classList.contains('chk')){
+    toast('🔥 Checked in!');
+    if(typeof quickCheckin==='function')quickCheckin(habitId);
+  }else{toast('Unchecked')}
+}
+
+function calculateUIHabitProgress(h){
+  const checkIns=h.checkIns||[];
+  if(checkIns.length===0)return 0;
+  const q=h.targetQuarter||1;
+  const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;
+  const qStart=new Date(yr,(q-1)*3,1);
+  const qEnd=new Date(yr,q*3,0);
+  const totalDays=Math.ceil((qEnd-qStart)/(1000*60*60*24));
+  const daysChecked=checkIns.filter(c=>{const d=new Date(c);return d>=qStart&&d<=qEnd}).length;
+  return Math.min(1,daysChecked/totalDays);
+}
+
+// ===== MEMORIES VIEW =====
+function renderMemoriesView(){
+  buildMemTimeline();
+  buildOnThisDay();
+}
+
+function switchMemView(view,btn){
+  document.querySelectorAll('.mem-yearly-tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.getElementById('memTimelineView').style.display=view==='timeline'?'block':'none';
+  document.getElementById('memYearlyView').style.display=view==='yearly'?'block':'none';
+  document.getElementById('memMapView').style.display=view==='map'?'block':'none';
+  if(view==='timeline')buildMemTimeline();
+  if(view==='yearly')buildMemYearGrid();
+  if(view==='map')buildMemMap();
+}
+
+function buildMemTimeline(){
+  const c=document.getElementById('memoriesTimeline');if(!c)return;
+  const mems=typeof memories!=='undefined'&&Array.isArray(memories)?memories:[];
+  if(mems.length===0){
+    c.innerHTML='<div style="text-align:center;padding:30px 0"><p style="color:var(--text-tertiary);margin-bottom:12px">No memories yet.</p><button class="btn-p" onclick="captureMemory()">📸 Capture First Memory</button></div>';
+    return;
+  }
+  const sorted=[...mems].sort((a,b)=>new Date(b.occurredAt)-new Date(a.occurredAt));
+  let html='';let lastMonth='';
+  sorted.forEach(m=>{
+    const d=new Date(m.occurredAt);
+    const monthKey=MN[d.getMonth()]+' '+d.getFullYear();
+    if(monthKey!==lastMonth){html+=`<div class="mml">${monthKey}</div>`;lastMonth=monthKey}
+    const photo=m.photos&&m.photos.length>0?m.photos[0].url:'';
+    const bgStyle=photo?`background-image:url(${photo})`:'background:linear-gradient(135deg,var(--sage-200),var(--sage-400))';
+    const photoCount=m.photos?m.photos.length:0;
+    html+=`<div class="mmcd" onclick="openMemoryForEdit('${m.id}')" style="cursor:pointer">
+      <div class="mimg" style="${bgStyle}">
+        <span class="mdt">${MN[d.getMonth()].slice(0,3)} ${d.getDate()}</span>
+        ${photoCount>1?`<span class="mphoto-count">📷 ${photoCount}</span>`:''}
+      </div>
+      <div class="mbdy">
+        <div class="mbtl">${escapeHtmlUI(m.title||'Memory')}</div>
+        <div class="mbdsc">${escapeHtmlUI((m.text||m.description||'').substring(0,80))}</div>
+      </div>
+    </div>`;
+  });
+  c.innerHTML=html;
+}
+
+function openMemoryForEdit(memoryId){
+  const mems=typeof memories!=='undefined'?memories:[];
+  const m=mems.find(x=>x.id===memoryId);
+  if(m&&typeof showMemoryModal==='function'){showMemoryModal(m);return}
+  toast('Memory detail');
+}
+
+function buildOnThisDay(){
+  const c=document.getElementById('onThisDayContainer');if(!c)return;
+  const mems=typeof memories!=='undefined'&&Array.isArray(memories)?memories:[];
+  const today=new Date();
+  const otd=mems.filter(m=>{const d=new Date(m.occurredAt);return d.getMonth()===today.getMonth()&&d.getDate()===today.getDate()&&d.getFullYear()!==today.getFullYear()});
+  if(otd.length>0){
+    const m=otd[0];const d=new Date(m.occurredAt);const yearsAgo=today.getFullYear()-d.getFullYear();
+    c.innerHTML=`<div class="otd" onclick="openMemoryForEdit('${m.id}')" style="cursor:pointer"><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.8;margin-bottom:8px">On This Day</div><div style="font-family:'Fraunces',serif;font-size:1.1rem;font-weight:500;margin-bottom:4px">${escapeHtmlUI(m.title)}</div><div style="font-size:.8rem;opacity:.75">${yearsAgo} year${yearsAgo>1?'s':''} ago · ${MN[d.getMonth()].slice(0,3)} ${d.getDate()}, ${d.getFullYear()}</div></div>`;
+  }else{c.innerHTML=''}
+}
+
+function buildMemYearGrid(){
+  const g=document.getElementById('memYearGrid');if(!g)return;
+  const mems=typeof memories!=='undefined'&&Array.isArray(memories)?memories:[];
+  const year=typeof currentViewYear!=='undefined'?currentViewYear:2026;
+  g.innerHTML='';
+  MN.forEach((name,i)=>{
+    const monthMems=mems.filter(m=>{const d=new Date(m.occurredAt);return d.getMonth()===i&&d.getFullYear()===year});
+    const photos=monthMems.flatMap(m=>m.photos||[]);
+    const card=document.createElement('div');card.className='mem-month-card';
+    card.innerHTML=`<div class="mem-month-name">${name.slice(0,3)}</div><div class="mem-month-count">${monthMems.length} memor${monthMems.length!==1?'ies':'y'}</div>${photos.length>0?`<div class="mem-month-photos">${photos.slice(0,3).map(p=>`<img src="${p.url}" alt="" class="mem-month-thumb">`).join('')}</div>`:''}`;
+    card.onclick=()=>{curM=i;switchMemView('timeline',document.querySelector('.mem-yearly-tab'))};
+    g.appendChild(card);
+  });
+}
+
+let memMap=null;
+function buildMemMap(){
+  const container=document.getElementById('memMapContainer');if(!container)return;
+  const mems=(typeof memories!=='undefined'&&Array.isArray(memories)?memories:[]).filter(m=>m.location&&m.location.lat&&m.location.lng);
+  if(memMap){memMap.remove();memMap=null}
+  container.style.height='300px';
+  if(mems.length===0){container.innerHTML='<p style="color:var(--text-tertiary);text-align:center;padding:40px 0">No geotagged memories yet</p>';return}
+  const bounds=[];const center=[mems[0].location.lat,mems[0].location.lng];const zoom=10;
+  memMap=L.map(container).setView(center,zoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}).addTo(memMap);
+  mems.forEach(m=>{
+    bounds.push([m.location.lat,m.location.lng]);
+    L.marker([m.location.lat,m.location.lng]).addTo(memMap).bindPopup(`<b>${escapeHtmlUI(m.title||'Memory')}</b><br>${escapeHtmlUI(m.location.name||'')}`);
+  });
+  if(bounds.length>1)memMap.fitBounds(bounds,{padding:[30,30]});
+  const list=document.getElementById('memMapList');if(!list)return;
+  list.innerHTML=mems.map(m=>`<div class="mem-map-item" onclick="openMemoryForEdit('${m.id}')" style="cursor:pointer"><span class="mem-map-pin">📍</span><div class="mem-map-info"><div class="mem-map-title">${escapeHtmlUI(m.title||'Memory')}</div><div class="mem-map-date">${escapeHtmlUI(m.location.name||'')}</div></div></div>`).join('');
+}
+
+// ===== ACCOUNT SETTINGS =====
+function openAccountSettings(){
+  toggleProfile(); // close profile panel
+  // Populate fields from currentUser
+  if(typeof currentUser!=='undefined'&&currentUser){
+    const n=document.getElementById('acctName');if(n)n.value=currentUser.name||'';
+    const e=document.getElementById('acctEmail');if(e)e.value=currentUser.email||'';
+    const b=document.getElementById('acctBirthdate');if(b)b.value=currentUser.birthdate||'';
+    const l=document.getElementById('acctLifespan');if(l)l.value=currentUser.lifespan||80;
+    const av=document.getElementById('acctAvatarDisplay');
+    if(av){
+      if(currentUser.avatarUrl){av.innerHTML=`<img src="${currentUser.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`}
+      else{av.textContent=currentUser.avatar||getInitials(currentUser.name)||'👤'}
+    }
+  }
+  openPanel('account');
+}
+function getInitials(name){if(!name)return'';return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}
+function saveAccountSettings(){
+  const name=document.getElementById('acctName').value.trim();
+  const birthdate=document.getElementById('acctBirthdate').value;
+  const lifespan=parseInt(document.getElementById('acctLifespan').value)||80;
+  if(!name){toast('Name is required');return}
+  if(typeof currentUser!=='undefined'){
+    currentUser.name=name;
+    if(birthdate)currentUser.birthdate=birthdate;
+    currentUser.lifespan=lifespan;
+  }
+  // Update via app.js if available
+  if(typeof updateUserProfile==='function'){updateUserProfile({name,birthdate,lifespan})}
+  else if(typeof saveUserData==='function'){saveUserData()}
+  // Update displayed name
+  const pn=document.getElementById('profileName');if(pn)pn.textContent=name;
+  toast('✓ Settings saved');
+  closePanel('account');
+}
+function changeAccountPassword(){
+  const oldPw=document.getElementById('acctOldPassword').value;
+  const newPw=document.getElementById('acctNewPassword').value;
+  if(!oldPw||!newPw){toast('Please fill in both fields');return}
+  if(newPw.length<8){toast('Password must be at least 8 characters');return}
+  if(typeof changePassword==='function'){changePassword(oldPw,newPw).then(()=>{toast('✓ Password updated');document.getElementById('acctOldPassword').value='';document.getElementById('acctNewPassword').value=''}).catch(e=>toast('Error: '+e.message))}
+  else{toast('Password change not available')}
+}
+function openAvatarPicker(){
+  // Simple: use file input to pick photo
+  const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
+  inp.onchange=async(e)=>{
+    const file=e.target.files[0];if(!file)return;
+    if(typeof uploadAvatar==='function'){
+      try{await uploadAvatar(file);toast('✓ Avatar updated')}catch(err){toast('Upload failed')}
+    }else{
+      // Preview locally
+      const reader=new FileReader();
+      reader.onload=(ev)=>{
+        const av=document.getElementById('acctAvatarDisplay');
+        if(av)av.innerHTML=`<img src="${ev.target.result}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+      };
+      reader.readAsDataURL(file);
+      toast('Avatar preview set');
+    }
+  };
+  inp.click();
 }
 
 // ===== PLAN VIEW REFRESH =====
@@ -566,25 +591,30 @@ function refreshPlanView(){
   if(typeof plans!=='undefined'&&Array.isArray(plans)){
     const adventures=plans.filter(p=>p.type==='adventure').length;
     const misogis=plans.filter(p=>p.type==='misogi').length;
+    const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.length:0;
     const el=document.getElementById('statAdventures');if(el)el.textContent=adventures;
     const mel=document.getElementById('statMisogi');if(mel)mel.textContent=misogis;
+    const bel=document.getElementById('statBucket');if(bel)bel.textContent=bucketCount;
   }
-  buildMG();buildYV();
-  // Update profile name
+  buildWeekView();buildMG();buildYV();
+  // Update profile
   if(typeof currentUser!=='undefined'&&currentUser){
     const pn=document.getElementById('profileName');if(pn)pn.textContent=currentUser.name||'User';
+  }
+  // Update year theme
+  if(typeof yearData!=='undefined'&&yearData){
+    const th=document.getElementById('yearBannerTheme');if(th&&yearData.theme)th.textContent='"'+yearData.theme+'"';
   }
 }
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded',()=>{
-  buildMG();buildYV();
-  // After app.js loads data, refresh views
+  buildWeekView();buildMG();buildYV();
   setTimeout(()=>{refreshPlanView()},1000);
   setTimeout(()=>{refreshPlanView()},3000);
 });
 
-// Helper: parseLocalDate (also in app.js, defining here as fallback)
+// Helper: parseLocalDate fallback
 if(typeof parseLocalDate==='undefined'){
   window.parseLocalDate=function(dateStr){
     if(!dateStr)return null;

@@ -402,12 +402,44 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
   <div class="pro" id="profileOverlay" onclick="toggleProfile()"></div>
   <div class="prp" id="profilePanel">
     <div class="prn" id="profileName">User</div>
-    <div class="pre">Sacramento, CA</div>
+    <div class="pre" id="profileEmail"></div>
     <div class="prst">Account</div>
+    <div class="prl" onclick="openAccountSettings()"><span class="prli">⚙️</span> Account Settings</div>
     <div class="prl" onclick="typeof showFriendsModal==='function'&&showFriendsModal()"><span class="prli">🤝</span> Manage Friends</div>
-    <div class="prl" onclick="typeof showManagePeopleModal==='function'&&showManagePeopleModal()"><span class="prli">👥</span> Manage People</div>
-    <div class="prl" onclick="typeof clearCacheAndSync==='function'&&clearCacheAndSync()"><span class="prli">🔄</span> Clear Cache & Sync</div>
     <button class="prso" onclick="typeof signOut==='function'&&signOut()">Sign Out</button>
+  </div>
+
+  <!-- Account Settings Panel -->
+  <div class="po" id="accountOverlay" onclick="closePanel('account')"></div>
+  <div class="sp" id="accountPanel">
+    <div class="ph"></div>
+    <div class="phd"><span class="ptl">⚙️ Account Settings</span><button class="pcl" onclick="closePanel('account')">✕</button></div>
+    <div class="pbd">
+      <div class="acct-avatar" id="acctAvatar" onclick="openAvatarPicker()">
+        <span id="acctAvatarDisplay">👤</span>
+        <div class="acct-avatar-edit">📷</div>
+      </div>
+      <div class="acct-field">
+        <label>Name</label>
+        <input type="text" id="acctName" class="tinp" placeholder="Your name">
+      </div>
+      <div class="acct-field">
+        <label>Email</label>
+        <input type="email" id="acctEmail" class="tinp" placeholder="Email" disabled style="opacity:.6">
+        <div class="acct-hint">Email cannot be changed</div>
+      </div>
+      <div class="acct-field">
+        <label>Date of Birth</label>
+        <input type="date" id="acctBirthdate" class="tinp">
+      </div>
+      <button class="btn-p" onclick="saveAccountSettings()">Save Changes</button>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--sand-200)">
+        <div class="fl">Change Password</div>
+        <input type="password" id="acctOldPassword" class="tinp" placeholder="Current password">
+        <input type="password" id="acctNewPassword" class="tinp" placeholder="New password (min 8 chars)">
+        <button class="btn-s" onclick="changeAccountPassword()">Update Password</button>
+      </div>
+    </div>
   </div>
 
   <div class="toast" id="toastEl"></div>
