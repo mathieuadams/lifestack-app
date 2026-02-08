@@ -3,6 +3,11 @@
 // Connects to app.js for API calls
 // =====================================================
 
+// ===== GLOBALS =====
+const catIcons={travel:'✈️',food:'🍽️',adventure:'🏔️',roadtrip:'🚗',culture:'🎭',date:'💕',health:'💪',birthday:'🎂',hiking:'🥾',skiing:'⛷️',misogi:'🏔️'};
+const catColors={travel:'var(--cat-travel)',food:'var(--cat-food)',adventure:'var(--cat-adventure)',roadtrip:'var(--cat-roadtrip)',culture:'var(--cat-culture)',date:'var(--cat-date)',health:'var(--cat-health)',birthday:'var(--cat-birthday)'};
+const catBgs={travel:'var(--cat-travel-bg)',food:'var(--cat-food-bg)',adventure:'var(--cat-adventure-bg)',roadtrip:'var(--cat-roadtrip-bg)',culture:'var(--cat-culture-bg)',date:'var(--cat-date-bg)',health:'var(--cat-health-bg)',birthday:'var(--cat-birthday-bg)'};
+
 // ===== UI CORE =====
 function swView(v){
   document.querySelectorAll('.v').forEach(x=>x.classList.remove('active'));
@@ -23,7 +28,7 @@ function swTab(t,b){
   b.classList.add('active');
   document.getElementById('st-'+t).classList.add('active');
   if(t==='week') buildWeekView();
-  if(t==='bucket') buildBucketView();
+  if(t==='bucket'){buildBucketView();if(typeof fetchBucketList==='function')fetchBucketList().then(()=>buildBucketView()).catch(()=>{})}
 }
 function openPanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.add('open');if(p)p.classList.add('open')}
 function closePanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.remove('open');if(p)p.classList.remove('open')}
@@ -90,10 +95,8 @@ function buildWeekView(){
     pc.innerHTML='<p style="color:var(--text-tertiary);text-align:center;padding:12px 0;font-size:.85rem">No activities planned this week</p>';
     return;
   }
-  const catIcons={travel:'✈️',food:'🍽️',adventure:'🏔️',roadtrip:'🚗',culture:'🎭',date:'💕',health:'💪',birthday:'🎂',misogi:'🏔️'};
-  const catColors={travel:'var(--cat-travel)',food:'var(--cat-food)',adventure:'var(--cat-adventure)',roadtrip:'var(--cat-roadtrip)',culture:'var(--cat-culture)',date:'var(--cat-date)',health:'var(--cat-health)',birthday:'var(--cat-birthday)'};
   pc.innerHTML=weekPlans.map(p=>{
-    const icon=catIcons[p.category||p.type]||'📋';
+    const icon=catIcons[(p.category||p.type||'').toLowerCase()]||'📋';
     const cat=p.category||p.type||'';
     const color=catColors[cat]||'var(--sage-500)';
     const sd=p.startDate?parseWeekDate(p.startDate):null;
@@ -167,6 +170,7 @@ function buildMG(){
     html+=`<div class="mgc${isToday?' today':''}" data-day="${d}" onclick="openQuickAdd(${d})">${d}${dots}</div>`;
   }
   g.innerHTML=html;calS=null;calE=null;
+  initCalendarDrag();
   // Activity list
   const actList=document.getElementById('actList');const actTitle=document.getElementById('actListTitle');
   if(actList&&actTitle){
@@ -201,12 +205,12 @@ function buildBucketView(){
   const c=document.getElementById('bucketListContainer');if(!c)return;
   const items=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList:[];
   if(items.length===0){c.innerHTML='<p style="color:var(--text-tertiary);text-align:center;padding:20px 0">No bucket list items yet. Tap "+ Add" to start!</p>';return}
-  const catIcons={travel:'✈️',adventure:'🏔️',skills:'🎯',experiences:'🎭',personal:'💫',health:'💪',creative:'🎨',other:'📌'};
+  const bucketCatIcons={travel:'✈️',adventure:'🏔️',skills:'🎯',experiences:'🎭',personal:'💫',health:'💪',creative:'🎨',other:'📌'};
   const groups={};items.forEach(i=>{const cat=i.category||'other';if(!groups[cat])groups[cat]=[];groups[cat].push(i)});
   let html='';
   html+=`<div class="bucket-summary">${items.length} Dream${items.length!==1?'s':''} · ${items.filter(i=>i.status==='planned').length} Planned · ${items.filter(i=>i.status==='done').length} Done</div>`;
   Object.keys(groups).forEach(cat=>{
-    const icon=catIcons[cat]||'📌';
+    const icon=bucketCatIcons[cat]||'📌';
     html+=`<div class="bucket-cat-header">${icon} ${cat.charAt(0).toUpperCase()+cat.slice(1)} <span class="bucket-cat-count">${groups[cat].length}</span></div>`;
     groups[cat].forEach(item=>{
       const isDone=item.status==='done'||item.status==='completed';
@@ -273,9 +277,10 @@ function startPlanFlow(startStep){
   const step=startStep||1;
   document.getElementById('pf'+step).style.display='block';
   updateSteps(step);
-  if(step===1){document.querySelectorAll('#pfTypes .tc').forEach(t=>t.classList.remove('sel'));document.getElementById('pfNext1').style.opacity='.5';document.getElementById('pfNext1').style.pointerEvents='none';document.getElementById('pfActName').value=''}
+  if(step===1){document.querySelectorAll('#pfTypes .tc').forEach(t=>t.classList.remove('sel'));document.getElementById('pfNext1').style.opacity='.5';document.getElementById('pfNext1').style.pointerEvents='none';document.getElementById('pfActName').value='';const ds=document.getElementById('pfDateStart');if(ds)ds.value='';const de=document.getElementById('pfDateEnd');if(de)de.value=''}
   openPanel('planFlow');
   document.getElementById('pfTitle').textContent='Plan Activity';
+  setTimeout(()=>{document.querySelectorAll('#planFlowPanel input,#planFlowPanel textarea').forEach(inp=>{inp.onfocus=function(){setTimeout(()=>{this.scrollIntoView({behavior:'smooth',block:'center'})},300)}})},100);
 }
 
 function updateSteps(n){document.querySelectorAll('#pfSteps .step-dot').forEach((d,i)=>{d.className='step-dot';if(i+1<n)d.classList.add('done');if(i+1===n)d.classList.add('active')})}
@@ -394,7 +399,7 @@ function renderHabitsView(){
         <div class="hr"><svg viewBox="0 0 52 52"><circle class="hrbg" cx="26" cy="26" r="22"/><circle class="hrf" cx="26" cy="26" r="22" stroke="var(--coral)" stroke-dasharray="138.23" stroke-dashoffset="${138.23*(1-progress)}"/></svg><div class="hrc">🏔️</div></div>
         <div class="hinf"><div class="hnam">${escapeHtmlUI(m.title)}</div><div class="hstr">🎯 ${m.status==='completed'?'Complete!':'In Progress'}</div></div>
       </div>`;
-    }).join('');
+    }).join('')+`<div style="text-align:center;padding:12px 0"><button class="btn-s" onclick="if(typeof showAddPlanModal==='function')showAddPlanModal('misogi')">+ Add Another Misogi</button></div>`;
   }
 }
 
@@ -590,6 +595,45 @@ function openAvatarPicker(){
   inp.click();
 }
 
+// ===== THEME EDITING =====
+function editYearTheme(){
+  const current=document.getElementById('yearBannerTheme').textContent.replace(/"/g,'');
+  const newTheme=prompt('Enter your year theme:',current);
+  if(newTheme!==null&&newTheme.trim()){
+    document.getElementById('yearBannerTheme').textContent='"'+newTheme.trim()+'"';
+    const ytEl=document.getElementById('yearTheme');if(ytEl){ytEl.value=newTheme.trim();if(typeof saveYearTheme==='function')saveYearTheme()}
+  }
+}
+
+// ===== CALENDAR DRAG SELECTION =====
+let calDragStart=null;
+function initCalendarDrag(){
+  const grid=document.getElementById('mGrid');if(!grid)return;
+  grid.addEventListener('pointerdown',function(e){
+    const cell=e.target.closest('.mgc:not(.blank)');if(!cell)return;
+    calDragStart=parseInt(cell.dataset.day);if(!calDragStart)return;
+    calS=calDragStart;calE=null;hlRange();e.preventDefault();
+  });
+  grid.addEventListener('pointermove',function(e){
+    if(!calDragStart)return;
+    const cell=document.elementFromPoint(e.clientX,e.clientY);
+    if(!cell||!cell.classList.contains('mgc')||cell.classList.contains('blank'))return;
+    const day=parseInt(cell.dataset.day);if(!day)return;
+    if(day>=calDragStart){calS=calDragStart;calE=day}else{calS=day;calE=calDragStart}
+    hlRange();
+  });
+  grid.addEventListener('pointerup',function(e){
+    if(!calDragStart)return;
+    const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;
+    const startStr=`${yr}-${String(curM+1).padStart(2,'0')}-${String(calS).padStart(2,'0')}`;
+    const endStr=calE?`${yr}-${String(curM+1).padStart(2,'0')}-${String(calE).padStart(2,'0')}`:startStr;
+    document.getElementById('pfDateStart').value=startStr;
+    document.getElementById('pfDateEnd').value=endStr;
+    calDragStart=null;
+    startPlanFlow(1);
+  });
+}
+
 // ===== PLAN VIEW REFRESH =====
 function refreshPlanView(){
   if(typeof plans!=='undefined'&&Array.isArray(plans)){
@@ -618,6 +662,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   setTimeout(()=>{refreshPlanView()},3000);
   setTimeout(()=>{refreshPlanView()},6000);
   setTimeout(()=>{refreshPlanView()},10000);
+  // Theme editing - click to edit
+  const themeEl=document.getElementById('yearBannerTheme');
+  if(themeEl){themeEl.onclick=function(){editYearTheme()}}
+  // Keyboard scroll fix for all modals
+  document.addEventListener('focusin',function(e){if(e.target.matches('.sp input,.sp textarea,.modal input,.modal textarea')){setTimeout(()=>{e.target.scrollIntoView({behavior:'smooth',block:'center'})},300)}});
 });
 
 // Helper: parseLocalDate fallback

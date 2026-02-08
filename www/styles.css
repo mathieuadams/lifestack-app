@@ -660,3 +660,59 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .bucket-list-empty{text-align:center;padding:40px 20px}
 .bucket-list-empty-icon{font-size:3rem;margin-bottom:12px}
 .bucket-list-hint{font-size:.8rem;color:var(--text-tertiary);font-style:italic;margin-top:8px}
+
+/* MEMORY MODAL — constrain photos */
+#memoryModal .modal-body img,
+#memoryModal img,
+.memory-photos img,
+.memory-photo-grid img{max-width:100%;height:auto;border-radius:var(--radius-md);display:block;margin:8px 0}
+#memoryPhotosContainer img{max-width:100%;height:auto;border-radius:var(--radius-md)}
+#memoryPhotosContainer{display:flex;flex-wrap:wrap;gap:8px}
+#memoryPhotosContainer .memory-photo-item{max-width:100%;overflow:hidden;border-radius:var(--radius-md)}
+
+/* FRIENDS MODAL — style friend cards */
+#friendsList .friend-card,
+#friendsListContainer > div{background:var(--white);border-radius:var(--radius-md);padding:14px;margin-bottom:8px;box-shadow:var(--shadow-soft);display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+#friendsList .friend-avatar,
+.friend-initial{width:40px;height:40px;border-radius:50%;background:var(--sage-200);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;color:var(--sage-700);flex-shrink:0}
+#friendsList .friend-info{flex:1;min-width:0}
+#friendsList .friend-name{font-weight:600;font-size:.9rem}
+#friendsList .friend-meta,.friend-email{font-size:.78rem;color:var(--text-tertiary)}
+#friendsList .friend-relationship{font-size:.75rem;color:var(--sage-600)}
+#friendsList .friend-actions{display:flex;gap:6px}
+#friendsList .friend-actions .btn,
+#friendsList button{padding:6px 14px;border-radius:var(--radius-sm);font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid var(--sand-200)}
+#friendsList .btn-danger,
+#friendsList button[style*="red"],
+#friendsList button:last-child{background:var(--coral-bg);color:var(--coral);border-color:var(--coral)}
+
+/* PEOPLE SELECTOR & CHIPS */
+.people-list-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);border-bottom:1px solid var(--sand-100)}
+.people-list-item:active,.people-list-item.selected{background:var(--sage-50)}
+.people-list-item .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--sage-300),var(--sage-500));display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:white;flex-shrink:0}
+.people-list-item-info{flex:1;min-width:0}
+.people-list-item-name{display:block;font-size:.9rem;font-weight:500;color:var(--text-primary)}
+.people-list-item-detail{display:block;font-size:.75rem;color:var(--text-tertiary)}
+.check-mark{color:var(--sage-600);font-size:1.2rem;font-weight:700}
+.person-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--sage-50);border:1.5px solid var(--sage-200);border-radius:20px;font-size:.8rem;margin:3px}
+.person-chip.selected{background:var(--sage-100);border-color:var(--sage-400)}
+.person-avatar{font-size:.9rem}
+.person-name{font-weight:500}
+.person-remove{background:none;border:none;color:var(--sage-400);cursor:pointer;font-size:1rem;padding:0 2px}
+
+/* LIGHTBOX enhanced */
+.lightbox-content h3{color:white;font-family:'Fraunces',serif;font-size:1.1rem;margin-top:12px}
+.lightbox-content p{color:rgba(255,255,255,.7);font-size:.85rem;margin-top:4px}
+
+/* CALENDAR DAY SELECTION */
+.mgc.selecting{background:var(--sage-100)}
+.mgc.rstart,.mgc.rend{background:var(--sage-500);color:white;border-radius:50%}
+.mgc.rs{background:var(--sage-100)}
+
+/* YEAR BANNER THEME - editable */
+.yth{cursor:pointer;border-bottom:1px dashed rgba(255,255,255,.4)}
+.yth:hover{border-bottom-color:rgba(255,255,255,.7)}
+
+/* PLAN FLOW - scroll fix for keyboard */
+#planFlowPanel{max-height:95vh;min-height:70vh;padding-bottom:calc(env(safe-area-inset-bottom,16px) + 20px)}
+#planFlowPanel .pbd{padding-bottom:40px}
