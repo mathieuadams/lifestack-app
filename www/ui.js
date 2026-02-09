@@ -186,12 +186,12 @@ function navMonth(dir){curM=(curM+dir+12)%12;buildMG()}
 // ===== YEARLY VIEW =====
 function buildYV(){
   const g=document.getElementById('yearGrid');if(!g)return;g.innerHTML='';
-  const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;
+  const yr=typeof currentViewYear!=='undefined'?currentViewYear:new Date().getFullYear();
   const cm=new Date().getMonth();
+  const cy=new Date().getFullYear();
   MN.forEach((m,i)=>{
-    const card=document.createElement('div');card.className='ym'+(i===cm?' cur':'');
+    const card=document.createElement('div');card.className='ym'+((i===cm&&yr===cy)?' cur':'');
     const evts=getPlansForMonth(i);const evMap={};
-    // Map plans to days - include targetMonth plans on day 15 as fallback
     evts.forEach(p=>{
       const cat=(p.category||p.type||'adventure').toLowerCase();
       if(p.startDate){
@@ -202,7 +202,6 @@ function buildYV(){
           for(let dd=startDay;dd<=endDay;dd++)evMap[dd]=cat;
         }
       } else if(p.targetMonth){
-        // No specific date - place dot on day 15
         if(!evMap[15])evMap[15]=cat;else if(!evMap[16])evMap[16]=cat;
       }
     });
@@ -214,7 +213,6 @@ function buildYV(){
     g.appendChild(card);
   });
 }
-
 // ===== BUCKET LIST VIEW =====
 function buildBucketView(){
   const c=document.getElementById('bucketListContainer');if(!c)return;
@@ -268,12 +266,20 @@ let pfState={type:null,loc:null,locName:'Near Sacramento',selectedFriends:[],vis
 
 function startPlanFlow(startStep){
   pfState={type:null};
+  // Reset all form fields
   document.getElementById('pfActName').value='';
   var ds=document.getElementById('pfDateStart');if(ds)ds.value='';
   var de=document.getElementById('pfDateEnd');if(de)de.value='';
   var notes=document.getElementById('pfNotes');if(notes)notes.value='';
+  var loc=document.getElementById('pfLocation');if(loc)loc.value='';
+  // Reset selected people
+  if(typeof selectedPeopleIds!=='undefined')selectedPeopleIds=[];
+  // Reset category pills and quick date buttons
   document.querySelectorAll('#pfTypes .pf-cat,#pfTypes .tc').forEach(function(t){t.classList.remove('sel')});
   document.querySelectorAll('.pf-qd').forEach(function(t){t.classList.remove('sel')});
+  // Hide AI recommendations section
+  var recs=document.getElementById('pfRecsSection');if(recs)recs.style.display='none';
+  var recsC=document.getElementById('pfRecsContainer');if(recsC)recsC.innerHTML='';
   openPanel('planFlow');
   document.getElementById('pfTitle').textContent='New Adventure';
   setTimeout(()=>{document.querySelectorAll('#planFlowPanel input,#planFlowPanel textarea').forEach(inp=>{inp.onfocus=function(){setTimeout(()=>{this.scrollIntoView({behavior:'smooth',block:'center'})},300)}})},100);
@@ -291,7 +297,15 @@ function pfSelType(btn,type){
   const recsContainer = document.getElementById('pfRecsContainer');
   if (recsContainer) recsContainer.innerHTML = '';
 }
-
+async function pfGetIdeas() {
+  const btn = document.getElementById('pfGetIdeasBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '🤖 Loading...'; }
+  const category = pfState.type || 'adventure';
+  const recs = await getAIRecommendations(category);
+  if (btn) { btn.disabled = false; btn.textContent = '🤖 Get Ideas'; }
+  const container = document.getElementById('pfRecsContainer');
+  if (recs && container) showAIRecommendations(recs, container);
+}
 async function pfGetIdeas() {
   const btn = document.getElementById('pfGetIdeasBtn');
   if (btn) { btn.disabled = true; btn.textContent = '🤖 Loading...'; }
@@ -359,7 +373,15 @@ function pfFinish(){
   }
   closePanel('planFlow');
   toast('📋 '+title+' added!');
-  setTimeout(()=>{buildWeekView();buildMG();buildYV()},500);
+  // Wait for API save to complete, then refresh from server
+  setTimeout(()=>{
+    if(typeof fetchPlans==='function'){
+      fetchPlans(typeof currentViewYear!=='undefined'?currentViewYear:2026).then(function(freshPlans){
+        if(freshPlans){plans=freshPlans}
+        refreshPlanView();
+      }).catch(function(){refreshPlanView()});
+    }else{refreshPlanView()}
+  },1500);
 }
 
 function saveTripDetail(){closePanel('trip');toast('✓ Saved');setTimeout(()=>{buildWeekView();buildMG()},300)}
@@ -404,38 +426,132 @@ function renderHabitsView(){
   }
   const habits=plans.filter(p=>p.type==='habit');
   const misogis=plans.filter(p=>p.type==='misogi');
-  
+  const now=new Date();const todayStr=now.toISOString().split('T')[0];
+  const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+  const monthEnd=new Date(now.getFullYear(),now.getMonth()+1,0);
+  const daysInMonth=monthEnd.getDate();
+  const MNS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // ===== HABITS =====
   if(habits.length===0){
-    hc.innerHTML=`<div style="text-align:center;padding:24px 0"><p style="color:var(--text-tertiary);margin-bottom:12px">No habits set yet.</p><button class="btn-p" onclick="if(typeof showAddPlanModal==='function')showAddPlanModal('habit',${Math.ceil((new Date().getMonth()+1)/3)})">+ Add Habit</button></div>`;
+    hc.innerHTML=`<div class="hab-empty"><div style="font-size:2rem;margin-bottom:8px">💪</div><p>No habits yet. Start building consistency!</p><button class="btn-p" onclick="openAddHabitModal()">+ Add Habit</button></div>`;
   } else {
     hc.innerHTML=habits.map(h=>{
-      const progress=h.completionRate||calculateUIHabitProgress(h);
-      const offset=138.23*(1-progress);
-      return `<div class="hc" onclick="openHabitDetail('${h.id}')" style="cursor:pointer">
-        <div class="hr"><svg viewBox="0 0 52 52"><circle class="hrbg" cx="26" cy="26" r="22"/><circle class="hrf" cx="26" cy="26" r="22" stroke="var(--teal)" stroke-dasharray="138.23" stroke-dashoffset="${offset}"/></svg><div class="hrc">💪</div></div>
-        <div class="hinf"><div class="hnam">${escapeHtmlUI(h.title)}</div><div class="hstr">Q${h.targetQuarter||'?'}</div></div>
-        <button class="hci${h.status==='completed'?' chk':''}" onclick="event.stopPropagation();quickCheckinUI('${h.id}',this)">✓</button>
+      const checkIns=Array.isArray(h.checkIns)?h.checkIns:[];
+      const thisMonth=checkIns.filter(c=>{const d=new Date(c);return d>=monthStart&&d<=monthEnd}).length;
+      const pct=daysInMonth>0?Math.round((thisMonth/daysInMonth)*100):0;
+      const checkedToday=checkIns.includes(todayStr);
+      const streak=calcStreak(checkIns);
+      // Build 7-day dot trail
+      const dots=[];for(let i=6;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const ds=d.toISOString().split('T')[0];dots.push(checkIns.includes(ds))}
+
+      return `<div class="hab-card">
+        <div class="hab-top">
+          <div class="hab-info">
+            <div class="hab-title">${escapeHtmlUI(h.title)}</div>
+            <div class="hab-meta">
+              <span>${thisMonth}/${daysInMonth} days in ${MNS[now.getMonth()]}</span>
+              ${streak>1?`<span>· 🔥 ${streak} day streak</span>`:''}
+            </div>
+          </div>
+          <div class="hab-btns">
+            <button class="hab-btn" onclick="event.stopPropagation();if(typeof showEditPlanModal==='function')showEditPlanModal('${h.id}')" title="Edit">✏️</button>
+            <button class="hab-checkin${checkedToday?' done':''}" onclick="event.stopPropagation();habitCheckinUI('${h.id}',this)">
+              ${checkedToday?'✅':'○'}
+            </button>
+          </div>
+        </div>
+        <div class="hab-dots">${dots.map(d=>`<div class="hab-dot${d?' on':''}"></div>`).join('')}</div>
+        <div class="hab-bar"><div class="hab-fill" style="width:${pct}%"></div></div>
+        <div class="hab-pct">${pct}%</div>
       </div>`;
-    }).join('')+`<div style="text-align:center;padding:12px 0"><button class="btn-s" onclick="if(typeof showAddPlanModal==='function'){const q=Math.ceil((new Date().getMonth()+1)/3);showAddPlanModal('habit',q)}">+ Add Another Habit</button></div>`;
+    }).join('')+`<div style="text-align:center;padding:12px 0"><button class="btn-s" onclick="openAddHabitModal()">+ Add Another Habit</button></div>`;
   }
-  
+
+  // ===== MISOGIS =====
   if(misogis.length===0){
-    mc.innerHTML=`<div style="text-align:center;padding:24px 0"><p style="color:var(--text-tertiary);margin-bottom:12px">No misogi set. Define your year's biggest challenge!</p><button class="btn-p" onclick="if(typeof showAddPlanModal==='function')showAddPlanModal('misogi')">+ Set Misogi</button></div>`;
+    mc.innerHTML=`<div class="hab-empty"><div style="font-size:2rem;margin-bottom:8px">🏔️</div><p>No misogi set. What's your big challenge this year?</p><button class="btn-p" onclick="if(typeof showAddPlanModal==='function')showAddPlanModal('misogi')">+ Set Misogi</button></div>`;
   } else {
     mc.innerHTML=misogis.map(m=>{
-      const progress=m.completionRate||0.3;
-      return `<div class="hc" style="border-left:4px solid var(--coral);cursor:pointer" onclick="openHabitDetail('${m.id}')">
-        <div class="hr"><svg viewBox="0 0 52 52"><circle class="hrbg" cx="26" cy="26" r="22"/><circle class="hrf" cx="26" cy="26" r="22" stroke="var(--coral)" stroke-dasharray="138.23" stroke-dashoffset="${138.23*(1-progress)}"/></svg><div class="hrc">🏔️</div></div>
-        <div class="hinf"><div class="hnam">${escapeHtmlUI(m.title)}</div><div class="hstr">🎯 ${m.status==='completed'?'Complete!':'In Progress'}</div></div>
+      const done=m.status==='completed';
+      const dateStr=m.startDate?fmtMisogiDate(m.startDate):(m.targetMonth?MNS[m.targetMonth-1]+' '+m.year:'No date set');
+      let daysLabel='';
+      if(m.startDate){const dl=Math.ceil((new Date(m.startDate)-now)/(86400000));daysLabel=dl>0?dl+' days away':dl===0?'Today!':'Passed'}
+      return `<div class="miso-card${done?' completed':''}">
+        <div class="miso-icon">${done?'🏆':'🏔️'}</div>
+        <div class="miso-body">
+          <div class="miso-title">${escapeHtmlUI(m.title)}</div>
+          ${m.description?`<div class="miso-desc">${escapeHtmlUI(m.description)}</div>`:''}
+          <div class="miso-meta">
+            <span>📅 ${dateStr}</span>
+            ${daysLabel?`<span class="miso-days">${daysLabel}</span>`:''}
+          </div>
+          <div class="miso-status">${done?'<span class="miso-badge done">✓ Completed</span>':'<span class="miso-badge prog">In Progress</span>'}</div>
+        </div>
+        <div class="miso-actions">
+          <button class="hab-btn" onclick="event.stopPropagation();if(typeof showEditPlanModal==='function')showEditPlanModal('${m.id}')" title="Edit">✏️</button>
+          <button class="hab-btn" onclick="event.stopPropagation();if(typeof getAIPrepTips==='function')getAIPrepTips('${m.id}')" title="AI Prep">✨</button>
+          ${!done?`<button class="hab-btn" onclick="event.stopPropagation();completeMisogiUI('${m.id}')" title="Complete">✓</button>`:''}
+        </div>
       </div>`;
     }).join('')+`<div style="text-align:center;padding:12px 0"><button class="btn-s" onclick="if(typeof showAddPlanModal==='function')showAddPlanModal('misogi')">+ Add Another Misogi</button></div>`;
   }
 }
 
+function calcStreak(checkIns){
+  if(!checkIns||checkIns.length===0)return 0;
+  const sorted=[...checkIns].sort().reverse();
+  const today=new Date().toISOString().split('T')[0];
+  const yesterday=new Date(Date.now()-86400000).toISOString().split('T')[0];
+  if(sorted[0]!==today&&sorted[0]!==yesterday)return 0;
+  let streak=1;
+  for(let i=0;i<sorted.length-1;i++){
+    const cur=new Date(sorted[i]);const prev=new Date(sorted[i+1]);
+    const diff=Math.round((cur-prev)/86400000);
+    if(diff===1)streak++;else break;
+  }
+  return streak;
+}
+
+function fmtMisogiDate(dateStr){
+  try{const d=new Date(dateStr+'T00:00:00');const MNS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return MNS[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear()}catch(e){return dateStr}
+}
+
+function habitCheckinUI(habitId,btn){
+  if(typeof quickCheckin==='function'){
+    quickCheckin(habitId);
+    btn.classList.add('done');
+    btn.innerHTML='✅';
+    // Re-render after a short delay to update progress
+    setTimeout(()=>{renderHabitsView()},500);
+  }else{toast('Check-in not available')}
+}
+
+function openAddHabitModal(){
+  if(typeof showAddPlanModal==='function'){
+    const q=Math.ceil((new Date().getMonth()+1)/3);
+    showAddPlanModal('habit',q);
+    // Override the modal title to remove Q reference
+    setTimeout(()=>{
+      const title=document.getElementById('planModalTitle');
+      if(title)title.textContent='Add Habit';
+    },50);
+  }
+}
+
+function completeMisogiUI(misogiId){
+  if(!confirm('Mark this misogi as completed? 🏆'))return;
+  if(typeof updatePlan==='function'){
+    updatePlan(misogiId,{status:'completed',completedAt:new Date().toISOString()}).then(()=>{
+      const m=plans.find(p=>p.id===misogiId);if(m){m.status='completed';m.completedAt=new Date().toISOString()}
+      renderHabitsView();
+      toast('🏆 Misogi completed! Amazing!');
+    }).catch(e=>{toast('Error: '+e.message)});
+  }
+}
+
 function openHabitDetail(planId){
-  // Use app.js openHabitTracking if available
   if(typeof openHabitTracking==='function'){openHabitTracking(planId);return}
-  // Fallback: open edit modal
   if(typeof showEditPlanModal==='function'){showEditPlanModal(planId);return}
   toast('Habit detail');
 }
@@ -451,12 +567,11 @@ function quickCheckinUI(habitId,btn){
 function calculateUIHabitProgress(h){
   const checkIns=h.checkIns||[];
   if(checkIns.length===0)return 0;
-  const q=h.targetQuarter||1;
-  const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;
-  const qStart=new Date(yr,(q-1)*3,1);
-  const qEnd=new Date(yr,q*3,0);
-  const totalDays=Math.ceil((qEnd-qStart)/(1000*60*60*24));
-  const daysChecked=checkIns.filter(c=>{const d=new Date(c);return d>=qStart&&d<=qEnd}).length;
+  const now=new Date();
+  const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+  const monthEnd=new Date(now.getFullYear(),now.getMonth()+1,0);
+  const totalDays=monthEnd.getDate();
+  const daysChecked=checkIns.filter(c=>{const d=new Date(c);return d>=monthStart&&d<=monthEnd}).length;
   return Math.min(1,daysChecked/totalDays);
 }
 
@@ -561,13 +676,12 @@ function buildMemMap(){
 
 // ===== ACCOUNT SETTINGS =====
 function openAccountSettings(){
-  toggleProfile(); // close profile panel
-  // Populate fields from currentUser
+  toggleProfile();
   if(typeof currentUser!=='undefined'&&currentUser){
     const n=document.getElementById('acctName');if(n)n.value=currentUser.name||'';
     const e=document.getElementById('acctEmail');if(e)e.value=currentUser.email||'';
     const b=document.getElementById('acctBirthdate');if(b)b.value=currentUser.birthdate||'';
-    const l=document.getElementById('acctLifespan');if(l)l.value=currentUser.lifespan||80;
+    const ht=document.getElementById('acctHometown');if(ht)ht.value=currentUser.hometown?.name||'';
     const av=document.getElementById('acctAvatarDisplay');
     if(av){
       if(currentUser.avatarUrl){av.innerHTML=`<img src="${currentUser.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`}
@@ -580,17 +694,31 @@ function getInitials(name){if(!name)return'';return name.split(' ').map(w=>w[0])
 function saveAccountSettings(){
   const name=document.getElementById('acctName').value.trim();
   const birthdate=document.getElementById('acctBirthdate').value;
-  const lifespan=parseInt(document.getElementById('acctLifespan').value)||80;
+  const hometown=document.getElementById('acctHometown')?.value?.trim()||'';
   if(!name){toast('Name is required');return}
+  // Update local state
   if(typeof currentUser!=='undefined'){
     currentUser.name=name;
     if(birthdate)currentUser.birthdate=birthdate;
-    currentUser.lifespan=lifespan;
+    if(hometown)currentUser.hometown={name:hometown};
+    localStorage.setItem('lifestack_user',JSON.stringify(currentUser));
   }
-  // Update via app.js if available
-  if(typeof updateUserProfile==='function'){updateUserProfile({name,birthdate,lifespan})}
-  else if(typeof saveUserData==='function'){saveUserData()}
-  // Update displayed name
+  // Save to API via PUT /users
+  (async()=>{
+    try{
+      const tokens=typeof getValidTokens==='function'?await getValidTokens():null;
+      if(tokens?.idToken){
+        const body={name};
+        if(birthdate)body.birthdate=birthdate;
+        if(hometown)body.hometown={name:hometown};
+        await fetch((typeof CONFIG!=='undefined'?CONFIG.API_URL:'')+'/users',{
+          method:'PUT',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+tokens.idToken},
+          body:JSON.stringify(body)
+        });
+      }
+    }catch(e){console.error('Save settings error:',e)}
+  })();
   const pn=document.getElementById('profileName');if(pn)pn.textContent=name;
   toast('✓ Settings saved');
   closePanel('account');
@@ -686,10 +814,8 @@ function refreshPlanView(){
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded',()=>{
   buildWeekView();buildMG();buildYV();
-  setTimeout(()=>{refreshPlanView()},1000);
-  setTimeout(()=>{refreshPlanView()},3000);
-  setTimeout(()=>{refreshPlanView()},6000);
-  setTimeout(()=>{refreshPlanView()},10000);
+  setTimeout(() => { refreshPlanView() }, 500);
+  setTimeout(() => { refreshPlanView() }, 2000);
   // Theme editing
   const themeEl=document.getElementById('yearBannerTheme');
   if(themeEl){themeEl.onclick=function(){editYearTheme()}}

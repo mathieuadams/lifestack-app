@@ -294,6 +294,42 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .prso{margin-top:30px;width:100%;padding:12px;background:var(--sand-100);border:none;border-radius:var(--radius-md);font-family:inherit;font-size:.88rem;font-weight:600;color:var(--coral);cursor:pointer}
 
 /* HABITS / MEMORIES shared */
+/* Habit Cards — Redesigned */
+.hab-empty{text-align:center;padding:32px 16px;background:white;border-radius:var(--radius-md);box-shadow:var(--shadow-soft)}
+.hab-empty p{color:var(--text-tertiary);margin-bottom:16px}
+.hab-card{background:var(--white);border-radius:var(--radius-md);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-soft)}
+.hab-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.hab-info{flex:1;min-width:0}
+.hab-title{font-weight:600;font-size:.95rem;color:var(--text-primary);margin-bottom:3px}
+.hab-meta{font-size:.75rem;color:var(--text-tertiary);display:flex;flex-wrap:wrap;gap:4px}
+.hab-btns{display:flex;gap:6px;flex-shrink:0}
+.hab-btn{width:36px;height:36px;border-radius:10px;border:1.5px solid var(--sand-200);background:white;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.hab-btn:active{background:var(--sand-100);transform:scale(.95)}
+.hab-checkin{width:40px;height:40px;border-radius:50%;border:2.5px solid var(--sage-300);background:none;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;color:var(--sage-300);transition:all .2s}
+.hab-checkin.done{background:var(--sage-500);border-color:var(--sage-500);color:white}
+.hab-dots{display:flex;gap:6px;justify-content:center;margin-bottom:10px}
+.hab-dot{width:10px;height:10px;border-radius:50%;background:var(--sand-200);transition:all .2s}
+.hab-dot.on{background:var(--teal)}
+.hab-bar{background:var(--sand-100);border-radius:6px;height:8px;overflow:hidden}
+.hab-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--sage-500));border-radius:6px;transition:width .4s ease}
+.hab-pct{font-size:.7rem;color:var(--text-tertiary);text-align:right;margin-top:4px}
+
+/* Misogi Cards — Redesigned */
+.miso-card{background:var(--white);border-radius:var(--radius-md);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-soft);display:flex;gap:14px;border-left:4px solid var(--coral)}
+.miso-card.completed{border-left-color:var(--sage-500);opacity:.85}
+.miso-icon{font-size:1.6rem;flex-shrink:0;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--sand-50);border-radius:12px}
+.miso-body{flex:1;min-width:0}
+.miso-title{font-weight:700;font-size:1rem;color:var(--text-primary);margin-bottom:4px}
+.miso-desc{font-size:.8rem;color:var(--text-secondary);margin-bottom:6px;line-height:1.3}
+.miso-meta{font-size:.75rem;color:var(--text-tertiary);display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.miso-days{font-weight:600;color:var(--coral)}
+.miso-status{margin-top:4px}
+.miso-badge{font-size:.7rem;padding:3px 10px;border-radius:20px;font-weight:600;display:inline-block}
+.miso-badge.prog{background:var(--coral-bg);color:var(--coral)}
+.miso-badge.done{background:var(--sage-100);color:var(--sage-600)}
+.miso-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+
+/* Keep old classes for backwards compat if app.js renders with them */
 .hc{background:var(--white);border-radius:var(--radius-md);padding:18px;margin-bottom:12px;box-shadow:var(--shadow-soft);display:flex;align-items:center;gap:14px}
 .hr{width:52px;height:52px;position:relative;flex-shrink:0}
 .hr svg{width:52px;height:52px;transform:rotate(-90deg)}

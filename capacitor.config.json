@@ -1,5 +1,10 @@
 {
   "appId": "com.lifestack.app",
   "appName": "LifeStack",
-  "webDir": "www"
+  "webDir": "www",
+  "plugins": {
+    "SpeechRecognition": {
+      "language": "en-US"
+    }
+  }
 }

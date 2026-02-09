@@ -3921,28 +3921,26 @@ async function saveYearTheme() {
   var el = document.getElementById('yearTheme');
   if (!el) return;
   const theme = el.value;
+  if (!theme || !theme.trim()) return;
   console.log('saveYearTheme called with:', theme);
   
-  // Save locally immediately for responsiveness
+  // Save locally immediately
   localStorage.setItem(`lifestack_theme_${currentViewYear}`, theme);
   
-  // Find existing theme plan for this year or create new one
-  let themePlan = plans.find(p => p.type === 'theme' && parseInt(p.year) === currentViewYear);
+  // Find existing theme plan - compare year as string since DynamoDB may store either
+  let themePlan = plans.find(p => p.type === 'theme' && String(p.year) === String(currentViewYear));
   console.log('Existing theme plan:', themePlan);
   
   const tokens = await getValidTokens();
   if (tokens?.idToken) {
     try {
       if (themePlan) {
-        // Update existing theme
         console.log('Updating existing theme plan:', themePlan.id);
         const updated = await updatePlan(themePlan.id, { title: theme });
-        console.log('Update result:', updated);
         if (updated) {
           themePlan.title = theme;
         }
       } else {
-        // Create new theme plan
         console.log('Creating new theme plan');
         const result = await createPlan({
           type: 'theme',
@@ -3950,20 +3948,17 @@ async function saveYearTheme() {
           year: currentViewYear,
           description: 'Year theme'
         });
-        console.log('Create result:', result);
         if (result) {
           plans.push(result);
-          themePlan = result;
         }
       }
       localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
-      showToast('Theme saved!');
+      showToast('✓ Theme saved!');
     } catch (error) {
       console.error('Save theme error:', error);
       showToast('Theme saved locally');
     }
   } else {
-    console.log('No valid tokens, saving locally only');
     showToast('Theme saved locally');
   }
 }
@@ -7679,6 +7674,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         currentUser = JSON.parse(savedUser);
         loadLocalMemories();
         loadLocalPeople();
+        
+        // Load cached plans for instant display
+        try {
+          const cachedPlans = localStorage.getItem('lifestack_plans_' + currentViewYear);
+          if (cachedPlans) {
+            plans = JSON.parse(cachedPlans);
+            console.log('Loaded', plans.length, 'plans from cache for year', currentViewYear);
+          }
+        } catch(e) { console.log('Plans cache parse error:', e); }
+        
         const cachedJournals = localStorage.getItem('lifestack_journals');
         if (cachedJournals) journalEntries = JSON.parse(cachedJournals);
         const cachedFriendships = localStorage.getItem('lifestack_friendships');

@@ -234,10 +234,11 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
     <!-- ===== HABITS VIEW ===== -->
     <div id="habitsView" class="v"><div class="vp">
       <div class="sl">Winning Habits</div>
-      <p style="font-size:.85rem;color:var(--text-tertiary);margin-bottom:20px;margin-top:-8px">One powerful habit per quarter.</p>
+      <p style="font-size:.85rem;color:var(--text-tertiary);margin-bottom:20px;margin-top:-8px">Build the habits that shape your year.</p>
       <div id="habitsContainer"></div>
       <div style="margin-top:28px">
         <div class="sl">🏔️ Misogi Challenge</div>
+        <p style="font-size:.85rem;color:var(--text-tertiary);margin-bottom:16px;margin-top:-8px">One epic challenge that defines your year.</p>
         <div id="misogiContainer"></div>
       </div>
     </div></div>
@@ -467,6 +468,11 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
       <div class="acct-field">
         <label>Date of Birth</label>
         <input type="date" id="acctBirthdate" class="tinp">
+      </div>
+      <div class="acct-field">
+      <label>🏠 Hometown</label>
+        <input type="text" id="acctHometown" class="tinp" placeholder="e.g., Sacramento, CA">
+        <div class="acct-hint">Used for AI recommendations</div>
       </div>
       <button class="btn-p" onclick="saveAccountSettings()">Save Changes</button>
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--sand-200)">
