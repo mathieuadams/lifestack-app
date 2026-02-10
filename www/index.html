@@ -280,99 +280,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
   <!-- Full-Screen Plan Creation Page -->
   <div class="po" id="planFlowOverlay" onclick="closePanel('planFlow')"></div>
   <div class="pf-fullscreen" id="planFlowPanel">
-    <div class="pf-header">
-      <button class="pf-back" onclick="closePanel('planFlow')">← Back</button>
-      <span class="pf-htitle" id="pfTitle">New Adventure</span>
-      <div style="width:60px"></div>
-    </div>
-    <div class="pf-scroll">
-      <!-- Activity Name -->
-      <div class="pf-section">
-        <label class="pf-label">What are you planning?</label>
-        <input class="pf-input" id="pfActName" placeholder="e.g., Trip to Paris, Dinner at The Kitchen">
-      </div>
 
-      <!-- Category -->
-      <div class="pf-section">
-        <label class="pf-label">Category</label>
-        <div class="pf-cats" id="pfTypes">
-          <button class="pf-cat" onclick="pfSelType(this,'travel')">✈️ Travel</button>
-          <button class="pf-cat" onclick="pfSelType(this,'food')">🍽️ Food</button>
-          <button class="pf-cat" onclick="pfSelType(this,'adventure')">🏔️ Adventure</button>
-          <button class="pf-cat" onclick="pfSelType(this,'roadtrip')">🚗 Road trip</button>
-          <button class="pf-cat" onclick="pfSelType(this,'culture')">🎭 Culture</button>
-          <button class="pf-cat" onclick="pfSelType(this,'health')">💪 Health</button>
-          <button class="pf-cat" onclick="pfSelType(this,'birthday')">🎂 Birthday</button>
-          <button class="pf-cat" onclick="pfSelType(this,'date')">💕 Date night</button>
-          <button class="pf-cat" onclick="pfSelType(this,'hiking')">🥾 Hiking</button>
-          <button class="pf-cat" onclick="pfSelType(this,'skiing')">⛷️ Skiing</button>
-        </div>
-      </div>
-
-      <!-- AI Recommendations -->
-      <div class="pf-section" id="pfRecsSection" style="display:none">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <label class="pf-label">💡 Ideas near you</label>
-          <button class="btn-s" id="pfGetIdeasBtn" onclick="pfGetIdeas()" style="font-size:.8rem">🤖 Get Ideas</button>
-        </div>
-        <div id="pfRecsContainer" style="margin-top:8px"></div>
-      </div>
-
-      <!-- Dates -->
-      <div class="pf-section">
-        <label class="pf-label">When?</label>
-        <div class="pf-quick-dates">
-          <button class="pf-qd" onclick="pfSetQuickDate('tomorrow',this)">Tomorrow</button>
-          <button class="pf-qd" onclick="pfSetQuickDate('saturday',this)">This Saturday</button>
-          <button class="pf-qd" onclick="pfSetQuickDate('nextweek',this)">Next weekend</button>
-        </div>
-        <div class="pf-date-row">
-          <div class="pf-date-field">
-            <label class="pf-date-label">Start</label>
-            <input type="date" class="pf-date-input" id="pfDateStart">
-          </div>
-          <div class="pf-date-field">
-            <label class="pf-date-label">End</label>
-            <input type="date" class="pf-date-input" id="pfDateEnd">
-          </div>
-        </div>
-      </div>
-
-      <!-- Location -->
-      <div class="pf-section">
-        <label class="pf-label">📍 Location</label>
-        <input class="pf-input" id="pfLocation" placeholder="e.g., Paris, Lake Tahoe, The Kitchen">
-      </div>
-
-      <!-- Friends -->
-      <div class="pf-section">
-        <label class="pf-label">👥 Who's joining?</label>
-        <div class="pf-friends" id="pfFriends">
-          <button class="pf-add-friend" onclick="if(typeof showPeopleSelector==='function')showPeopleSelector('plan');else toast('Add friends first in profile')">+ Add people</button>
-        </div>
-      </div>
-
-      <!-- Notes -->
-      <div class="pf-section">
-        <label class="pf-label">Notes (optional)</label>
-        <textarea class="pf-textarea" id="pfNotes" placeholder="Any details..."></textarea>
-      </div>
-
-      <!-- Hidden fields for compatibility -->
-      <div id="pfSteps" style="display:none"><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div></div>
-      <div id="pf1" style="display:none"></div>
-      <div id="pf2" style="display:none"></div>
-      <div id="pf3" style="display:none"></div>
-      <div id="pfAiRecs" style="display:none"></div>
-      <div id="pfCustomPlace" style="display:none"></div>
-      <button id="pfNext1" style="display:none"></button>
-
-      <div style="height:100px"></div>
-    </div>
-    <!-- Fixed bottom save button -->
-    <div class="pf-footer">
-      <button class="pf-save" onclick="pfFinish()">Save Adventure</button>
-    </div>
   </div>
 
   <!-- Recurring Event Panel -->
@@ -471,7 +379,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
       </div>
       <div class="acct-field">
       <label>🏠 Hometown</label>
-        <input type="text" id="acctHometown" class="tinp" placeholder="e.g., Sacramento, CA">
+        <input type="text" id="acctHometown" class="tinp" placeholder="e.g., Los Angeles, CA">
         <div class="acct-hint">Used for AI recommendations</div>
       </div>
       <button class="btn-p" onclick="saveAccountSettings()">Save Changes</button>
@@ -893,5 +801,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 <div id="toast" class="toast"></div>
 <script src="ui.js"></script>
 <script src="app.js"></script>
+<script src="adventure.js"></script>
+<link rel="stylesheet" href="adventure.css">
 </body>
 </html>

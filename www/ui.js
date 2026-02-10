@@ -189,6 +189,7 @@ function buildYV(){
   const yr=typeof currentViewYear!=='undefined'?currentViewYear:new Date().getFullYear();
   const cm=new Date().getMonth();
   const cy=new Date().getFullYear();
+  const card=document.createElement('div');card.className='ym'+((i===cm&&yr===cy)?' cur':'');
   MN.forEach((m,i)=>{
     const card=document.createElement('div');card.className='ym'+((i===cm&&yr===cy)?' cur':'');
     const evts=getPlansForMonth(i);const evMap={};
@@ -265,24 +266,12 @@ let pfState={type:null,loc:null,locName:'Near Sacramento',selectedFriends:[],vis
 
 
 function startPlanFlow(startStep){
-  pfState={type:null};
-  // Reset all form fields
-  document.getElementById('pfActName').value='';
-  var ds=document.getElementById('pfDateStart');if(ds)ds.value='';
-  var de=document.getElementById('pfDateEnd');if(de)de.value='';
-  var notes=document.getElementById('pfNotes');if(notes)notes.value='';
-  var loc=document.getElementById('pfLocation');if(loc)loc.value='';
-  // Reset selected people
-  if(typeof selectedPeopleIds!=='undefined')selectedPeopleIds=[];
-  // Reset category pills and quick date buttons
-  document.querySelectorAll('#pfTypes .pf-cat,#pfTypes .tc').forEach(function(t){t.classList.remove('sel')});
-  document.querySelectorAll('.pf-qd').forEach(function(t){t.classList.remove('sel')});
-  // Hide AI recommendations section
-  var recs=document.getElementById('pfRecsSection');if(recs)recs.style.display='none';
-  var recsC=document.getElementById('pfRecsContainer');if(recsC)recsC.innerHTML='';
-  openPanel('planFlow');
-  document.getElementById('pfTitle').textContent='New Adventure';
-  setTimeout(()=>{document.querySelectorAll('#planFlowPanel input,#planFlowPanel textarea').forEach(inp=>{inp.onfocus=function(){setTimeout(()=>{this.scrollIntoView({behavior:'smooth',block:'center'})},300)}})},100);
+  if(typeof startAdventureWizard==='function'){
+    startAdventureWizard();
+  } else {
+    // Fallback to old flow
+    openPanel('planFlow');
+  }
 }
 
 function updateSteps(n){document.querySelectorAll('#pfSteps .step-dot').forEach((d,i)=>{d.className='step-dot';if(i+1<n)d.classList.add('done');if(i+1===n)d.classList.add('active')})}
@@ -350,38 +339,9 @@ function pfQuick(type){pfState.type=type;startPlanFlow(1);setTimeout(()=>{docume
 function startRecurring(){openPanel('recur')}
 
 function pfFinish(){
-  const title=document.getElementById('pfActName').value.trim()||'New Activity';
-  const startDate=document.getElementById('pfDateStart').value;
-  const endDate=document.getElementById('pfDateEnd').value;
-  const notes=document.getElementById('pfNotes');
-  const desc=notes?notes.value.trim():'';
-  const locInput=document.getElementById('pfLocation');
-  const location=locInput?locInput.value.trim():'';
-  const fullDesc=location?(desc?location+' — '+desc:location):desc;
-  if(!title||title==='New Activity'){toast('Please enter an activity name');return}
-  if(typeof handlePlanSubmit==='function'){
-    document.getElementById('planId').value='';
-    document.getElementById('planType').value='adventure';
-    document.getElementById('planTitle').value=title;
-    document.getElementById('planDescription').value=fullDesc;
-    document.getElementById('planStartDate').value=startDate;
-    document.getElementById('planEndDate').value=endDate;
-    document.getElementById('planCategory').value=pfState.type||'adventure';
-    const locField=document.getElementById('planLocation');if(locField)locField.value=location;
-    if(typeof selectedCategory!=='undefined')window.selectedCategory=pfState.type||'adventure';
-    handlePlanSubmit(new Event('submit'));
-  }
-  closePanel('planFlow');
-  toast('📋 '+title+' added!');
-  // Wait for API save to complete, then refresh from server
-  setTimeout(()=>{
-    if(typeof fetchPlans==='function'){
-      fetchPlans(typeof currentViewYear!=='undefined'?currentViewYear:2026).then(function(freshPlans){
-        if(freshPlans){plans=freshPlans}
-        refreshPlanView();
-      }).catch(function(){refreshPlanView()});
-    }else{refreshPlanView()}
-  },1500);
+  // Handled by advSave() in adventure.js now
+  if(typeof advSave==='function'){advSave();return}
+  toast('Save not available');
 }
 
 function saveTripDetail(){closePanel('trip');toast('✓ Saved');setTimeout(()=>{buildWeekView();buildMG()},300)}
@@ -427,54 +387,56 @@ function renderHabitsView(){
   const habits=plans.filter(p=>p.type==='habit');
   const misogis=plans.filter(p=>p.type==='misogi');
   const now=new Date();const todayStr=now.toISOString().split('T')[0];
-  const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
-  const monthEnd=new Date(now.getFullYear(),now.getMonth()+1,0);
-  const daysInMonth=monthEnd.getDate();
-  const MNS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   // ===== HABITS =====
   if(habits.length===0){
-    hc.innerHTML=`<div class="hab-empty"><div style="font-size:2rem;margin-bottom:8px">💪</div><p>No habits yet. Start building consistency!</p><button class="btn-p" onclick="openAddHabitModal()">+ Add Habit</button></div>`;
+    hc.innerHTML=`<div class="hab-empty">
+      <div style="font-size:2rem;margin-bottom:8px">💪</div>
+      <p>No habits yet. Start building consistency!</p>
+      <button class="btn-p" onclick="openAddHabitModal()">+ Add Habit</button>
+    </div>`;
   } else {
     hc.innerHTML=habits.map(h=>{
       const checkIns=Array.isArray(h.checkIns)?h.checkIns:[];
-      const thisMonth=checkIns.filter(c=>{const d=new Date(c);return d>=monthStart&&d<=monthEnd}).length;
-      const pct=daysInMonth>0?Math.round((thisMonth/daysInMonth)*100):0;
       const checkedToday=checkIns.includes(todayStr);
       const streak=calcStreak(checkIns);
-      // Build 7-day dot trail
-      const dots=[];for(let i=6;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const ds=d.toISOString().split('T')[0];dots.push(checkIns.includes(ds))}
+
+      // Build 8-week (56 day) GitHub grid
+      const grid=buildHabitGrid(checkIns,56);
 
       return `<div class="hab-card">
         <div class="hab-top">
           <div class="hab-info">
             <div class="hab-title">${escapeHtmlUI(h.title)}</div>
-            <div class="hab-meta">
-              <span>${thisMonth}/${daysInMonth} days in ${MNS[now.getMonth()]}</span>
-              ${streak>1?`<span>· 🔥 ${streak} day streak</span>`:''}
-            </div>
+            ${streak>0?`<div class="hab-streak">🔥 ${streak} day streak</div>`:'<div class="hab-streak" style="opacity:.4">No streak yet</div>'}
           </div>
           <div class="hab-btns">
             <button class="hab-btn" onclick="event.stopPropagation();if(typeof showEditPlanModal==='function')showEditPlanModal('${h.id}')" title="Edit">✏️</button>
-            <button class="hab-checkin${checkedToday?' done':''}" onclick="event.stopPropagation();habitCheckinUI('${h.id}',this)">
-              ${checkedToday?'✅':'○'}
-            </button>
           </div>
         </div>
-        <div class="hab-dots">${dots.map(d=>`<div class="hab-dot${d?' on':''}"></div>`).join('')}</div>
-        <div class="hab-bar"><div class="hab-fill" style="width:${pct}%"></div></div>
-        <div class="hab-pct">${pct}%</div>
+        <div class="hab-grid">
+          <div class="hab-grid-labels"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+          ${grid}
+        </div>
+        <button class="hab-checkin-btn${checkedToday?' done':''}" onclick="event.stopPropagation();habitCheckinUI('${h.id}',this)">
+          ${checkedToday?'✅ Checked in today':'✓ Check In'}
+        </button>
       </div>`;
     }).join('')+`<div style="text-align:center;padding:12px 0"><button class="btn-s" onclick="openAddHabitModal()">+ Add Another Habit</button></div>`;
   }
 
   // ===== MISOGIS =====
   if(misogis.length===0){
-    mc.innerHTML=`<div class="hab-empty"><div style="font-size:2rem;margin-bottom:8px">🏔️</div><p>No misogi set. What's your big challenge this year?</p><button class="btn-p" onclick="if(typeof showAddPlanModal==='function')showAddPlanModal('misogi')">+ Set Misogi</button></div>`;
+    mc.innerHTML=`<div class="hab-empty">
+      <div style="font-size:2rem;margin-bottom:8px">🏔️</div>
+      <p>No misogi set. What's your big challenge this year?</p>
+      <button class="btn-p" onclick="if(typeof showAddPlanModal==='function')showAddPlanModal('misogi')">+ Set Misogi</button>
+    </div>`;
   } else {
+    const MNS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     mc.innerHTML=misogis.map(m=>{
       const done=m.status==='completed';
-      const dateStr=m.startDate?fmtMisogiDate(m.startDate):(m.targetMonth?MNS[m.targetMonth-1]+' '+m.year:'No date set');
+      const dateStr=m.startDate?fmtMisogiDate(m.startDate):(m.targetMonth?MNS[(m.targetMonth||1)-1]+' '+(m.year||''):' No date set');
       let daysLabel='';
       if(m.startDate){const dl=Math.ceil((new Date(m.startDate)-now)/(86400000));daysLabel=dl>0?dl+' days away':dl===0?'Today!':'Passed'}
       return `<div class="miso-card${done?' completed':''}">
@@ -498,6 +460,42 @@ function renderHabitsView(){
   }
 }
 
+// Build GitHub-style contribution grid
+function buildHabitGrid(checkIns,totalDays){
+  const today=new Date();
+  // Find the Monday of the week that is (totalDays) ago
+  const startDate=new Date(today);
+  startDate.setDate(startDate.getDate()-totalDays);
+  // Adjust to Monday
+  const dayOfWeek=startDate.getDay();
+  const mondayOffset=(dayOfWeek===0)?-6:(1-dayOfWeek);
+  startDate.setDate(startDate.getDate()+mondayOffset);
+
+  const checkInSet=new Set(checkIns);
+  const weeks=[];
+  let current=new Date(startDate);
+  const todayStr=today.toISOString().split('T')[0];
+
+  while(current<=today){
+    const weekRow=[];
+    for(let d=0;d<7;d++){
+      const ds=current.toISOString().split('T')[0];
+      const isFuture=current>today;
+      const isChecked=checkInSet.has(ds);
+      const isToday=ds===todayStr;
+      weekRow.push({date:ds,checked:isChecked,future:isFuture,today:isToday});
+      current.setDate(current.getDate()+1);
+    }
+    weeks.push(weekRow);
+  }
+
+  return `<div class="hab-grid-weeks">${weeks.map(week=>`<div class="hab-grid-row">${week.map(d=>{
+    if(d.future)return `<div class="hab-cell future"></div>`;
+    const cls=d.checked?'on':'off';
+    const todayCls=d.today?' today':'';
+    return `<div class="hab-cell ${cls}${todayCls}" title="${d.date}"></div>`;
+  }).join('')}</div>`).join('')}</div>`;
+}
 function calcStreak(checkIns){
   if(!checkIns||checkIns.length===0)return 0;
   const sorted=[...checkIns].sort().reverse();
@@ -521,9 +519,8 @@ function habitCheckinUI(habitId,btn){
   if(typeof quickCheckin==='function'){
     quickCheckin(habitId);
     btn.classList.add('done');
-    btn.innerHTML='✅';
-    // Re-render after a short delay to update progress
-    setTimeout(()=>{renderHabitsView()},500);
+    btn.textContent='✅ Checked in today';
+    setTimeout(()=>{renderHabitsView()},600);
   }else{toast('Check-in not available')}
 }
 
@@ -531,7 +528,6 @@ function openAddHabitModal(){
   if(typeof showAddPlanModal==='function'){
     const q=Math.ceil((new Date().getMonth()+1)/3);
     showAddPlanModal('habit',q);
-    // Override the modal title to remove Q reference
     setTimeout(()=>{
       const title=document.getElementById('planModalTitle');
       if(title)title.textContent='Add Habit';
@@ -551,19 +547,12 @@ function completeMisogiUI(misogiId){
 }
 
 function openHabitDetail(planId){
-  if(typeof openHabitTracking==='function'){openHabitTracking(planId);return}
   if(typeof showEditPlanModal==='function'){showEditPlanModal(planId);return}
   toast('Habit detail');
 }
-
 function quickCheckinUI(habitId,btn){
-  btn.classList.toggle('chk');
-  if(btn.classList.contains('chk')){
-    toast('🔥 Checked in!');
-    if(typeof quickCheckin==='function')quickCheckin(habitId);
-  }else{toast('Unchecked')}
+  habitCheckinUI(habitId,btn);
 }
-
 function calculateUIHabitProgress(h){
   const checkIns=h.checkIns||[];
   if(checkIns.length===0)return 0;
@@ -696,14 +685,12 @@ function saveAccountSettings(){
   const birthdate=document.getElementById('acctBirthdate').value;
   const hometown=document.getElementById('acctHometown')?.value?.trim()||'';
   if(!name){toast('Name is required');return}
-  // Update local state
   if(typeof currentUser!=='undefined'){
     currentUser.name=name;
     if(birthdate)currentUser.birthdate=birthdate;
     if(hometown)currentUser.hometown={name:hometown};
     localStorage.setItem('lifestack_user',JSON.stringify(currentUser));
   }
-  // Save to API via PUT /users
   (async()=>{
     try{
       const tokens=typeof getValidTokens==='function'?await getValidTokens():null;
@@ -722,14 +709,6 @@ function saveAccountSettings(){
   const pn=document.getElementById('profileName');if(pn)pn.textContent=name;
   toast('✓ Settings saved');
   closePanel('account');
-}
-function changeAccountPassword(){
-  const oldPw=document.getElementById('acctOldPassword').value;
-  const newPw=document.getElementById('acctNewPassword').value;
-  if(!oldPw||!newPw){toast('Please fill in both fields');return}
-  if(newPw.length<8){toast('Password must be at least 8 characters');return}
-  if(typeof changePassword==='function'){changePassword(oldPw,newPw).then(()=>{toast('✓ Password updated');document.getElementById('acctOldPassword').value='';document.getElementById('acctNewPassword').value=''}).catch(e=>toast('Error: '+e.message))}
-  else{toast('Password change not available')}
 }
 function openAvatarPicker(){
   // Simple: use file input to pick photo

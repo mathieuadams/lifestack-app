@@ -1770,6 +1770,17 @@ function showMemoryModal(memoryToEdit = null) {
     if (selectedAdventureFilter !== 'all' && planSelector) {
       planSelector.value = selectedAdventureFilter;
     }
+      setTimeout(() => {
+    const memModal = document.getElementById('memoryModal');
+    if (!memModal) return;
+    memModal.querySelectorAll('input, textarea, select').forEach(inp => {
+      inp.addEventListener('focus', function() {
+        setTimeout(() => {
+          this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 350);
+      });
+    });
+  }, 200);
   }
   
   renderMemoryPeopleGrid();

@@ -293,28 +293,36 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .prli{font-size:18px;width:24px;text-align:center}
 .prso{margin-top:30px;width:100%;padding:12px;background:var(--sand-100);border:none;border-radius:var(--radius-md);font-family:inherit;font-size:.88rem;font-weight:600;color:var(--coral);cursor:pointer}
 
-/* HABITS / MEMORIES shared */
-/* Habit Cards — Redesigned */
+/* ===== HABIT CARDS — GitHub Grid Redesign ===== */
 .hab-empty{text-align:center;padding:32px 16px;background:white;border-radius:var(--radius-md);box-shadow:var(--shadow-soft)}
 .hab-empty p{color:var(--text-tertiary);margin-bottom:16px}
-.hab-card{background:var(--white);border-radius:var(--radius-md);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-soft)}
-.hab-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.hab-card{background:var(--white);border-radius:var(--radius-md);padding:16px;margin-bottom:14px;box-shadow:var(--shadow-soft)}
+.hab-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
 .hab-info{flex:1;min-width:0}
-.hab-title{font-weight:600;font-size:.95rem;color:var(--text-primary);margin-bottom:3px}
-.hab-meta{font-size:.75rem;color:var(--text-tertiary);display:flex;flex-wrap:wrap;gap:4px}
+.hab-title{font-weight:600;font-size:1rem;color:var(--text-primary);margin-bottom:2px}
+.hab-streak{font-size:.78rem;color:var(--text-tertiary)}
 .hab-btns{display:flex;gap:6px;flex-shrink:0}
 .hab-btn{width:36px;height:36px;border-radius:10px;border:1.5px solid var(--sand-200);background:white;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .hab-btn:active{background:var(--sand-100);transform:scale(.95)}
-.hab-checkin{width:40px;height:40px;border-radius:50%;border:2.5px solid var(--sage-300);background:none;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;color:var(--sage-300);transition:all .2s}
-.hab-checkin.done{background:var(--sage-500);border-color:var(--sage-500);color:white}
-.hab-dots{display:flex;gap:6px;justify-content:center;margin-bottom:10px}
-.hab-dot{width:10px;height:10px;border-radius:50%;background:var(--sand-200);transition:all .2s}
-.hab-dot.on{background:var(--teal)}
-.hab-bar{background:var(--sand-100);border-radius:6px;height:8px;overflow:hidden}
-.hab-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--sage-500));border-radius:6px;transition:width .4s ease}
-.hab-pct{font-size:.7rem;color:var(--text-tertiary);text-align:right;margin-top:4px}
 
-/* Misogi Cards — Redesigned */
+/* GitHub contribution grid */
+.hab-grid{margin-bottom:14px}
+.hab-grid-labels{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;padding:0 2px}
+.hab-grid-labels span{font-size:.55rem;color:var(--text-tertiary);text-align:center}
+.hab-grid-weeks{display:flex;flex-direction:column;gap:3px}
+.hab-grid-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.hab-cell{aspect-ratio:1;border-radius:3px;min-width:0}
+.hab-cell.off{background:var(--sand-100)}
+.hab-cell.on{background:var(--sage-400)}
+.hab-cell.today{outline:2px solid var(--sage-600);outline-offset:-1px}
+.hab-cell.future{background:transparent}
+
+/* Check-in button */
+.hab-checkin-btn{width:100%;padding:12px;border:2px solid var(--sage-300);border-radius:var(--radius-md);background:white;font-size:.9rem;font-weight:600;color:var(--sage-600);cursor:pointer;transition:all .2s}
+.hab-checkin-btn:active{transform:scale(.98)}
+.hab-checkin-btn.done{background:var(--sage-500);border-color:var(--sage-500);color:white}
+
+/* ===== MISOGI CARDS ===== */
 .miso-card{background:var(--white);border-radius:var(--radius-md);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-soft);display:flex;gap:14px;border-left:4px solid var(--coral)}
 .miso-card.completed{border-left-color:var(--sage-500);opacity:.85}
 .miso-icon{font-size:1.6rem;flex-shrink:0;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--sand-50);border-radius:12px}
@@ -325,9 +333,11 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .miso-days{font-weight:600;color:var(--coral)}
 .miso-status{margin-top:4px}
 .miso-badge{font-size:.7rem;padding:3px 10px;border-radius:20px;font-weight:600;display:inline-block}
-.miso-badge.prog{background:var(--coral-bg);color:var(--coral)}
-.miso-badge.done{background:var(--sage-100);color:var(--sage-600)}
+.miso-badge.prog{background:rgba(193,119,100,.12);color:var(--coral)}
+.miso-badge.done{background:rgba(115,140,115,.15);color:var(--sage-600)}
 .miso-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+
+
 
 /* Keep old classes for backwards compat if app.js renders with them */
 .hc{background:var(--white);border-radius:var(--radius-md);padding:18px;margin-bottom:12px;box-shadow:var(--shadow-soft);display:flex;align-items:center;gap:14px}
@@ -795,3 +805,20 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .airn{font-weight:600;font-size:.85rem;color:var(--text-primary)}
 .aird{font-size:.75rem;color:var(--text-secondary);margin-top:1px}
 .airdist{font-size:.7rem;color:var(--text-tertiary);margin-top:2px}
+
+/* Location autocomplete dropdown (shared - memory + adventure) */
+#locationAutocomplete{position:absolute;top:100%;left:0;right:0;z-index:100;display:none;background:white;border:1.5px solid var(--sand-200);border-radius:var(--radius-md);max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.1)}
+#locationAutocomplete.active{display:block}
+.location-autocomplete-item{display:flex;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--sand-50)}
+.location-autocomplete-item:last-child{border-bottom:none}
+.location-autocomplete-item:hover,.location-autocomplete-item.selected{background:var(--sand-50)}
+.location-autocomplete-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
+.location-autocomplete-text{flex:1;min-width:0}
+.location-autocomplete-name{font-weight:600;font-size:.85rem}
+.location-autocomplete-address{font-size:.72rem;color:var(--text-tertiary)}
+.location-autocomplete-loading,.location-autocomplete-empty{padding:12px;text-align:center;color:var(--text-tertiary);font-size:.82rem}
+.location-input-wrapper{position:relative}
+.location-status{font-size:.75rem;margin-top:4px}
+.location-status.success{color:var(--sage-600)}
+.location-status.error{color:var(--coral)}
+.location-status.loading{color:var(--text-tertiary)}
