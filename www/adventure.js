@@ -22,14 +22,29 @@ let advLocationTimeout = null;
 // ===== OPEN / CLOSE =====
 
 function startAdventureWizard() {
+  startAdventureWizardWithData({});
+}
+
+function startAdventureWizardWithData(prefill) {
+  prefill = prefill || {};
   // Reset state
   advWizard.step = 1;
   advWizard.data = {
-    location: { name: '', lat: null, lng: null, placeId: '' },
-    name: '', category: '', startDate: '', endDate: '',
-    friends: [], subActivities: [], notes: ''
+    location: prefill.location || { name: '', lat: null, lng: null, placeId: '' },
+    name: prefill.name || '', 
+    category: prefill.category || '', 
+    startDate: prefill.startDate || '', 
+    endDate: prefill.endDate || '',
+    friends: [], subActivities: [], 
+    notes: prefill.notes || '',
+    _bucketItemId: prefill._bucketItemId || null
   };
   if (typeof selectedPeopleIds !== 'undefined') selectedPeopleIds = [];
+
+  // If we have a name prefilled, skip to step 2 (since location may not be needed)
+  if (prefill.name) {
+    advWizard.step = 2;
+  }
 
   renderAdvWizard();
   openPanel('planFlow');
@@ -211,6 +226,9 @@ function renderAdvStep4() {
     ? d.subActivities.map(a => `<div class="adv-review-idea">• ${escapeHtmlUI(a.name)}</div>`).join('')
     : '';
 
+  // Generate smart reminders based on location/category
+  const smartReminders = generateSmartReminders(d);
+
   return `
     <div class="adv-step">
       <h2 class="adv-question">Looking good! 🎉</h2>
@@ -227,12 +245,14 @@ function renderAdvStep4() {
 
       <div class="adv-reminders-section">
         <label class="adv-label">⏰ Reminders</label>
-        <p class="adv-hint" style="margin-bottom:10px">Get notified before your adventure</p>
+        <p class="adv-hint" style="margin-bottom:10px">AI-recommended reminders for your trip</p>
         <div class="adv-reminder-options">
-          <label class="adv-reminder-opt"><input type="checkbox" id="advRemind1w" checked> 1 week before</label>
-          <label class="adv-reminder-opt"><input type="checkbox" id="advRemind1d" checked> 1 day before</label>
-          <label class="adv-reminder-opt"><input type="checkbox" id="advRemind1m"> 1 month before</label>
-          <label class="adv-reminder-opt"><input type="checkbox" id="advRemind3m"> 3 months before</label>
+          ${smartReminders.map((r, i) => `
+            <label class="adv-reminder-opt">
+              <input type="checkbox" id="advRemindSmart${i}" ${r.checked ? 'checked' : ''} data-reminder-key="${escapeHtmlUI(r.key)}">
+              ${escapeHtmlUI(r.label)}
+            </label>
+          `).join('')}
         </div>
       </div>
 
@@ -241,6 +261,76 @@ function renderAdvStep4() {
     </div>
   `;
 }
+
+function generateSmartReminders(data) {
+  const reminders = [];
+  const cat = (data.category || '').toLowerCase();
+  const loc = (data.location.name || '').toLowerCase();
+  const hasDate = !!data.startDate;
+  
+  // Calculate days until trip
+  let daysUntil = 0;
+  if (hasDate) {
+    daysUntil = Math.ceil((new Date(data.startDate + 'T00:00:00') - new Date()) / 86400000);
+  }
+
+  // Travel-specific reminders
+  if (cat === 'travel' || cat === 'roadtrip' || loc.includes('airport') || loc.includes('international')) {
+    reminders.push({ key: 'passport', label: '🛂 Check passport & travel docs — 2 weeks before', checked: true });
+    reminders.push({ key: 'packing', label: '🧳 Start packing — 3 days before', checked: true });
+    reminders.push({ key: 'booking', label: '🏨 Confirm hotel & flight bookings — 1 week before', checked: true });
+  }
+  
+  // Hiking/outdoor reminders
+  if (cat === 'hiking' || cat === 'adventure' || cat === 'camping' || cat === 'skiing') {
+    reminders.push({ key: 'gear', label: '🎒 Check gear & supplies — 2 days before', checked: true });
+    reminders.push({ key: 'weather', label: '🌤️ Check weather forecast — 1 day before', checked: true });
+    reminders.push({ key: 'trailinfo', label: '🗺️ Download offline maps & trail info — 3 days before', checked: true });
+  }
+  
+  // Food/date reminders
+  if (cat === 'food' || cat === 'date') {
+    reminders.push({ key: 'reservation', label: '📞 Confirm reservation — 1 day before', checked: true });
+    reminders.push({ key: 'dresscode', label: '👔 Plan outfit & check dress code — day of', checked: false });
+  }
+  
+  // Concert/event reminders
+  if (cat === 'concert' || cat === 'culture') {
+    reminders.push({ key: 'tickets', label: '🎫 Download tickets to phone — 1 day before', checked: true });
+    reminders.push({ key: 'parking', label: '🅿️ Plan parking & transportation — day before', checked: true });
+  }
+  
+  // Health/fitness reminders
+  if (cat === 'health' || cat === 'running' || cat === 'swimming') {
+    reminders.push({ key: 'hydrate', label: '💧 Hydrate & prep meals — day before', checked: true });
+    reminders.push({ key: 'equipment', label: '👟 Prepare equipment & clothes — night before', checked: true });
+  }
+  
+  // Birthday reminders
+  if (cat === 'birthday') {
+    reminders.push({ key: 'gift', label: '🎁 Buy gift — 1 week before', checked: true });
+    reminders.push({ key: 'cake', label: '🎂 Order cake — 3 days before', checked: true });
+    reminders.push({ key: 'invites', label: '📨 Send invites / confirm guests — 2 weeks before', checked: true });
+  }
+
+  // Universal time-based reminders
+  if (daysUntil > 30) {
+    reminders.push({ key: '1month', label: '📅 Review plans — 1 month before', checked: true });
+  }
+  if (daysUntil > 7) {
+    reminders.push({ key: '1week', label: '🔔 Final prep reminder — 1 week before', checked: true });
+  }
+  reminders.push({ key: '1day', label: '⏰ Get excited! — 1 day before', checked: true });
+
+  // If no category-specific reminders, add generic ones
+  if (reminders.length <= 2) {
+    reminders.unshift({ key: 'plan', label: '📋 Finalize plans & logistics — 3 days before', checked: true });
+    reminders.unshift({ key: 'notify', label: '👥 Confirm with friends — 2 days before', checked: data.friends.length > 0 });
+  }
+
+  return reminders.slice(0, 5); // Max 5 reminders
+}
+
 
 // ===== NAVIGATION =====
 
@@ -583,12 +673,7 @@ async function advSave() {
     ownerName: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.name : 'Unknown',
     location: d.location.name ? d.location : null,
     subActivities: d.subActivities.length > 0 ? d.subActivities : null, 
-    reminderPrefs: {
-      '1week': !!document.getElementById('advRemind1w')?.checked,
-      '1day': !!document.getElementById('advRemind1d')?.checked,
-      '1month': !!document.getElementById('advRemind1m')?.checked,
-      '3months': !!document.getElementById('advRemind3m')?.checked
-    }
+    reminderPrefs: collectSmartReminders()
   };
 
   // Save via app.js createPlan
@@ -651,6 +736,15 @@ function buildAdvParticipants() {
 }
 
 // ===== HELPERS =====
+
+function collectSmartReminders() {
+  const reminders = {};
+  document.querySelectorAll('[id^="advRemindSmart"]').forEach(cb => {
+    const key = cb.getAttribute('data-reminder-key');
+    if (key) reminders[key] = !!cb.checked;
+  });
+  return reminders;
+}
 
 function getCatEmoji(cat) {
   const map = { travel:'✈️', food:'🍽️', adventure:'🏔️', roadtrip:'🚗', culture:'🎭', health:'💪', birthday:'🎂', date:'💕', hiking:'🥾', skiing:'⛷️', swimming:'🏊', running:'🏃', concert:'🎸', camping:'⛺' };

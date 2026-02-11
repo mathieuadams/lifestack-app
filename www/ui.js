@@ -28,7 +28,9 @@ function swTab(t,b){
   b.classList.add('active');
   document.getElementById('st-'+t).classList.add('active');
   if(t==='week') buildWeekView();
-  if(t==='bucket'){buildBucketView();if(typeof fetchBucketList==='function')fetchBucketList().then(()=>buildBucketView()).catch(()=>{})}
+  if(t==='month') buildMG();
+  if(t==='bucket'){buildBucketView();if(typeof fetchBucketList==='function')fetchBucketList().then(()=>{buildBucketView();refreshPlanView()}).catch(()=>{})}
+  if(t==='year')buildYV();
 }
 function openPanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.add('open');if(p)p.classList.add('open')}
 function closePanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.remove('open');if(p)p.classList.remove('open')}
@@ -189,7 +191,6 @@ function buildYV(){
   const yr=typeof currentViewYear!=='undefined'?currentViewYear:new Date().getFullYear();
   const cm=new Date().getMonth();
   const cy=new Date().getFullYear();
-  const card=document.createElement('div');card.className='ym'+((i===cm&&yr===cy)?' cur':'');
   MN.forEach((m,i)=>{
     const card=document.createElement('div');card.className='ym'+((i===cm&&yr===cy)?' cur':'');
     const evts=getPlansForMonth(i);const evMap={};
@@ -259,16 +260,19 @@ function scheduleBucket(id){
   var item=items.find(function(i){return i.id===id});
   if(!item)return;
   if(typeof startAdventureWizard==='function'){
-    startAdventureWizard();
-    setTimeout(function(){
-      if(typeof advWizard!=='undefined'){
-        advWizard.data.name=item.title;
-        advWizard.data.notes=item.description||'';
-        var catMap={travel:'travel',adventure:'adventure',skills:'culture',experiences:'culture',personal:'health',health:'health',creative:'culture'};
-        advWizard.data.category=catMap[item.category]||'adventure';
-        advWizard.data._bucketItemId=item.id;
-      }
-    },200);
+    // Pre-set wizard data BEFORE starting it
+    var catMap={travel:'travel',adventure:'adventure',skills:'culture',experiences:'culture',personal:'health',health:'health',creative:'culture'};
+    var prefill={
+      name:item.title||'',
+      notes:item.description||'',
+      category:catMap[item.category]||'adventure',
+      _bucketItemId:item.id
+    };
+    // If item has location info, try to parse from description
+    if(item.location){
+      prefill.location={name:item.location,lat:null,lng:null,placeId:''};
+    }
+    startAdventureWizardWithData(prefill);
   } else if(typeof showAddPlanModal==='function'){
     showAddPlanModal('adventure');
     setTimeout(function(){var t=document.getElementById('planTitle');if(t)t.value=item.title},200);
@@ -429,10 +433,7 @@ function renderHabitsView(){
             <button class="hab-btn" onclick="event.stopPropagation();if(typeof showEditPlanModal==='function')showEditPlanModal('${h.id}')" title="Edit">✏️</button>
           </div>
         </div>
-        <div class="hab-grid">
-          <div class="hab-grid-labels"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
-          ${grid}
-        </div>
+        ${grid}
         <button class="hab-checkin-btn${checkedToday?' done':''}" onclick="event.stopPropagation();habitCheckinUI('${h.id}',this)">
           ${checkedToday?'✅ Checked in today':'✓ Check In'}
         </button>
@@ -475,41 +476,74 @@ function renderHabitsView(){
   }
 }
 
-// Build GitHub-style contribution grid
+// Build GitHub-style contribution grid - full width, months at top, Mon/Wed/Fri rows
 function buildHabitGrid(checkIns,totalDays){
   const today=new Date();
-  // Find the Monday of the week that is (totalDays) ago
+  today.setHours(0,0,0,0);
+  
+  // Go back totalDays and find the nearest Monday
   const startDate=new Date(today);
   startDate.setDate(startDate.getDate()-totalDays);
-  // Adjust to Monday
   const dayOfWeek=startDate.getDay();
   const mondayOffset=(dayOfWeek===0)?-6:(1-dayOfWeek);
   startDate.setDate(startDate.getDate()+mondayOffset);
 
   const checkInSet=new Set(checkIns);
-  const weeks=[];
-  let current=new Date(startDate);
   const todayStr=today.toISOString().split('T')[0];
 
+  // Build columns (each column = 1 week)
+  const weeks=[];
+  let current=new Date(startDate);
   while(current<=today){
-    const weekRow=[];
+    const week=[];
     for(let d=0;d<7;d++){
       const ds=current.toISOString().split('T')[0];
       const isFuture=current>today;
       const isChecked=checkInSet.has(ds);
       const isToday=ds===todayStr;
-      weekRow.push({date:ds,checked:isChecked,future:isFuture,today:isToday});
+      week.push({date:ds,day:current.getDay(),month:current.getMonth(),dayOfMonth:current.getDate(),checked:isChecked,future:isFuture,today:isToday});
       current.setDate(current.getDate()+1);
     }
-    weeks.push(weekRow);
+    weeks.push(week);
   }
 
-  return `<div class="hab-grid-weeks">${weeks.map(week=>`<div class="hab-grid-row">${week.map(d=>{
-    if(d.future)return `<div class="hab-cell future"></div>`;
-    const cls=d.checked?'on':'off';
-    const todayCls=d.today?' today':'';
-    return `<div class="hab-cell ${cls}${todayCls}" title="${d.date}"></div>`;
-  }).join('')}</div>`).join('')}</div>`;
+  // Build month labels across the top
+  const MNS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let monthLabels='<div class="hgit-label"></div>'; // empty cell for row labels column
+  let lastMonth=-1;
+  weeks.forEach((week)=>{
+    // Use the Monday (first day) of each week to determine month label
+    const m=week[0].month;
+    if(m!==lastMonth){
+      monthLabels+=`<div class="hgit-month">${MNS[m]}</div>`;
+      lastMonth=m;
+    } else {
+      monthLabels+=`<div class="hgit-month"></div>`;
+    }
+  });
+
+  // Build 7 rows (Mon=0 to Sun=6) but only label Mon, Wed, Fri
+  const rowLabels=['Mon','','Wed','','Fri','',''];
+  let rows='';
+  for(let r=0;r<7;r++){
+    let cells=`<div class="hgit-label">${rowLabels[r]}</div>`;
+    weeks.forEach(week=>{
+      const d=week[r];
+      if(!d||d.future){
+        cells+=`<div class="hgit-cell future"></div>`;
+      } else {
+        const cls=d.checked?'on':'off';
+        const todayCls=d.today?' today':'';
+        cells+=`<div class="hgit-cell ${cls}${todayCls}" title="${d.date}"></div>`;
+      }
+    });
+    rows+=`<div class="hgit-row">${cells}</div>`;
+  }
+
+  return `<div class="hgit-container">
+    <div class="hgit-months">${monthLabels}</div>
+    <div class="hgit-grid">${rows}</div>
+  </div>`;
 }
 function calcStreak(checkIns){
   if(!checkIns||checkIns.length===0)return 0;
@@ -789,8 +823,7 @@ function refreshPlanView(){
   if(typeof plans!=='undefined'&&Array.isArray(plans)){
     const adventures=plans.filter(p=>p.type==='adventure').length;
     const misogis=plans.filter(p=>p.type==='misogi').length;
-    const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.filter(function(b){return b.status==='completed'||b.status==='done'}).length:0;
-    const bucketPlanned=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.filter(b=>b.status==='planned').length:0;
+    const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.length:0;
     
     const el=document.getElementById('statAdventures');if(el)el.textContent=adventures;
     const mel=document.getElementById('statMisogi');if(mel)mel.textContent=misogis;
