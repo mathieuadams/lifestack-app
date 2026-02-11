@@ -255,9 +255,24 @@ function deleteBucketItem(id){
   if(typeof bucketList!=='undefined'){const idx=bucketList.findIndex(i=>i.id===id);if(idx>-1){bucketList.splice(idx,1);buildBucketView();toast('Removed')}}
 }
 function scheduleBucket(id){
-  const items=typeof bucketList!=='undefined'?bucketList:[];
-  const item=items.find(i=>i.id===id);
-  if(item&&typeof showAddPlanModal==='function'){showAddPlanModal('adventure');setTimeout(()=>{const t=document.getElementById('planTitle');if(t)t.value=item.title},200)}
+  var items=typeof bucketList!=='undefined'?bucketList:[];
+  var item=items.find(function(i){return i.id===id});
+  if(!item)return;
+  if(typeof startAdventureWizard==='function'){
+    startAdventureWizard();
+    setTimeout(function(){
+      if(typeof advWizard!=='undefined'){
+        advWizard.data.name=item.title;
+        advWizard.data.notes=item.description||'';
+        var catMap={travel:'travel',adventure:'adventure',skills:'culture',experiences:'culture',personal:'health',health:'health',creative:'culture'};
+        advWizard.data.category=catMap[item.category]||'adventure';
+        advWizard.data._bucketItemId=item.id;
+      }
+    },200);
+  } else if(typeof showAddPlanModal==='function'){
+    showAddPlanModal('adventure');
+    setTimeout(function(){var t=document.getElementById('planTitle');if(t)t.value=item.title},200);
+  }
 }
 
 // ===== PLANNING FLOW =====
@@ -774,7 +789,9 @@ function refreshPlanView(){
   if(typeof plans!=='undefined'&&Array.isArray(plans)){
     const adventures=plans.filter(p=>p.type==='adventure').length;
     const misogis=plans.filter(p=>p.type==='misogi').length;
-    const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.length:0;
+    const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.filter(function(b){return b.status==='completed'||b.status==='done'}).length:0;
+    const bucketPlanned=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.filter(b=>b.status==='planned').length:0;
+    
     const el=document.getElementById('statAdventures');if(el)el.textContent=adventures;
     const mel=document.getElementById('statMisogi');if(mel)mel.textContent=misogis;
     const bel=document.getElementById('statBucket');if(bel)bel.textContent=bucketCount;

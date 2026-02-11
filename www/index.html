@@ -226,7 +226,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 
       <!-- Bucket Tab -->
       <div id="st-bucket" class="ps">
-        <div class="bh"><div class="sl" style="margin-bottom:0">🪣 Bucket List</div><button class="bab" onclick="typeof showBucketListModal==='function'&&showBucketListModal()">+ Add</button></div>
+        <button class="bab" onclick="typeof showAddDreamModal==='function'?showAddDreamModal():showBucketListModal()">+ Add</button>
         <div id="bucketListContainer"></div>
       </div>
     </div></div>
@@ -770,7 +770,67 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
     <div id="habitCalendarGrid" style="margin-top:1rem;"></div>
   </div>
 </div></div></div>
+<!-- Add Dream Modal (focused voice/text input) -->
+<div id="addDreamModal" class="modal-overlay"><div class="modal dream-modal"><div class="modal-content">
+  <button class="modal-close" onclick="closeAddDreamModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  
+  <!-- Phase 1: Input (voice or text) -->
+  <div id="dreamInputPhase">
+    <div class="dream-header">
+      <h2>Add a Dream</h2>
+      <p>Tell me what you want to do in life</p>
+    </div>
 
+    <div class="dream-mic-area">
+      <button type="button" class="dream-mic-btn" id="dreamMicBtn" onclick="dreamToggleRecording()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="36" height="36">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
+      <div class="dream-mic-label" id="dreamMicLabel">Tap to speak</div>
+      <div class="dream-mic-hint" id="dreamMicHint">Say something like: "I want to visit Japan, learn surfing, and run a marathon"</div>
+    </div>
+
+    <div class="dream-transcript" id="dreamTranscript"></div>
+    <div class="dream-status" id="dreamStatus"></div>
+
+    <div class="dream-divider"><span>or type it in</span></div>
+
+    <div class="dream-text-row">
+      <input type="text" id="dreamTextInput" class="dream-text-input" placeholder="Add a dream...">
+      <select id="dreamCategorySelect" class="dream-cat-select">
+        <option value="travel">✈️ Travel</option>
+        <option value="adventure">🏔️ Adventure</option>
+        <option value="skills">🎯 Skills</option>
+        <option value="experiences">🎭 Experiences</option>
+        <option value="personal">💫 Personal</option>
+        <option value="health">💪 Health</option>
+        <option value="creative">🎨 Creative</option>
+        <option value="other">📌 Other</option>
+      </select>
+      <button class="dream-add-btn" onclick="dreamAddManual()">Add</button>
+    </div>
+  </div>
+
+  <!-- Phase 2: AI Results (generated items to confirm) -->
+  <div id="dreamResultsPhase" style="display:none">
+    <div class="dream-header">
+      <h2>✨ AI Generated Dreams</h2>
+      <p id="dreamResultsSubtitle">Select the ones you want to add</p>
+    </div>
+
+    <div class="dream-results-list" id="dreamResultsList"></div>
+
+    <div class="dream-results-actions">
+      <button class="dream-btn-secondary" onclick="dreamBackToInput()">← Try Again</button>
+      <button class="dream-btn-primary" onclick="dreamConfirmSelected()">Add Selected</button>
+    </div>
+  </div>
+
+</div></div></div>
 <!-- Bucket List Modal -->
 <div id="bucketListModal" class="modal-overlay"><div class="modal"><div class="modal-content">
   <button class="modal-close" onclick="closeBucketListModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>

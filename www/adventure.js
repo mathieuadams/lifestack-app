@@ -125,10 +125,7 @@ function renderAdvStep2() {
 
       <label class="adv-label" style="margin-top:16px">Category</label>
       <div class="adv-cats" id="advCats">
-        ${['travel','food','adventure','roadtrip','culture','health','birthday','date','hiking','skiing','swimming','running','concert','camping'].map(c=>{
-          const emoji={'travel':'✈️','food':'🍽️','adventure':'🏔️','roadtrip':'🚗','culture':'🎭','health':'💪','birthday':'🎂','date':'💕','hiking':'🥾','skiing':'⛷️','swimming':'🏊','running':'🏃','concert':'🎸','camping':'⛺'}[c]||'🎯';
-          return `<button class="adv-cat${advWizard.data.category===c?' sel':''}" onclick="advSelCat('${c}',this)">${emoji} ${c.charAt(0).toUpperCase()+c.slice(1)}</button>`;
-        }).join('')}
+          ${buildAdvCatPills()}
       </div>
 
       <label class="adv-label" style="margin-top:16px">When?</label>
@@ -149,6 +146,22 @@ function renderAdvStep2() {
       </div>
     </div>
   `;
+}
+
+function buildAdvCatPills(){
+  var cats=[
+    ['travel','✈️'],['food','🍽️'],['adventure','🏔️'],['roadtrip','🚗'],
+    ['culture','🎭'],['health','💪'],['birthday','🎂'],['date','💕'],
+    ['hiking','🥾'],['skiing','⛷️'],['swimming','🏊'],['running','🏃'],
+    ['concert','🎸'],['camping','⛺']
+  ];
+  var html='';
+  for(var idx=0;idx<cats.length;idx++){
+    var c=cats[idx][0],e=cats[idx][1];
+    var sel=advWizard.data.category===c?' sel':'';
+    html+='<button class="adv-cat'+sel+'" onclick="advSelCat(\''+c+'\',this)">'+e+' '+c.charAt(0).toUpperCase()+c.slice(1)+'</button>';
+  }
+  return html;
 }
 
 // ===== STEP 3: WHO & IDEAS =====
@@ -210,6 +223,17 @@ function renderAdvStep4() {
         ${d.startDate ? `<div class="adv-review-row">📅 ${formatAdvDate(d.startDate)}${d.endDate && d.endDate !== d.startDate ? ' → ' + formatAdvDate(d.endDate) : ''}</div>` : ''}
         <div class="adv-review-row">👥 ${escapeHtmlUI(friendNames)}</div>
         ${ideasHtml ? `<div class="adv-review-ideas"><div class="adv-review-ideas-label">Things to do:</div>${ideasHtml}</div>` : ''}
+      </div>
+
+      <div class="adv-reminders-section">
+        <label class="adv-label">⏰ Reminders</label>
+        <p class="adv-hint" style="margin-bottom:10px">Get notified before your adventure</p>
+        <div class="adv-reminder-options">
+          <label class="adv-reminder-opt"><input type="checkbox" id="advRemind1w" checked> 1 week before</label>
+          <label class="adv-reminder-opt"><input type="checkbox" id="advRemind1d" checked> 1 day before</label>
+          <label class="adv-reminder-opt"><input type="checkbox" id="advRemind1m"> 1 month before</label>
+          <label class="adv-reminder-opt"><input type="checkbox" id="advRemind3m"> 3 months before</label>
+        </div>
       </div>
 
       <label class="adv-label" style="margin-top:16px">Notes (optional)</label>
@@ -558,12 +582,26 @@ async function advSave() {
     participants: buildAdvParticipants(),
     ownerName: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.name : 'Unknown',
     location: d.location.name ? d.location : null,
-    subActivities: d.subActivities.length > 0 ? d.subActivities : null
+    subActivities: d.subActivities.length > 0 ? d.subActivities : null, 
+    reminderPrefs: {
+      '1week': !!document.getElementById('advRemind1w')?.checked,
+      '1day': !!document.getElementById('advRemind1d')?.checked,
+      '1month': !!document.getElementById('advRemind1m')?.checked,
+      '3months': !!document.getElementById('advRemind3m')?.checked
+    }
   };
 
   // Save via app.js createPlan
   const saveBtn = document.querySelector('.adv-save-btn');
   if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+
+  if (advWizard.data._bucketItemId && typeof bucketList !== 'undefined') {
+      const bItem = bucketList.find(b => b.id === advWizard.data._bucketItemId);
+      if (bItem) {
+        bItem.status = 'planned';
+        if (typeof saveBucketList === 'function') saveBucketList(bucketList);
+      }
+    }
 
   try {
     let result = null;
@@ -575,6 +613,15 @@ async function advSave() {
       plans.push(result);
       localStorage.setItem(`lifestack_plans_${yr}`, JSON.stringify(plans));
       toast('🎉 Adventure created!');
+
+      if (advWizard.data._bucketItemId && typeof bucketList !== 'undefined') {
+      var bItem = bucketList.find(function(b) { return b.id === advWizard.data._bucketItemId; });
+      if (bItem) {
+        bItem.status = 'planned';
+        bItem.plannedYear = yr;
+        if (typeof saveBucketList === 'function') saveBucketList(bucketList);
+      }
+    }
     } else {
       // Local fallback
       const localPlan = { id: 'plan_' + Date.now(), ...planData, status: 'planned', createdAt: new Date().toISOString() };

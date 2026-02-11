@@ -110,3 +110,10 @@
 .adv-review-ideas{margin-top:12px;padding-top:10px;border-top:1px solid var(--sand-200)}
 .adv-review-ideas-label{font-size:.75rem;font-weight:600;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:6px}
 .adv-review-idea{font-size:.85rem;color:var(--text-secondary);padding:3px 0}
+
+
+/*reminder card */
+.adv-reminders-section{margin-top:20px;padding-top:16px;border-top:1px solid var(--sand-100)}
+.adv-reminder-options{display:flex;flex-direction:column;gap:10px}
+.adv-reminder-opt{display:flex;align-items:center;gap:10px;font-size:.9rem;color:var(--text-primary);cursor:pointer}
+.adv-reminder-opt input[type="checkbox"]{width:20px;height:20px;accent-color:var(--sage-500)}

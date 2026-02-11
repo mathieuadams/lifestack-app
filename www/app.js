@@ -7181,24 +7181,32 @@ async function processBucketListVoice(transcript) {
 }
 
 async function scheduleBucketItem(itemId) {
-  const item = bucketList.find(i => i.id === itemId);
+  var item = bucketList.find(function(i) { return i.id === itemId; });
   if (!item) return;
   
   closeBucketListModal();
-  showAddPlanModal('adventure');
   
-  setTimeout(() => {
-    document.getElementById('planTitle').value = item.title;
-    document.getElementById('planDescription').value = item.description || '';
-    
-    const categoryMap = {
-      travel: 'travel', adventure: 'hiking', skills: 'learning', experiences: 'other',
-      personal: 'other', health: 'running', creative: 'art', relationships: 'other', career: 'conference'
-    };
-    
-    document.getElementById('planCategory').value = categoryMap[item.category] || 'other';
-    document.getElementById('planForm').dataset.bucketItemId = itemId;
-  }, 100);
+  if (typeof startAdventureWizard === 'function') {
+    startAdventureWizard();
+    setTimeout(function() {
+      if (typeof advWizard !== 'undefined') {
+        advWizard.data.name = item.title;
+        advWizard.data.notes = item.description || '';
+        var catMap = {
+          travel: 'travel', adventure: 'adventure', skills: 'culture', experiences: 'culture',
+          personal: 'health', health: 'health', creative: 'culture'
+        };
+        advWizard.data.category = catMap[item.category] || 'adventure';
+        advWizard.data._bucketItemId = itemId;
+      }
+    }, 200);
+  } else {
+    showAddPlanModal('adventure');
+    setTimeout(function() {
+      var t = document.getElementById('planTitle');
+      if (t) t.value = item.title;
+    }, 100);
+  }
 }
 
 async function completeBucketItem(itemId) {
@@ -7271,6 +7279,291 @@ function getBucketListStatsForYear(year) {
   const completed = bucketList.filter(i => i.completedYear === year);
   const planned = bucketList.filter(i => i.plannedYear === year);
   return { completedCount: completed.length, plannedCount: planned.length, completedItems: completed, plannedItems: planned };
+}
+
+// =====================================================
+// ADD DREAM MODAL — Focused voice/text input
+// =====================================================
+
+let dreamRecognition = null;
+let isDreamRecording = false;
+let dreamSelectedItems = [];
+
+function showAddDreamModal() {
+  // Reset to input phase
+  document.getElementById('dreamInputPhase').style.display = '';
+  document.getElementById('dreamResultsPhase').style.display = 'none';
+
+  // Reset UI
+  var transcript = document.getElementById('dreamTranscript');
+  if (transcript) { transcript.textContent = ''; transcript.classList.remove('visible'); }
+  var status = document.getElementById('dreamStatus');
+  if (status) { status.textContent = ''; status.className = 'dream-status'; }
+  var textInput = document.getElementById('dreamTextInput');
+  if (textInput) textInput.value = '';
+  var micLabel = document.getElementById('dreamMicLabel');
+  if (micLabel) micLabel.textContent = 'Tap to speak';
+  var hint = document.getElementById('dreamMicHint');
+  if (hint) hint.style.display = '';
+  var micBtn = document.getElementById('dreamMicBtn');
+  if (micBtn) { micBtn.classList.remove('recording'); micBtn.disabled = false; }
+
+  dreamSelectedItems = [];
+
+  document.getElementById('addDreamModal').classList.add('active');
+}
+
+function closeAddDreamModal() {
+  dreamStopRecording();
+  document.getElementById('addDreamModal').classList.remove('active');
+}
+
+// ===== VOICE =====
+
+function dreamInitRecognition() {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return false;
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  dreamRecognition = new SR();
+  dreamRecognition.continuous = true;
+  dreamRecognition.interimResults = true;
+  dreamRecognition.lang = 'en-US';
+
+  var fullText = '';
+
+  dreamRecognition.onstart = function() {
+    isDreamRecording = true;
+    fullText = '';
+    document.getElementById('dreamMicBtn').classList.add('recording');
+    document.getElementById('dreamMicLabel').textContent = 'Listening... Tap to stop';
+    document.getElementById('dreamMicHint').style.display = 'none';
+    document.getElementById('dreamTranscript').classList.add('visible');
+    document.getElementById('dreamTranscript').textContent = '';
+    document.getElementById('dreamStatus').textContent = '';
+    document.getElementById('dreamStatus').className = 'dream-status';
+  };
+
+  dreamRecognition.onresult = function(event) {
+    var interim = '';
+    for (var i = event.resultIndex; i < event.results.length; i++) {
+      var t = event.results[i][0].transcript;
+      if (event.results[i].isFinal) fullText += t + ' ';
+      else interim = t;
+    }
+    document.getElementById('dreamTranscript').textContent = fullText + interim;
+  };
+
+  dreamRecognition.onerror = function(event) {
+    dreamStopRecording();
+    var msg = 'Voice input error';
+    if (event.error === 'no-speech') msg = 'No speech detected. Try again.';
+    else if (event.error === 'not-allowed') msg = 'Microphone access denied. Use text input instead.';
+    document.getElementById('dreamStatus').textContent = msg;
+    document.getElementById('dreamStatus').className = 'dream-status error';
+  };
+
+  dreamRecognition.onend = function() {
+    if (isDreamRecording) {
+      var text = document.getElementById('dreamTranscript').textContent.trim();
+      if (text.length > 10) {
+        dreamStopRecording();
+        dreamProcessVoice(text);
+      } else {
+        try { dreamRecognition.start(); } catch(e) { dreamStopRecording(); }
+      }
+    }
+  };
+
+  return true;
+}
+
+function dreamToggleRecording() {
+  if (!dreamRecognition) {
+    if (!dreamInitRecognition()) {
+      document.getElementById('dreamStatus').textContent = 'Voice not supported. Use text input below.';
+      document.getElementById('dreamStatus').className = 'dream-status error';
+      return;
+    }
+  }
+
+  if (isDreamRecording) {
+    dreamStopRecording();
+    var text = document.getElementById('dreamTranscript').textContent.trim();
+    if (text.length > 5) dreamProcessVoice(text);
+  } else {
+    dreamStartRecording();
+  }
+}
+
+function dreamStartRecording() {
+  try {
+    document.getElementById('dreamTranscript').textContent = '';
+    dreamRecognition.start();
+  } catch(e) {
+    document.getElementById('dreamStatus').textContent = 'Could not start microphone.';
+    document.getElementById('dreamStatus').className = 'dream-status error';
+  }
+}
+
+function dreamStopRecording() {
+  isDreamRecording = false;
+  if (dreamRecognition) {
+    try { dreamRecognition.stop(); } catch(e) {}
+  }
+  var btn = document.getElementById('dreamMicBtn');
+  if (btn) btn.classList.remove('recording');
+  var label = document.getElementById('dreamMicLabel');
+  if (label) label.textContent = 'Tap to speak';
+}
+
+// ===== PROCESS WITH AI =====
+
+async function dreamProcessVoice(transcript) {
+  var status = document.getElementById('dreamStatus');
+  status.textContent = '🤖 AI is creating your bucket list...';
+  status.className = 'dream-status thinking';
+  var micBtn = document.getElementById('dreamMicBtn');
+  if (micBtn) micBtn.disabled = true;
+
+  try {
+    var result = await processBucketListWithAI('generate', transcript);
+
+    if (micBtn) micBtn.disabled = false;
+
+    if (result && !result.error) {
+      // AI returns the full updated bucket list
+      // We need to find the NEW items that were just added
+      var oldIds = new Set();
+      // Items before AI processing would have been stored — we check by creation time
+      var newItems = bucketList.filter(function(item) {
+        // Items created in last 30 seconds are likely new
+        var created = new Date(item.createdAt);
+        return (Date.now() - created.getTime()) < 30000;
+      });
+
+      if (newItems.length === 0) {
+        // Fallback: show all items as confirmable
+        newItems = bucketList.slice(-5); // Last 5 items
+      }
+
+      dreamShowResults(newItems, result.message);
+    } else {
+      status.textContent = result?.error || 'AI processing failed. Try again or use text input.';
+      status.className = 'dream-status error';
+    }
+  } catch(e) {
+    if (micBtn) micBtn.disabled = false;
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'dream-status error';
+  }
+}
+
+// ===== SHOW AI RESULTS =====
+
+function dreamShowResults(items, message) {
+  document.getElementById('dreamInputPhase').style.display = 'none';
+  document.getElementById('dreamResultsPhase').style.display = '';
+
+  var subtitle = document.getElementById('dreamResultsSubtitle');
+  if (subtitle) subtitle.textContent = message || 'Select the dreams you want to keep';
+
+  // All selected by default
+  dreamSelectedItems = items.map(function(item) { return item.id; });
+
+  var catIcons = {
+    travel: '✈️', adventure: '🏔️', skills: '🎯', experiences: '🎭',
+    personal: '💫', health: '💪', creative: '🎨', other: '📌'
+  };
+
+  var html = items.map(function(item) {
+    var icon = catIcons[item.category] || '📌';
+    return '<div class="dream-result-item selected" onclick="dreamToggleItem(\'' + item.id + '\', this)" data-id="' + item.id + '">' +
+      '<span class="dream-result-emoji">' + icon + '</span>' +
+      '<div class="dream-result-body">' +
+        '<div class="dream-result-title">' + escapeHtml(item.title) + '</div>' +
+        (item.description ? '<div class="dream-result-desc">' + escapeHtml(item.description) + '</div>' : '') +
+        '<div class="dream-result-cat">' + (item.category || 'other') + (item.difficulty ? ' · ' + item.difficulty : '') + '</div>' +
+      '</div>' +
+      '<div class="dream-result-check">✓</div>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('dreamResultsList').innerHTML = html;
+}
+
+function dreamToggleItem(id, el) {
+  var idx = dreamSelectedItems.indexOf(id);
+  if (idx >= 0) {
+    dreamSelectedItems.splice(idx, 1);
+    el.classList.remove('selected');
+  } else {
+    dreamSelectedItems.push(id);
+    el.classList.add('selected');
+  }
+}
+
+function dreamBackToInput() {
+  document.getElementById('dreamInputPhase').style.display = '';
+  document.getElementById('dreamResultsPhase').style.display = 'none';
+  document.getElementById('dreamStatus').textContent = '';
+  document.getElementById('dreamStatus').className = 'dream-status';
+}
+
+async function dreamConfirmSelected() {
+  // Remove unselected items from bucket list
+  var removeIds = [];
+  bucketList.forEach(function(item) {
+    var created = new Date(item.createdAt);
+    var isRecent = (Date.now() - created.getTime()) < 60000;
+    if (isRecent && dreamSelectedItems.indexOf(item.id) === -1) {
+      removeIds.push(item.id);
+    }
+  });
+
+  if (removeIds.length > 0) {
+    bucketList = bucketList.filter(function(item) {
+      return removeIds.indexOf(item.id) === -1;
+    });
+    await saveBucketList(bucketList);
+  }
+
+  closeAddDreamModal();
+
+  // Refresh bucket view
+  if (typeof buildBucketView === 'function') buildBucketView();
+  if (typeof refreshPlanView === 'function') refreshPlanView();
+
+  showToast('✨ ' + dreamSelectedItems.length + ' dream' + (dreamSelectedItems.length !== 1 ? 's' : '') + ' added!');
+}
+
+// ===== MANUAL TEXT ADD =====
+
+async function dreamAddManual() {
+  var titleInput = document.getElementById('dreamTextInput');
+  var catSelect = document.getElementById('dreamCategorySelect');
+  var title = titleInput.value.trim();
+  if (!title) { showToast('Enter a dream first'); return; }
+
+  var newItem = {
+    id: 'bucket_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+    title: title,
+    category: catSelect.value || 'other',
+    status: 'dream',
+    createdAt: new Date().toISOString(),
+    aiGenerated: false
+  };
+
+  bucketList.push(newItem);
+
+  var success = await saveBucketList(bucketList);
+  if (success) {
+    titleInput.value = '';
+    showToast('✨ Added: ' + title);
+    // Refresh views
+    if (typeof buildBucketView === 'function') buildBucketView();
+    if (typeof refreshPlanView === 'function') refreshPlanView();
+  } else {
+    showToast('Saved locally');
+  }
 }
 
 // =====================================================
