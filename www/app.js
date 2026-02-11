@@ -2838,9 +2838,12 @@ function showEditPlanModal(planId) {
   const plan = plans.find(p => p.id === planId);
   if (!plan) return;
   
+  const planIdEl = document.getElementById('planId');
+  if (!planIdEl) { console.warn('Plan modal not in DOM'); return; }
+  
   const isSharedAdventure = plan.type === 'shared-adventure';
   
-  document.getElementById('planId').value = plan.id;
+  planIdEl.value = plan.id;
   document.getElementById('planType').value = isSharedAdventure ? 'adventure' : plan.type;
   document.getElementById('planTitle').value = plan.title;
   document.getElementById('planDescription').value = plan.description || '';
