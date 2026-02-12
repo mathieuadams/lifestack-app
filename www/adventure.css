@@ -117,3 +117,6 @@
 .adv-reminder-options{display:flex;flex-direction:column;gap:10px}
 .adv-reminder-opt{display:flex;align-items:center;gap:10px;font-size:.9rem;color:var(--text-primary);cursor:pointer}
 .adv-reminder-opt input[type="checkbox"]{width:20px;height:20px;accent-color:var(--sage-500)}
+/* AI Remind generate button */
+.adv-ai-remind-btn{width:100%;padding:12px;background:var(--sage-50,#f5f7f5);border:1.5px dashed var(--sage-300);border-radius:10px;font-size:.9rem;color:var(--sage-600);cursor:pointer;font-family:inherit;font-weight:600;transition:all .2s}
+.adv-ai-remind-btn:active{transform:scale(.97);background:var(--sage-100)}

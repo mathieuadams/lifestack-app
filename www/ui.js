@@ -188,7 +188,7 @@ function openQuickAdd(d){const yr=typeof currentViewYear!=='undefined'?currentVi
 function navMonth(dir){curM=(curM+dir+12)%12;buildMG()}
 
 // ===== YEARLY VIEW =====
-const ymcCatMap={travel:'travel',food:'food',adventure:'adventure',roadtrip:'roadtrip',birthday:'birthday',health:'health',culture:'culture',date:'date',hiking:'adventure',skiing:'adventure',swimming:'health',running:'health',concert:'culture',camping:'adventure',surfing:'health',misogi:'adventure'};
+const ymcCatMap={travel:'travel',food:'food',adventure:'adventure',roadtrip:'roadtrip',birthday:'birthday',health:'health',culture:'culture',date:'date',hiking:'adventure',skiing:'adventure',swimming:'health',running:'health',concert:'culture',camping:'adventure',surfing:'health',misogi:'adventure',beach:'health',climbing:'adventure',cycling:'health',diving:'adventure',spa:'health',sports:'health'};
 function buildYV(){
   const g=document.getElementById('yearGrid');if(!g)return;g.innerHTML='';
   const yr=typeof currentViewYear!=='undefined'?currentViewYear:new Date().getFullYear();
@@ -225,66 +225,35 @@ function buildBucketView(){
   const items=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList:[];
   if(items.length===0){c.innerHTML='<p style="color:var(--text-tertiary);text-align:center;padding:20px 0">No bucket list items yet. Tap "+ Add" to start!</p>';return}
   const bucketCatIcons={travel:'✈️',adventure:'🏔️',skills:'🎯',experiences:'🎭',personal:'💫',health:'💪',creative:'🎨',other:'📌'};
-  
-  // Split into active and completed
   const active=items.filter(i=>i.status!=='done'&&i.status!=='completed');
   const completed=items.filter(i=>i.status==='done'||i.status==='completed');
-  
   let html='';
   html+=`<div class="bucket-summary">${items.length} Dream${items.length!==1?'s':''} · ${items.filter(i=>i.status==='planned').length} Planned · ${completed.length} Done</div>`;
-  
-  // Group active items by category
   const groups={};active.forEach(i=>{const cat=i.category||'other';if(!groups[cat])groups[cat]=[];groups[cat].push(i)});
   Object.keys(groups).forEach(cat=>{
     const icon=bucketCatIcons[cat]||'📌';
     html+=`<div class="bucket-cat-header">${icon} <strong>${cat.charAt(0).toUpperCase()+cat.slice(1)}</strong> <span class="bucket-cat-count">${groups[cat].length}</span></div>`;
     groups[cat].forEach(item=>{
-      html+=`<div class="bucket-item">
-        <div class="bucket-check" onclick="event.stopPropagation();toggleBucketDone('${item.id}')">○</div>
-        <div class="bucket-info">
-          <div class="bucket-title">${escapeHtmlUI(item.title)}</div>
-          ${item.description?`<div class="bucket-desc">${escapeHtmlUI(item.description).substring(0,80)}...</div>`:''}
-          ${item.difficulty?`<div class="bucket-diff">${item.difficulty}</div>`:''}
-        </div>
-        <div class="bucket-actions">
-          <button class="bucket-schedule" onclick="event.stopPropagation();scheduleBucket('${item.id}')">📅</button>
-          <button class="bucket-delete" onclick="event.stopPropagation();deleteBucketItem('${item.id}')">🗑</button>
-        </div>
-      </div>`;
+      html+=`<div class="bucket-item"><div class="bucket-check" onclick="event.stopPropagation();toggleBucketDone('${item.id}')">○</div><div class="bucket-info"><div class="bucket-title">${escapeHtmlUI(item.title)}</div>${item.difficulty?`<div class="bucket-diff">${item.difficulty}</div>`:''}</div><div class="bucket-actions"><button class="bucket-schedule" onclick="event.stopPropagation();scheduleBucket('${item.id}')">📅</button><button class="bucket-delete" onclick="event.stopPropagation();deleteBucketItem('${item.id}')">🗑</button></div></div>`;
     });
   });
-  
-  // Completed section
   if(completed.length>0){
-    html+=`<div class="bucket-completed-header" onclick="document.getElementById('bucketCompletedList').classList.toggle('hidden')">
-      <span>✅ Completed (${completed.length})</span><span class="bucket-toggle">▾</span>
-    </div>`;
+    html+=`<div class="bucket-completed-header" onclick="document.getElementById('bucketCompletedList').classList.toggle('hidden')"><span>✅ Completed (${completed.length})</span><span class="bucket-toggle">▾</span></div>`;
     html+=`<div id="bucketCompletedList">`;
     completed.forEach(item=>{
-      html+=`<div class="bucket-item done">
-        <div class="bucket-check checked" onclick="event.stopPropagation();toggleBucketDone('${item.id}')">✓</div>
-        <div class="bucket-info">
-          <div class="bucket-title done">${escapeHtmlUI(item.title)}</div>
-        </div>
-        <div class="bucket-actions">
-          <button class="bucket-delete" onclick="event.stopPropagation();deleteBucketItem('${item.id}')">🗑</button>
-        </div>
-      </div>`;
+      html+=`<div class="bucket-item done"><div class="bucket-check checked" onclick="event.stopPropagation();toggleBucketDone('${item.id}')">✓</div><div class="bucket-info"><div class="bucket-title done">${escapeHtmlUI(item.title)}</div></div><div class="bucket-actions"><button class="bucket-delete" onclick="event.stopPropagation();deleteBucketItem('${item.id}')">🗑</button></div></div>`;
     });
     html+=`</div>`;
   }
-  
   c.innerHTML=html;
 }
 function openBucketItem(id){if(typeof showBucketListModal==='function')showBucketListModal()}
 function toggleBucketDone(id){
   const items=typeof bucketList!=='undefined'?bucketList:[];
-  const item=items.find(i=>i.id===id);
-  if(!item)return;
+  const item=items.find(i=>i.id===id);if(!item)return;
   item.status=(item.status==='done'||item.status==='completed')?'dream':'done';
   buildBucketView();refreshPlanView();
   toast(item.status==='done'?'🎉 Dream achieved!':'Unmarked');
-  // Persist to API
   if(typeof saveBucketList==='function')saveBucketList(bucketList);
   localStorage.setItem('lifestack_bucketlist',JSON.stringify(bucketList));
 }
@@ -293,15 +262,9 @@ function deleteBucketItem(id){
   if(typeof bucketList!=='undefined'){const idx=bucketList.findIndex(i=>i.id===id);if(idx>-1){bucketList.splice(idx,1);buildBucketView();toast('Removed')}}
 }
 function scheduleBucket(id){
-  var items=typeof bucketList!=='undefined'?bucketList:[];
-  var item=items.find(function(i){return i.id===id});
-  if(!item)return;
-  if(typeof startAdventureWizardWithData==='function'){
-    var catMap={travel:'travel',adventure:'adventure',skills:'culture',experiences:'culture',personal:'health',health:'health',creative:'culture'};
-    startAdventureWizardWithData({name:item.title||'',notes:item.description||'',category:catMap[item.category]||'adventure',_bucketItemId:item.id});
-  } else if(typeof startAdventureWizard==='function'){
-    startAdventureWizard();setTimeout(function(){if(typeof advWizard!=='undefined'){advWizard.data.name=item.title;advWizard.data._bucketItemId=item.id}},200);
-  }
+  var items=typeof bucketList!=='undefined'?bucketList:[];var item=items.find(function(i){return i.id===id});if(!item)return;
+  if(typeof startAdventureWizardWithData==='function'){var catMap={travel:'travel',adventure:'adventure',skills:'culture',experiences:'culture',personal:'health',health:'health',creative:'culture'};startAdventureWizardWithData({name:item.title||'',notes:item.description||'',category:catMap[item.category]||'adventure',_bucketItemId:item.id})}
+  else if(typeof startAdventureWizard==='function'){startAdventureWizard();setTimeout(function(){if(typeof advWizard!=='undefined'){advWizard.data.name=item.title;advWizard.data._bucketItemId=item.id}},200)}
 }
 
 // ===== PLANNING FLOW =====
@@ -501,19 +464,19 @@ function renderHabitsView(){
   }
 }
 
-// Build GitHub-style contribution grid - 52 weeks, table for equal spacing
+// Build habit grid - last 13 weeks (90 days), table for uniform cells
 function buildHabitGrid(checkIns,totalDays){
   const today=new Date();today.setHours(0,0,0,0);
-  const numWeeks=52;
+  const numWeeks=13;
   const startDate=new Date(today);startDate.setDate(startDate.getDate()-(numWeeks*7));
   const dow=startDate.getDay();startDate.setDate(startDate.getDate()+((dow===0)?-6:(1-dow)));
   const checkInSet=new Set(checkIns);const todayStr=today.toISOString().split('T')[0];
   const weeks=[];let cur=new Date(startDate);
-  while(cur<=today){const week=[];for(let d=0;d<7;d++){const ds=cur.toISOString().split('T')[0];week.push({date:ds,month:cur.getMonth(),checked:checkInSet.has(ds),future:cur>today,today:ds===todayStr});cur.setDate(cur.getDate()+1)}weeks.push(week)}
+  while(cur<=today){const wk=[];for(let d=0;d<7;d++){const ds=cur.toISOString().split('T')[0];wk.push({date:ds,month:cur.getMonth(),checked:checkInSet.has(ds),future:cur>today,today:ds===todayStr});cur.setDate(cur.getDate()+1)}weeks.push(wk)}
   const MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   let mh='';let lm=-1;
   weeks.forEach(w=>{const m=w[0].month;mh+=`<th class="hg-mh">${m!==lm?MS[m]:''}</th>`;lm=m});
-  const rl=['M','','W','','F','',''];
+  const rl=['M','T','W','T','F','S','S'];
   let rows='';
   for(let r=0;r<7;r++){
     let cells=`<td class="hg-rl">${rl[r]}</td>`;
@@ -523,7 +486,7 @@ function buildHabitGrid(checkIns,totalDays){
     });
     rows+=`<tr>${cells}</tr>`;
   }
-  return `<div class="hg-wrap"><table class="hg-table" cellspacing="2" cellpadding="0"><thead><tr><th class="hg-rl"></th>${mh}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="hg-wrap"><table class="hg-table" cellspacing="3" cellpadding="0"><thead><tr><th class="hg-rl"></th>${mh}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function calcStreak(checkIns){
   if(!checkIns||checkIns.length===0)return 0;
@@ -770,18 +733,13 @@ function editYearTheme(){
   }
 }
 
-// ===== CALENDAR DRAG SELECTION (long-press to activate) =====
+// ===== CALENDAR DRAG SELECTION (long-press) =====
 let calDragStart=null;let calLongPressTimer=null;let calLongPressActive=false;let calTouchMoved=false;
 function initCalendarDrag(){
   const grid=document.getElementById('mGrid');if(!grid)return;
-  grid.addEventListener('pointerdown',function(e){
-    const cell=e.target.closest('.mgc:not(.blank)');if(!cell)return;
-    calTouchMoved=false;calLongPressActive=false;const day=parseInt(cell.dataset.day);if(!day)return;
-    calLongPressTimer=setTimeout(function(){if(calTouchMoved)return;calLongPressActive=true;calDragStart=day;calS=day;calE=null;hlRange();if(navigator.vibrate)navigator.vibrate(50)},800);
-    e.preventDefault();
-  });
+  grid.addEventListener('pointerdown',function(e){const cell=e.target.closest('.mgc:not(.blank)');if(!cell)return;calTouchMoved=false;calLongPressActive=false;const day=parseInt(cell.dataset.day);if(!day)return;calLongPressTimer=setTimeout(function(){if(calTouchMoved)return;calLongPressActive=true;calDragStart=day;calS=day;calE=null;hlRange();if(navigator.vibrate)navigator.vibrate(50)},800);e.preventDefault()});
   grid.addEventListener('pointermove',function(e){calTouchMoved=true;if(!calLongPressActive||!calDragStart)return;const cell=document.elementFromPoint(e.clientX,e.clientY);if(!cell||!cell.classList.contains('mgc')||cell.classList.contains('blank'))return;const day=parseInt(cell.dataset.day);if(!day)return;if(day>=calDragStart){calS=calDragStart;calE=day}else{calS=day;calE=calDragStart}hlRange()});
-  grid.addEventListener('pointerup',function(e){clearTimeout(calLongPressTimer);if(!calLongPressActive||!calDragStart){calDragStart=null;calLongPressActive=false;return}const yr=typeof currentViewYear!=='undefined'?currentViewYear:new Date().getFullYear();const startStr=`${yr}-${String(curM+1).padStart(2,'0')}-${String(calS).padStart(2,'0')}`;const endStr=calE?`${yr}-${String(curM+1).padStart(2,'0')}-${String(calE).padStart(2,'0')}`:startStr;startPlanFlow(1);setTimeout(()=>{const s=document.getElementById('pfDateStart');const en=document.getElementById('pfDateEnd');if(s)s.value=startStr;if(en)en.value=endStr},100);calDragStart=null;calLongPressActive=false});
+  grid.addEventListener('pointerup',function(){clearTimeout(calLongPressTimer);if(!calLongPressActive||!calDragStart){calDragStart=null;calLongPressActive=false;return}const yr=typeof currentViewYear!=='undefined'?currentViewYear:new Date().getFullYear();const startStr=`${yr}-${String(curM+1).padStart(2,'0')}-${String(calS).padStart(2,'0')}`;const endStr=calE?`${yr}-${String(curM+1).padStart(2,'0')}-${String(calE).padStart(2,'0')}`:startStr;startPlanFlow(1);setTimeout(()=>{const s=document.getElementById('pfDateStart');const en=document.getElementById('pfDateEnd');if(s)s.value=startStr;if(en)en.value=endStr},100);calDragStart=null;calLongPressActive=false});
   grid.addEventListener('pointercancel',function(){clearTimeout(calLongPressTimer);calDragStart=null;calLongPressActive=false});
 }
 
@@ -801,14 +759,11 @@ function refreshPlanView(){
   if(typeof currentUser!=='undefined'&&currentUser){
     const pn=document.getElementById('profileName');if(pn)pn.textContent=currentUser.name||'User';
   }
-  // Update year theme from plans or localStorage
+  // Update year theme
   const yr=typeof currentViewYear!=='undefined'?currentViewYear:new Date().getFullYear();
   const themePlan=(typeof plans!=='undefined'&&Array.isArray(plans))?plans.find(p=>p.type==='theme'&&(parseInt(p.year)===yr||String(p.year)===String(yr))):null;
   const themeText=themePlan?themePlan.title:localStorage.getItem('lifestack_theme_'+yr);
-  if(themeText){
-    const th=document.getElementById('yearBannerTheme');if(th)th.textContent='"'+themeText+'"';
-    const ytEl=document.getElementById('yearTheme');if(ytEl)ytEl.value=themeText;
-  }
+  if(themeText){const th=document.getElementById('yearBannerTheme');if(th)th.textContent='"'+themeText+'"'}
 }
 
 // ===== INIT =====

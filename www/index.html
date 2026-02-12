@@ -461,15 +461,38 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
         <input type="hidden" id="planType" value="misogi">
         <input type="hidden" id="planTargetQuarter" value="">
         <input type="hidden" id="planTargetMonth" value="">
-        <input type="hidden" id="planCategory" value="">
         <div id="sharedAdventureInfo" style="display:none;"></div>
         <div class="form-group" id="categoryPickerGroup">
           <label>Category</label>
-          <div class="category-selected" onclick="showCategoryPicker()">
-            <span id="selectedCategoryIcon">🎯</span>
-            <span id="selectedCategoryName">Select category...</span>
-            <span>▼</span>
-          </div>
+          <select id="planCategory" class="form-select" style="width:100%;padding:12px;border:1.5px solid var(--sand-200);border-radius:10px;font-size:.9rem;font-family:inherit;background:white">
+            <option value="">Select category...</option>
+            <option value="travel">✈️ Travel</option>
+            <option value="hiking">🥾 Hiking</option>
+            <option value="camping">🏕️ Camping</option>
+            <option value="beach">🏖️ Beach</option>
+            <option value="skiing">⛷️ Skiing</option>
+            <option value="swimming">🏊 Swimming</option>
+            <option value="running">🏃 Running</option>
+            <option value="surfing">🏄 Surfing</option>
+            <option value="climbing">🧗 Climbing</option>
+            <option value="cycling">🚴 Cycling</option>
+            <option value="concert">🎸 Concert</option>
+            <option value="festival">🎪 Festival</option>
+            <option value="food">🍽️ Food</option>
+            <option value="date">💕 Date</option>
+            <option value="adventure">🏔️ Adventure</option>
+            <option value="roadtrip">🚗 Road Trip</option>
+            <option value="birthday">🎂 Birthday</option>
+            <option value="culture">🎭 Culture</option>
+            <option value="health">💪 Health</option>
+            <option value="spa">💆 Spa</option>
+            <option value="sports">⚽ Sports</option>
+            <option value="fishing">🎣 Fishing</option>
+            <option value="sailing">⛵ Sailing</option>
+            <option value="diving">🤿 Diving</option>
+            <option value="wedding">💒 Wedding</option>
+            <option value="other">🎯 Other</option>
+          </select>
         </div>
         <div class="form-group"><label for="planTitle">What's the plan?</label><input type="text" id="planTitle" placeholder="e.g., Run a marathon" required></div>
         <div class="form-group"><label for="planDescription">Why? (optional)</label><textarea id="planDescription" placeholder="Describe why..."></textarea></div>

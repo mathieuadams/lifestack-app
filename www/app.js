@@ -2840,10 +2840,10 @@ function showAddPlanModal(type, month = null) {
 function showEditPlanModal(planId) {
   const plan = plans.find(p => p.id === planId);
   if (!plan) return;
-  const planIdEl = document.getElementById('planId');
-  if (!planIdEl) { console.warn('Plan modal not in DOM'); return; }
+  
   const isSharedAdventure = plan.type === 'shared-adventure';
-  planIdEl.value = plan.id;
+  
+  document.getElementById('planId').value = plan.id;
   document.getElementById('planType').value = isSharedAdventure ? 'adventure' : plan.type;
   document.getElementById('planTitle').value = plan.title;
   document.getElementById('planDescription').value = plan.description || '';
@@ -2857,19 +2857,6 @@ function showEditPlanModal(planId) {
   document.getElementById('planTargetMonth').value = plan.targetMonth || '';
   document.getElementById('planTargetQuarter').value = plan.targetQuarter || '';
   document.getElementById('planCategory').value = plan.category || '';
-  
-  // Set category display
-  selectedCategory = plan.category || null;
-  if (plan.category) {
-    const cat = getAllCategories().find(c => c.id === plan.category);
-    if (cat) {
-      document.getElementById('selectedCategoryIcon').textContent = cat.icon;
-      document.getElementById('selectedCategoryName').textContent = cat.name;
-    }
-  } else {
-    document.getElementById('selectedCategoryIcon').textContent = '🎯';
-    document.getElementById('selectedCategoryName').textContent = 'Select category...';
-  }
   
   // Load people/participants
   // Handle both old format (people: [id1, id2]) and new format (participants: [{odId, name}])
@@ -5481,14 +5468,23 @@ function showAIPrepChecklist(planId, checklist) {
   // Reminders
   html += `<div style="border-top:1px solid var(--sand-100);padding-top:14px;margin-top:8px">`;
   html += `<div style="font-weight:600;font-size:.9rem;margin-bottom:6px">🔔 Reminders</div>`;
-  html += `<p style="font-size:.75rem;color:var(--text-tertiary);margin-bottom:8px">Email me when it's time for each group of tasks</p>`;
   const prefs = plan?.reminderPrefs || {};
-  ['6months','3months','1month','1week','1day'].forEach(t => {
+  // Show saved AI-generated reminders if they're in array format
+  if (Array.isArray(prefs) && prefs.length > 0) {
+    prefs.forEach(r => {
+      html += `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:.85rem">
+        <span style="color:var(--sage-500)">✓</span> ${escapeHtml(r.label || r.key || 'Reminder')}
+      </div>`;
+    });
+  } else if (typeof prefs === 'object' && Object.keys(prefs).length > 0) {
+    // Legacy format: key-value pairs
     const labels = {'6months':'6 months before','3months':'3 months before','1month':'1 month before','1week':'1 week before','1day':'Day before'};
-    if (!checklist.some(i => i.leadTime === t)) return;
-    html += `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:.82rem;cursor:pointer"><input type="checkbox" id="remind_${t}" ${prefs[t]!==false?'checked':''}> ${labels[t]}</label>`;
-  });
-  html += `<button class="btn-p" onclick="savePrepReminders('${planId}')" style="margin-top:10px;width:100%">Save Reminders</button>`;
+    Object.entries(prefs).forEach(([k, v]) => {
+      if (v) html += `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:.85rem"><span style="color:var(--sage-500)">✓</span> ${escapeHtml(labels[k] || k)}</div>`;
+    });
+  } else {
+    html += `<p style="font-size:.8rem;color:var(--text-tertiary)">No reminders set</p>`;
+  }
   html += `</div></div>`;
 
   // Display in plan modal
@@ -7100,8 +7096,7 @@ function initBucketListSpeechRecognition() {
         const transcript = document.getElementById('bucketListTranscript').textContent.trim();
         if (transcript.length > 10) {
           stopBucketListRecording();
-          // Show editable transcript instead of auto-processing
-          showEditableTranscript(transcript);
+          processBucketListVoice(transcript);
         } else {
           try { bucketListRecognition.start(); } catch (e) { stopBucketListRecording(); }
         }
@@ -7125,7 +7120,7 @@ function toggleBucketListRecording() {
   if (isBucketListRecording) {
     stopBucketListRecording();
     const transcript = document.getElementById('bucketListTranscript').textContent.trim();
-    if (transcript.length > 5) showEditableTranscript(transcript);
+    if (transcript.length > 5) processBucketListVoice(transcript);
   } else {
     startBucketListRecording();
   }
@@ -7149,21 +7144,6 @@ function stopBucketListRecording() {
   }
   document.getElementById('bucketListVoiceBtn').classList.remove('recording');
   document.getElementById('bucketListVoiceText').textContent = 'Tap to speak';
-}
-
-function showEditableTranscript(transcript) {
-  const transcriptEl = document.getElementById('bucketListTranscript');
-  if (!transcriptEl) { processBucketListVoice(transcript); return; }
-  transcriptEl.innerHTML = `
-    <textarea id="bucketVoiceEdit" style="width:100%;min-height:60px;border:1.5px solid var(--sand-200);border-radius:10px;padding:10px;font-size:.9rem;font-family:inherit;resize:vertical;margin-bottom:8px">${escapeHtml(transcript)}</textarea>
-    <div style="display:flex;gap:8px;justify-content:center">
-      <button onclick="document.getElementById('bucketListTranscript').textContent='';document.getElementById('bucketListVoiceStatus').textContent=''" style="padding:8px 16px;border:1.5px solid var(--sand-200);border-radius:8px;background:white;font-size:.85rem;cursor:pointer">✕ Cancel</button>
-      <button onclick="var t=document.getElementById('bucketVoiceEdit').value.trim();if(t)processBucketListVoice(t)" style="padding:8px 20px;background:var(--sage-500);color:white;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer">✨ Generate Dreams</button>
-    </div>
-  `;
-  document.getElementById('bucketListVoiceStatus').textContent = 'Edit your text above, then tap Generate';
-  // Focus the textarea
-  setTimeout(() => { const ta = document.getElementById('bucketVoiceEdit'); if (ta) ta.focus(); }, 100);
 }
 
 async function processBucketListVoice(transcript) {
@@ -7385,7 +7365,7 @@ function dreamInitRecognition() {
       var text = document.getElementById('dreamTranscript').textContent.trim();
       if (text.length > 10) {
         dreamStopRecording();
-        dreamShowEditableTranscript(text);
+        dreamProcessVoice(text);
       } else {
         try { dreamRecognition.start(); } catch(e) { dreamStopRecording(); }
       }
@@ -7407,7 +7387,7 @@ function dreamToggleRecording() {
   if (isDreamRecording) {
     dreamStopRecording();
     var text = document.getElementById('dreamTranscript').textContent.trim();
-    if (text.length > 5) dreamShowEditableTranscript(text);
+    if (text.length > 5) dreamProcessVoice(text);
   } else {
     dreamStartRecording();
   }
@@ -7432,20 +7412,6 @@ function dreamStopRecording() {
   if (btn) btn.classList.remove('recording');
   var label = document.getElementById('dreamMicLabel');
   if (label) label.textContent = 'Tap to speak';
-}
-
-function dreamShowEditableTranscript(text) {
-  var el = document.getElementById('dreamTranscript');
-  if (!el) { dreamProcessVoice(text); return; }
-  el.innerHTML = '<textarea id="dreamVoiceEdit" style="width:100%;min-height:50px;border:1.5px solid var(--sand-200);border-radius:10px;padding:10px;font-size:.9rem;font-family:inherit;resize:vertical;margin-bottom:8px">' + escapeHtml(text) + '</textarea>' +
-    '<div style="display:flex;gap:8px;justify-content:center">' +
-    '<button onclick="document.getElementById(\'dreamTranscript\').innerHTML=\'\';document.getElementById(\'dreamStatus\').textContent=\'\'" style="padding:8px 16px;border:1.5px solid var(--sand-200);border-radius:8px;background:white;font-size:.85rem;cursor:pointer">✕ Cancel</button>' +
-    '<button onclick="var t=document.getElementById(\'dreamVoiceEdit\').value.trim();if(t)dreamProcessVoice(t)" style="padding:8px 20px;background:var(--sage-500);color:white;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer">✨ Generate Dreams</button>' +
-    '</div>';
-  el.classList.add('visible');
-  var status = document.getElementById('dreamStatus');
-  if (status) { status.textContent = 'Edit your text, then tap Generate'; status.className = 'dream-status'; }
-  setTimeout(function() { var ta = document.getElementById('dreamVoiceEdit'); if (ta) ta.focus(); }, 100);
 }
 
 // ===== PROCESS WITH AI =====
@@ -7495,40 +7461,42 @@ async function dreamProcessVoice(transcript) {
 function dreamShowResults(items, message) {
   document.getElementById('dreamInputPhase').style.display = 'none';
   document.getElementById('dreamResultsPhase').style.display = '';
+
   var subtitle = document.getElementById('dreamResultsSubtitle');
   if (subtitle) subtitle.textContent = message || 'Select the dreams you want to keep';
-  var limitedItems = items.slice(0, 5);
-  dreamSelectedItems = limitedItems.map(function(item) { return item.id; });
-  var catIcons = {travel:'✈️',adventure:'🏔️',skills:'🎯',experiences:'🎭',personal:'💫',health:'💪',creative:'🎨',other:'📌'};
-  var html = limitedItems.map(function(item) {
+
+  // All selected by default
+  dreamSelectedItems = items.map(function(item) { return item.id; });
+
+  var catIcons = {
+    travel: '✈️', adventure: '🏔️', skills: '🎯', experiences: '🎭',
+    personal: '💫', health: '💪', creative: '🎨', other: '📌'
+  };
+
+  var html = items.map(function(item) {
     var icon = catIcons[item.category] || '📌';
     return '<div class="dream-result-item selected" onclick="dreamToggleItem(\'' + item.id + '\', this)" data-id="' + item.id + '">' +
       '<span class="dream-result-emoji">' + icon + '</span>' +
       '<div class="dream-result-body">' +
         '<div class="dream-result-title">' + escapeHtml(item.title) + '</div>' +
         (item.description ? '<div class="dream-result-desc">' + escapeHtml(item.description) + '</div>' : '') +
-        '<div class="dream-result-cat">' + (item.category || 'other').toUpperCase() + (item.difficulty ? ' · ' + item.difficulty.toUpperCase() : '') + '</div>' +
+        '<div class="dream-result-cat">' + (item.category || 'other') + (item.difficulty ? ' · ' + item.difficulty : '') + '</div>' +
       '</div>' +
       '<div class="dream-result-check">✓</div>' +
     '</div>';
   }).join('');
+
   document.getElementById('dreamResultsList').innerHTML = html;
-  updateDreamSelectButton();
 }
 
 function dreamToggleItem(id, el) {
   var idx = dreamSelectedItems.indexOf(id);
-  if (idx >= 0) { dreamSelectedItems.splice(idx, 1); el.classList.remove('selected'); }
-  else { dreamSelectedItems.push(id); el.classList.add('selected'); }
-  updateDreamSelectButton();
-}
-
-function updateDreamSelectButton() {
-  var btn = document.querySelector('.dream-btn-primary');
-  if (btn) {
-    var n = dreamSelectedItems.length;
-    btn.textContent = n > 0 ? 'Add Selected (' + n + ')' : 'Add Selected';
-    btn.disabled = n === 0; btn.style.opacity = n === 0 ? '0.5' : '1';
+  if (idx >= 0) {
+    dreamSelectedItems.splice(idx, 1);
+    el.classList.remove('selected');
+  } else {
+    dreamSelectedItems.push(id);
+    el.classList.add('selected');
   }
 }
 
