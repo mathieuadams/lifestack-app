@@ -28,9 +28,7 @@ function swTab(t,b){
   b.classList.add('active');
   document.getElementById('st-'+t).classList.add('active');
   if(t==='week') buildWeekView();
-  if(t==='month') buildMG();
-  if(t==='year') buildYV();
-  if(t==='bucket'){buildBucketView();if(typeof fetchBucketList==='function')fetchBucketList().then(()=>{buildBucketView();refreshPlanView()}).catch(()=>{})}
+  if(t==='bucket'){buildBucketView();if(typeof fetchBucketList==='function')fetchBucketList().then(()=>buildBucketView()).catch(()=>{})}
 }
 function openPanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.add('open');if(p)p.classList.add('open')}
 function closePanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.remove('open');if(p)p.classList.remove('open')}
@@ -110,7 +108,6 @@ function buildWeekView(){
         <div class="pct">${icon} ${escapeHtmlUI(p.title)}</div>
         <div class="pcm"><span>${dateStr}</span><span class="tag tag-${cat}">${cat}</span>${p.type==='misogi'?'<span class="tag tag-misogi">Misogi</span>':''}</div>
       </div>
-      <button class="pcai" onclick="event.stopPropagation();if(typeof getAIPrepTips==='function')getAIPrepTips('${p.id}')" title="AI Prep">✨</button>
       <button class="pcchk${isDone?' done':''}" onclick="event.stopPropagation();togglePlanDone('${p.id}',this)">✓</button>
     </div>`;
   }).join('');
@@ -128,9 +125,8 @@ function openPlanDetail(planId){
 }
 function togglePlanDone(planId,btn){
   btn.classList.toggle('done');
-  if(typeof togglePlanStatus==='function')togglePlanStatus(planId);
-  if(btn.classList.contains('done'))toast('✓ Completed!');
-  else toast('Marked incomplete');
+  if(btn.classList.contains('done')){toast('✓ Completed!');if(typeof quickCompletePlan==='function')quickCompletePlan(planId)}
+  else{toast('Marked incomplete')}
 }
 
 // ===== MONTH CALENDAR =====
@@ -171,7 +167,7 @@ function buildMG(){
     const isToday=d===today.getDate()&&curM===today.getMonth()&&yr===today.getFullYear();
     const dayPlans=pbd[d]||[];
     const dots=dayPlans.slice(0,2).map(p=>{const cat=(p.category||p.type||'adventure').toLowerCase();return `<div class="mgev" style="background:var(--cat-${cat},var(--sage-400));font-size:.55rem;color:white;padding:1px 3px;border-radius:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escapeHtmlUI(p.title).substring(0,8)}</div>`}).join('');
-    html+=`<div class="mgc${isToday?' today':''}" data-day="${d}">${d}${dots}</div>`;
+    html+=`<div class="mgc${isToday?' today':''}" data-day="${d}" onclick="openQuickAdd(${d})">${d}${dots}</div>`;
   }
   g.innerHTML=html;calS=null;calE=null;
   initCalendarDrag();
@@ -180,7 +176,7 @@ function buildMG(){
   if(actList&&actTitle){
     actTitle.textContent='Activities in '+MN[curM];
     if(mp.length===0){actList.innerHTML='<p style="color:var(--text-tertiary);font-size:.85rem;padding:8px 0">No activities this month</p>';return}
-    actList.innerHTML=mp.map(p=>{const cat=(p.category||p.type||'adventure').toLowerCase();const icon=catIcons[cat]||'📋';const bg=catBgs[cat]||'var(--sage-100)';const sd=p.startDate?parseWeekDate(p.startDate):null;const ds=sd?MN[curM]+' '+sd.getDate():'';const isDone=p.status==='completed';return `<div class="act-item${isDone?' completed':''}" onclick="openPlanDetail('${p.id}')"><div class="act-icon" style="background:${bg}">${icon}</div><div class="act-body"><div class="act-name${isDone?' done-text':''}">${escapeHtmlUI(p.title)}</div><div class="act-meta">${ds} <span class="tag tag-${cat}">${escapeHtmlUI(cat)}</span></div></div><button class="pcai" onclick="event.stopPropagation();if(typeof getAIPrepTips==='function')getAIPrepTips('${p.id}')">✨</button><button class="act-chk${isDone?' done':''}" onclick="event.stopPropagation();togglePlanDone('${p.id}',this)">✓</button></div>`}).join('');
+    actList.innerHTML=mp.map(p=>{const cat=(p.category||p.type||'adventure').toLowerCase();const icon=catIcons[cat]||'📋';const bg=catBgs[cat]||'var(--sage-100)';const sd=p.startDate?parseWeekDate(p.startDate):null;const ds=sd?MN[curM]+' '+sd.getDate():'';return `<div class="act-item" onclick="openPlanDetail('${p.id}')"><div class="act-icon" style="background:${bg}">${icon}</div><div class="act-body"><div class="act-name">${escapeHtmlUI(p.title)}</div><div class="act-meta">${ds} <span class="tag tag-${cat}">${escapeHtmlUI(cat)}</span></div></div><button style="background:none;border:none;font-size:.9rem;padding:4px;cursor:pointer" onclick="event.stopPropagation();getAIPrepTips('${p.id}')" title="AI Prep Tips">✨</button><span class="act-arrow">›</span></div>`}).join('');
   }
 }
 function hlRange(){document.querySelectorAll('#mGrid .mgc').forEach(c=>{c.classList.remove('rs','rstart','rend');const d=parseInt(c.dataset.day);if(!d)return;if(calS&&!calE&&d===calS){c.classList.add('rstart','rend')}else if(calS&&calE){if(d===calS)c.classList.add('rstart');else if(d===calE)c.classList.add('rend');else if(d>calS&&d<calE)c.classList.add('rs')}})}
@@ -188,18 +184,17 @@ function openQuickAdd(d){const yr=typeof currentViewYear!=='undefined'?currentVi
 function navMonth(dir){curM=(curM+dir+12)%12;buildMG()}
 
 // ===== YEARLY VIEW =====
-const ymcCatMap={travel:'travel',food:'food',adventure:'adventure',roadtrip:'roadtrip',birthday:'birthday',health:'health',culture:'culture',date:'date',hiking:'adventure',skiing:'adventure',swimming:'health',running:'health',concert:'culture',camping:'adventure',surfing:'health',misogi:'adventure',beach:'health',climbing:'adventure',cycling:'health',diving:'adventure',spa:'health',sports:'health'};
 function buildYV(){
   const g=document.getElementById('yearGrid');if(!g)return;g.innerHTML='';
   const yr=typeof currentViewYear!=='undefined'?currentViewYear:new Date().getFullYear();
   const cm=new Date().getMonth();
   const cy=new Date().getFullYear();
+  const card=document.createElement('div');card.className='ym'+((i===cm&&yr===cy)?' cur':'');
   MN.forEach((m,i)=>{
     const card=document.createElement('div');card.className='ym'+((i===cm&&yr===cy)?' cur':'');
     const evts=getPlansForMonth(i);const evMap={};
     evts.forEach(p=>{
-      const rawCat=(p.category||p.type||'adventure').toLowerCase();
-      const cat=ymcCatMap[rawCat]||'adventure';
+      const cat=(p.category||p.type||'adventure').toLowerCase();
       if(p.startDate){
         const sd2=parseWeekDate(p.startDate);const ed2=p.endDate?parseWeekDate(p.endDate):sd2;
         if(sd2){
@@ -225,46 +220,59 @@ function buildBucketView(){
   const items=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList:[];
   if(items.length===0){c.innerHTML='<p style="color:var(--text-tertiary);text-align:center;padding:20px 0">No bucket list items yet. Tap "+ Add" to start!</p>';return}
   const bucketCatIcons={travel:'✈️',adventure:'🏔️',skills:'🎯',experiences:'🎭',personal:'💫',health:'💪',creative:'🎨',other:'📌'};
-  const active=items.filter(i=>i.status!=='done'&&i.status!=='completed');
-  const completed=items.filter(i=>i.status==='done'||i.status==='completed');
+  const groups={};items.forEach(i=>{const cat=i.category||'other';if(!groups[cat])groups[cat]=[];groups[cat].push(i)});
   let html='';
-  html+=`<div class="bucket-summary">${items.length} Dream${items.length!==1?'s':''} · ${items.filter(i=>i.status==='planned').length} Planned · ${completed.length} Done</div>`;
-  const groups={};active.forEach(i=>{const cat=i.category||'other';if(!groups[cat])groups[cat]=[];groups[cat].push(i)});
+  html+=`<div class="bucket-summary">${items.length} Dream${items.length!==1?'s':''} · ${items.filter(i=>i.status==='planned').length} Planned · ${items.filter(i=>i.status==='done').length} Done</div>`;
   Object.keys(groups).forEach(cat=>{
     const icon=bucketCatIcons[cat]||'📌';
-    html+=`<div class="bucket-cat-header">${icon} <strong>${cat.charAt(0).toUpperCase()+cat.slice(1)}</strong> <span class="bucket-cat-count">${groups[cat].length}</span></div>`;
+    html+=`<div class="bucket-cat-header">${icon} ${cat.charAt(0).toUpperCase()+cat.slice(1)} <span class="bucket-cat-count">${groups[cat].length}</span></div>`;
     groups[cat].forEach(item=>{
-      html+=`<div class="bucket-item"><div class="bucket-check" onclick="event.stopPropagation();toggleBucketDone('${item.id}')">○</div><div class="bucket-info"><div class="bucket-title">${escapeHtmlUI(item.title)}</div>${item.difficulty?`<div class="bucket-diff">${item.difficulty}</div>`:''}</div><div class="bucket-actions"><button class="bucket-schedule" onclick="event.stopPropagation();scheduleBucket('${item.id}')">📅</button><button class="bucket-delete" onclick="event.stopPropagation();deleteBucketItem('${item.id}')">🗑</button></div></div>`;
+      const isDone=item.status==='done'||item.status==='completed';
+      html+=`<div class="bucket-item${isDone?' done':''}" onclick="openBucketItem('${item.id}')">
+        <div class="bucket-check${isDone?' checked':''}" onclick="event.stopPropagation();toggleBucketDone('${item.id}',this)">${isDone?'✓':'○'}</div>
+        <div class="bucket-info">
+          <div class="bucket-title${isDone?' done':''}">${escapeHtmlUI(item.title)}</div>
+          ${item.description?`<div class="bucket-desc">${escapeHtmlUI(item.description).substring(0,60)}</div>`:''}
+          ${item.difficulty?`<div class="bucket-diff">${item.difficulty}</div>`:''}
+        </div>
+        <div class="bucket-actions">
+          ${!isDone&&typeof showAddPlanModal==='function'?`<button class="bucket-schedule" onclick="event.stopPropagation();scheduleBucket('${item.id}')">📅</button>`:''}
+          <button class="bucket-delete" onclick="event.stopPropagation();deleteBucketItem('${item.id}')">🗑</button>
+        </div>
+      </div>`;
     });
   });
-  if(completed.length>0){
-    html+=`<div class="bucket-completed-header" onclick="document.getElementById('bucketCompletedList').classList.toggle('hidden')"><span>✅ Completed (${completed.length})</span><span class="bucket-toggle">▾</span></div>`;
-    html+=`<div id="bucketCompletedList">`;
-    completed.forEach(item=>{
-      html+=`<div class="bucket-item done"><div class="bucket-check checked" onclick="event.stopPropagation();toggleBucketDone('${item.id}')">✓</div><div class="bucket-info"><div class="bucket-title done">${escapeHtmlUI(item.title)}</div></div><div class="bucket-actions"><button class="bucket-delete" onclick="event.stopPropagation();deleteBucketItem('${item.id}')">🗑</button></div></div>`;
-    });
-    html+=`</div>`;
-  }
   c.innerHTML=html;
 }
 function openBucketItem(id){if(typeof showBucketListModal==='function')showBucketListModal()}
-function toggleBucketDone(id){
+function toggleBucketDone(id,btn){
   const items=typeof bucketList!=='undefined'?bucketList:[];
-  const item=items.find(i=>i.id===id);if(!item)return;
-  item.status=(item.status==='done'||item.status==='completed')?'dream':'done';
-  buildBucketView();refreshPlanView();
-  toast(item.status==='done'?'🎉 Dream achieved!':'Unmarked');
-  if(typeof saveBucketList==='function')saveBucketList(bucketList);
-  localStorage.setItem('lifestack_bucketlist',JSON.stringify(bucketList));
+  const item=items.find(i=>i.id===id);
+  if(item){item.status=item.status==='done'?'pending':'done';buildBucketView();toast(item.status==='done'?'🎉 Dream achieved!':'Unmarked')}
 }
 function deleteBucketItem(id){
   if(!confirm('Remove this bucket list item?'))return;
   if(typeof bucketList!=='undefined'){const idx=bucketList.findIndex(i=>i.id===id);if(idx>-1){bucketList.splice(idx,1);buildBucketView();toast('Removed')}}
 }
 function scheduleBucket(id){
-  var items=typeof bucketList!=='undefined'?bucketList:[];var item=items.find(function(i){return i.id===id});if(!item)return;
-  if(typeof startAdventureWizardWithData==='function'){var catMap={travel:'travel',adventure:'adventure',skills:'culture',experiences:'culture',personal:'health',health:'health',creative:'culture'};startAdventureWizardWithData({name:item.title||'',notes:item.description||'',category:catMap[item.category]||'adventure',_bucketItemId:item.id})}
-  else if(typeof startAdventureWizard==='function'){startAdventureWizard();setTimeout(function(){if(typeof advWizard!=='undefined'){advWizard.data.name=item.title;advWizard.data._bucketItemId=item.id}},200)}
+  var items=typeof bucketList!=='undefined'?bucketList:[];
+  var item=items.find(function(i){return i.id===id});
+  if(!item)return;
+  if(typeof startAdventureWizard==='function'){
+    startAdventureWizard();
+    setTimeout(function(){
+      if(typeof advWizard!=='undefined'){
+        advWizard.data.name=item.title;
+        advWizard.data.notes=item.description||'';
+        var catMap={travel:'travel',adventure:'adventure',skills:'culture',experiences:'culture',personal:'health',health:'health',creative:'culture'};
+        advWizard.data.category=catMap[item.category]||'adventure';
+        advWizard.data._bucketItemId=item.id;
+      }
+    },200);
+  } else if(typeof showAddPlanModal==='function'){
+    showAddPlanModal('adventure');
+    setTimeout(function(){var t=document.getElementById('planTitle');if(t)t.value=item.title},200);
+  }
 }
 
 // ===== PLANNING FLOW =====
@@ -464,7 +472,7 @@ function renderHabitsView(){
   }
 }
 
-// Build habit grid - last 13 weeks (90 days), table for uniform cells
+// Build habit grid - last 13 weeks, CSS grid with square cells
 function buildHabitGrid(checkIns,totalDays){
   const today=new Date();today.setHours(0,0,0,0);
   const numWeeks=13;
@@ -474,19 +482,21 @@ function buildHabitGrid(checkIns,totalDays){
   const weeks=[];let cur=new Date(startDate);
   while(cur<=today){const wk=[];for(let d=0;d<7;d++){const ds=cur.toISOString().split('T')[0];wk.push({date:ds,month:cur.getMonth(),checked:checkInSet.has(ds),future:cur>today,today:ds===todayStr});cur.setDate(cur.getDate()+1)}weeks.push(wk)}
   const MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  let mh='';let lm=-1;
-  weeks.forEach(w=>{const m=w[0].month;mh+=`<th class="hg-mh">${m!==lm?MS[m]:''}</th>`;lm=m});
+  // Month header row
+  let mRow='<div class="hg-rl"></div>';let lm=-1;
+  weeks.forEach(w=>{const m=w[0].month;mRow+=`<div class="hg-mh">${m!==lm?MS[m]:''}</div>`;lm=m});
+  // Day rows
   const rl=['M','T','W','T','F','S','S'];
   let rows='';
   for(let r=0;r<7;r++){
-    let cells=`<td class="hg-rl">${rl[r]}</td>`;
+    let cells=`<div class="hg-rl">${rl[r]}</div>`;
     weeks.forEach(w=>{const d=w[r];
-      if(!d||d.future)cells+=`<td><div class="hg-c empty"></div></td>`;
-      else cells+=`<td><div class="hg-c ${d.checked?'on':'off'}${d.today?' today':''}"></div></td>`;
+      if(!d||d.future)cells+=`<div class="hg-cell"><div class="hg-c empty"></div></div>`;
+      else cells+=`<div class="hg-cell"><div class="hg-c ${d.checked?'on':'off'}${d.today?' today':''}"></div></div>`;
     });
-    rows+=`<tr>${cells}</tr>`;
+    rows+=`<div class="hg-row">${cells}</div>`;
   }
-  return `<div class="hg-wrap"><table class="hg-table" cellspacing="3" cellpadding="0"><thead><tr><th class="hg-rl"></th>${mh}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="hg-wrap"><div class="hg-row hg-header">${mRow}</div>${rows}</div>`;
 }
 function calcStreak(checkIns){
   if(!checkIns||checkIns.length===0)return 0;
@@ -733,14 +743,32 @@ function editYearTheme(){
   }
 }
 
-// ===== CALENDAR DRAG SELECTION (long-press) =====
-let calDragStart=null;let calLongPressTimer=null;let calLongPressActive=false;let calTouchMoved=false;
+// ===== CALENDAR DRAG SELECTION =====
+let calDragStart=null;
 function initCalendarDrag(){
   const grid=document.getElementById('mGrid');if(!grid)return;
-  grid.addEventListener('pointerdown',function(e){const cell=e.target.closest('.mgc:not(.blank)');if(!cell)return;calTouchMoved=false;calLongPressActive=false;const day=parseInt(cell.dataset.day);if(!day)return;calLongPressTimer=setTimeout(function(){if(calTouchMoved)return;calLongPressActive=true;calDragStart=day;calS=day;calE=null;hlRange();if(navigator.vibrate)navigator.vibrate(50)},800);e.preventDefault()});
-  grid.addEventListener('pointermove',function(e){calTouchMoved=true;if(!calLongPressActive||!calDragStart)return;const cell=document.elementFromPoint(e.clientX,e.clientY);if(!cell||!cell.classList.contains('mgc')||cell.classList.contains('blank'))return;const day=parseInt(cell.dataset.day);if(!day)return;if(day>=calDragStart){calS=calDragStart;calE=day}else{calS=day;calE=calDragStart}hlRange()});
-  grid.addEventListener('pointerup',function(){clearTimeout(calLongPressTimer);if(!calLongPressActive||!calDragStart){calDragStart=null;calLongPressActive=false;return}const yr=typeof currentViewYear!=='undefined'?currentViewYear:new Date().getFullYear();const startStr=`${yr}-${String(curM+1).padStart(2,'0')}-${String(calS).padStart(2,'0')}`;const endStr=calE?`${yr}-${String(curM+1).padStart(2,'0')}-${String(calE).padStart(2,'0')}`:startStr;startPlanFlow(1);setTimeout(()=>{const s=document.getElementById('pfDateStart');const en=document.getElementById('pfDateEnd');if(s)s.value=startStr;if(en)en.value=endStr},100);calDragStart=null;calLongPressActive=false});
-  grid.addEventListener('pointercancel',function(){clearTimeout(calLongPressTimer);calDragStart=null;calLongPressActive=false});
+  grid.addEventListener('pointerdown',function(e){
+    const cell=e.target.closest('.mgc:not(.blank)');if(!cell)return;
+    calDragStart=parseInt(cell.dataset.day);if(!calDragStart)return;
+    calS=calDragStart;calE=null;hlRange();e.preventDefault();
+  });
+  grid.addEventListener('pointermove',function(e){
+    if(!calDragStart)return;
+    const cell=document.elementFromPoint(e.clientX,e.clientY);
+    if(!cell||!cell.classList.contains('mgc')||cell.classList.contains('blank'))return;
+    const day=parseInt(cell.dataset.day);if(!day)return;
+    if(day>=calDragStart){calS=calDragStart;calE=day}else{calS=day;calE=calDragStart}
+    hlRange();
+  });
+  grid.addEventListener('pointerup',function(e){
+    if(!calDragStart)return;
+    const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;
+    const startStr=`${yr}-${String(curM+1).padStart(2,'0')}-${String(calS).padStart(2,'0')}`;
+    const endStr=calE?`${yr}-${String(curM+1).padStart(2,'0')}-${String(calE).padStart(2,'0')}`:startStr;
+    startPlanFlow(1);
+    setTimeout(()=>{document.getElementById('pfDateStart').value=startStr;document.getElementById('pfDateEnd').value=endStr},50);
+    calDragStart=null;
+  });
 }
 
 // ===== PLAN VIEW REFRESH =====
@@ -748,7 +776,8 @@ function refreshPlanView(){
   if(typeof plans!=='undefined'&&Array.isArray(plans)){
     const adventures=plans.filter(p=>p.type==='adventure').length;
     const misogis=plans.filter(p=>p.type==='misogi').length;
-    const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.length:0;
+    const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.filter(function(b){return b.status==='completed'||b.status==='done'}).length:0;
+    const bucketPlanned=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.filter(b=>b.status==='planned').length:0;
     
     const el=document.getElementById('statAdventures');if(el)el.textContent=adventures;
     const mel=document.getElementById('statMisogi');if(mel)mel.textContent=misogis;
@@ -760,10 +789,9 @@ function refreshPlanView(){
     const pn=document.getElementById('profileName');if(pn)pn.textContent=currentUser.name||'User';
   }
   // Update year theme
-  const yr=typeof currentViewYear!=='undefined'?currentViewYear:new Date().getFullYear();
-  const themePlan=(typeof plans!=='undefined'&&Array.isArray(plans))?plans.find(p=>p.type==='theme'&&(parseInt(p.year)===yr||String(p.year)===String(yr))):null;
-  const themeText=themePlan?themePlan.title:localStorage.getItem('lifestack_theme_'+yr);
-  if(themeText){const th=document.getElementById('yearBannerTheme');if(th)th.textContent='"'+themeText+'"'}
+  if(typeof yearData!=='undefined'&&yearData){
+    const th=document.getElementById('yearBannerTheme');if(th&&yearData.theme)th.textContent='"'+yearData.theme+'"';
+  }
 }
 
 // ===== INIT =====
