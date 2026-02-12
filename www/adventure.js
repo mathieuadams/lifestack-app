@@ -21,28 +21,20 @@ let advLocationTimeout = null;
 
 // ===== OPEN / CLOSE =====
 
-function startAdventureWizard() {
-  startAdventureWizardWithData({});
-}
-
+function startAdventureWizard() { startAdventureWizardWithData({}); }
 function startAdventureWizardWithData(prefill) {
   prefill = prefill || {};
   advWizard.step = 1;
   advWizard.data = {
     location: prefill.location || { name: '', lat: null, lng: null, placeId: '' },
-    name: prefill.name || '',
-    category: prefill.category || '',
-    startDate: prefill.startDate || '',
-    endDate: prefill.endDate || '',
-    friends: [], subActivities: [],
-    notes: prefill.notes || '',
-    _bucketItemId: prefill._bucketItemId || null,
-    _aiReminders: null
+    name: prefill.name || '', category: prefill.category || '',
+    startDate: prefill.startDate || '', endDate: prefill.endDate || '',
+    friends: [], subActivities: [], notes: prefill.notes || '',
+    _bucketItemId: prefill._bucketItemId || null, _aiReminders: null
   };
   if (typeof selectedPeopleIds !== 'undefined') selectedPeopleIds = [];
   if (prefill.name) advWizard.step = 2;
-  renderAdvWizard();
-  openPanel('planFlow');
+  renderAdvWizard(); openPanel('planFlow');
 }
 
 function closeAdvWizard() {
@@ -213,144 +205,52 @@ function renderAdvStep3() {
 }
 
 // ===== STEP 4: REVIEW =====
-
 function renderAdvStep4() {
   const d = advWizard.data;
   const friendNames = d.friends.map(f => f.name).join(', ') || 'Solo adventure';
-  const ideasHtml = d.subActivities.length > 0
-    ? d.subActivities.map(a => `<div class="adv-review-idea">• ${escapeHtmlUI(a.name)}</div>`).join('')
-    : '';
-
-  return `
-    <div class="adv-step">
-      <h2 class="adv-question">Looking good! 🎉</h2>
-      <p class="adv-hint">Review your adventure before saving</p>
-
-      <div class="adv-review-card">
-        ${d.category ? `<div class="adv-review-cat">${getCatEmoji(d.category)} ${d.category}</div>` : ''}
-        <div class="adv-review-title">${escapeHtmlUI(d.name || 'Untitled Adventure')}</div>
-        ${d.location.name ? `<div class="adv-review-row">📍 ${escapeHtmlUI(d.location.name)}</div>` : ''}
-        ${d.startDate ? `<div class="adv-review-row">📅 ${formatAdvDate(d.startDate)}${d.endDate && d.endDate !== d.startDate ? ' → ' + formatAdvDate(d.endDate) : ''}</div>` : ''}
-        <div class="adv-review-row">👥 ${escapeHtmlUI(friendNames)}</div>
-        ${ideasHtml ? `<div class="adv-review-ideas"><div class="adv-review-ideas-label">Things to do:</div>${ideasHtml}</div>` : ''}
-      </div>
-
-      <div class="adv-reminders-section">
-        <label class="adv-label">⏰ REMINDERS</label>
-        <p class="adv-hint" style="margin-bottom:10px">AI-recommended reminders for your trip</p>
-        <div class="adv-reminder-options" id="advReminderList">
-          <div style="text-align:center;padding:12px;color:var(--text-tertiary);font-size:.85rem">
-            ✨ Generating smart reminders...
-          </div>
-        </div>
-      </div>
-
-      <label class="adv-label" style="margin-top:16px">Notes (optional)</label>
-      <textarea class="adv-textarea" id="advNotes" placeholder="Any extra details...">${escapeHtmlUI(d.notes)}</textarea>
+  const ideasHtml = d.subActivities.length > 0 ? d.subActivities.map(a => `<div class="adv-review-idea">• ${escapeHtmlUI(a.name)}</div>`).join('') : '';
+  return `<div class="adv-step"><h2 class="adv-question">Looking good! 🎉</h2><p class="adv-hint">Review your adventure before saving</p>
+    <div class="adv-review-card">${d.category ? `<div class="adv-review-cat">${getCatEmoji(d.category)} ${d.category}</div>` : ''}
+      <div class="adv-review-title">${escapeHtmlUI(d.name || 'Untitled Adventure')}</div>
+      ${d.location.name ? `<div class="adv-review-row">📍 ${escapeHtmlUI(d.location.name)}</div>` : ''}
+      ${d.startDate ? `<div class="adv-review-row">📅 ${formatAdvDate(d.startDate)}${d.endDate && d.endDate !== d.startDate ? ' → ' + formatAdvDate(d.endDate) : ''}</div>` : ''}
+      <div class="adv-review-row">👥 ${escapeHtmlUI(friendNames)}</div>
+      ${ideasHtml ? `<div class="adv-review-ideas"><div class="adv-review-ideas-label">Things to do:</div>${ideasHtml}</div>` : ''}
     </div>
-  `;
+    <div class="adv-reminders-section"><label class="adv-label">⏰ REMINDERS</label>
+      <p class="adv-hint" style="margin-bottom:10px">AI-recommended reminders for your trip</p>
+      <div class="adv-reminder-options" id="advReminderList"><div style="text-align:center;padding:12px;color:var(--text-tertiary);font-size:.85rem">✨ Generating smart reminders...</div></div>
+    </div>
+    <label class="adv-label" style="margin-top:16px">Notes (optional)</label>
+    <textarea class="adv-textarea" id="advNotes" placeholder="Any extra details...">${escapeHtmlUI(d.notes)}</textarea></div>`;
 }
-
 async function loadAIReminders() {
-  const d = advWizard.data;
-  const container = document.getElementById('advReminderList');
-  if (!container) return;
-  if (d._aiReminders) { renderAIReminders(d._aiReminders, container); return; }
-
-  try {
-    const tokens = typeof getValidTokens === 'function' ? await getValidTokens() : null;
-    if (!tokens?.idToken) { renderFallbackReminders(container); return; }
-
-    const context = [
-      d.name ? 'Activity: ' + d.name : '',
-      d.location.name ? 'Location: ' + d.location.name : '',
-      d.category ? 'Category: ' + d.category : '',
-      d.startDate ? 'Date: ' + d.startDate : '',
-      d.friends.length > 0 ? 'Going with ' + d.friends.length + ' friends' : '',
-      'Generate exactly 4 specific preparation reminder items for this trip. Each should have an emoji, a short title, and timing. Be specific to the activity and location.'
-    ].filter(Boolean).join('. ');
-
-    const resp = await fetch((typeof CONFIG !== 'undefined' ? CONFIG.API_URL : '') + '/ai-recommend', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tokens.idToken },
-      body: JSON.stringify({ category: 'reminders', location: d.location.name || '', context: context })
-    });
-
-    if (resp.ok) {
-      const data = await resp.json();
-      const recs = data.recommendations || data || [];
-      const reminders = recs.slice(0, 5).map((r, i) => ({
-        key: 'ai_' + i,
-        label: (r.emoji || '🔔') + ' ' + (r.name || r.title || r.description || 'Reminder'),
-        checked: true
-      }));
-      if (reminders.length > 0) {
-        d._aiReminders = reminders;
-        renderAIReminders(reminders, container);
-        return;
-      }
-    }
-    renderFallbackReminders(container);
-  } catch (e) {
-    console.error('AI reminders error:', e);
-    renderFallbackReminders(container);
-  }
+  const d=advWizard.data;const container=document.getElementById('advReminderList');if(!container)return;
+  if(d._aiReminders){renderAIRem(d._aiReminders,container);return}
+  try{
+    const tokens=typeof getValidTokens==='function'?await getValidTokens():null;
+    if(!tokens?.idToken){fallbackRem(container);return}
+    const ctx=[d.name?'Activity: '+d.name:'',d.location.name?'Location: '+d.location.name:'',d.category?'Category: '+d.category:'',d.startDate?'Date: '+d.startDate:'','Generate exactly 4 specific preparation reminders for this trip with emoji, title, and timing.'].filter(Boolean).join('. ');
+    const resp=await fetch((typeof CONFIG!=='undefined'?CONFIG.API_URL:'')+'/ai-recommend',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tokens.idToken},body:JSON.stringify({category:'reminders',location:d.location.name||'',context:ctx})});
+    if(resp.ok){const data=await resp.json();const recs=(data.recommendations||data||[]).slice(0,5).map((r,i)=>({key:'ai_'+i,label:(r.emoji||'🔔')+' '+(r.name||r.title||r.description||'Reminder'),checked:true}));if(recs.length>0){d._aiReminders=recs;renderAIRem(recs,container);return}}
+    fallbackRem(container);
+  }catch(e){console.error('AI reminders:',e);fallbackRem(container)}
 }
-
-function renderAIReminders(reminders, container) {
-  container.innerHTML = reminders.map((r, i) => `
-    <label class="adv-reminder-opt">
-      <input type="checkbox" id="advRemindSmart${i}" ${r.checked ? 'checked' : ''} data-reminder-key="${escapeHtmlUI(r.key)}">
-      ${escapeHtmlUI(r.label)}
-    </label>
-  `).join('');
+function renderAIRem(rems,c){c.innerHTML=rems.map((r,i)=>`<label class="adv-reminder-opt"><input type="checkbox" id="advRemindSmart${i}" ${r.checked?'checked':''} data-reminder-key="${escapeHtmlUI(r.key)}"> ${escapeHtmlUI(r.label)}</label>`).join('')}
+function fallbackRem(c){
+  const d=advWizard.data;const all=((d.category||'')+' '+(d.name||'')+' '+(d.location.name||'')).toLowerCase();const r=[];
+  if(/paddle|surf|kayak|swim|lake|beach|water/.test(all)){r.push({key:'w1',label:'🏊 Pack swimsuit & sunscreen',checked:true},{key:'w2',label:'🌊 Check conditions — 1 day before',checked:true})}
+  else if(/ski|snowboard|ice.*skat|snow/.test(all)){r.push({key:'s1',label:'🧤 Pack warm layers & gear',checked:true},{key:'s2',label:'🎿 Book rentals — 1 week before',checked:true},{key:'s3',label:'❄️ Check conditions — 1 day before',checked:true})}
+  else if(/hik|trail|trek|climb|camp|mountain/.test(all)){r.push({key:'h1',label:'🎒 Check gear & supplies — 2 days before',checked:true},{key:'h2',label:'🌤️ Check weather — 1 day before',checked:true},{key:'h3',label:'🗺️ Download offline maps — 3 days before',checked:true})}
+  else if(/jordan|norway|japan|italy|france|spain|mexico|bali/.test(all)){r.push({key:'i1',label:'🛂 Check passport & visa — 3 weeks before',checked:true},{key:'i2',label:'🏨 Confirm bookings — 1 week before',checked:true},{key:'i3',label:'🧳 Pack & check currency — 2 days before',checked:true})}
+  else if(/dinner|restaurant|food|date/.test(all)){r.push({key:'f1',label:'📞 Confirm reservation — 1 day before',checked:true})}
+  else if(/marathon|race|run/.test(all)){r.push({key:'r1',label:'🏃 Pick up race bib — day before',checked:true},{key:'r2',label:'👟 Lay out gear — night before',checked:true})}
+  else if(/birthday|party/.test(all)){r.push({key:'b1',label:'🎁 Buy gift — 1 week before',checked:true},{key:'b2',label:'🎂 Order cake — 3 days before',checked:true})}
+  else{r.push({key:'g1',label:'📋 Finalize plans — 3 days before',checked:true},{key:'g2',label:'🎒 Pack everything — night before',checked:true})}
+  r.push({key:'fin',label:'🔔 Final reminder — 1 day before',checked:true});
+  d._aiReminders=r.slice(0,5);renderAIRem(d._aiReminders,c);
 }
-
-function renderFallbackReminders(container) {
-  const d = advWizard.data;
-  const all = ((d.category||'')+ ' ' +(d.name||'')+ ' ' +(d.location.name||'')).toLowerCase();
-  const r = [];
-  if (/paddle|surf|kayak|swim|lake|beach|water|ocean/.test(all)) {
-    r.push({key:'w1',label:'🏊 Pack swimsuit, towel & sunscreen',checked:true});
-    r.push({key:'w2',label:'🌊 Check water & weather conditions — 1 day before',checked:true});
-  } else if (/ski|snowboard|ice.*skat|snow|winter/.test(all)) {
-    r.push({key:'s1',label:'🧤 Pack warm layers & thermal gear',checked:true});
-    r.push({key:'s2',label:'🎿 Book rentals & lift passes — 1 week before',checked:true});
-    r.push({key:'s3',label:'❄️ Check conditions & road closures — 1 day before',checked:true});
-  } else if (/hik|trail|trek|climb|camp|mountain/.test(all)) {
-    r.push({key:'h1',label:'🎒 Check gear & pack supplies — 2 days before',checked:true});
-    r.push({key:'h2',label:'🌤️ Check weather & trail conditions — 1 day before',checked:true});
-    r.push({key:'h3',label:'🗺️ Download offline maps — 3 days before',checked:true});
-  } else if (/jordan|norway|japan|italy|france|spain|mexico|bali|iceland/.test(all)) {
-    r.push({key:'i1',label:'🛂 Check passport & visa — 3 weeks before',checked:true});
-    r.push({key:'i2',label:'🏨 Confirm flights & hotel — 1 week before',checked:true});
-    r.push({key:'i3',label:'🧳 Pack & check currency — 2 days before',checked:true});
-  } else if (/dinner|restaurant|brunch|food|date/.test(all)) {
-    r.push({key:'f1',label:'📞 Confirm reservation — 1 day before',checked:true});
-  } else if (/marathon|race|run|5k/.test(all)) {
-    r.push({key:'r1',label:'🏃 Pick up race bib — day before',checked:true});
-    r.push({key:'r2',label:'👟 Lay out race outfit — night before',checked:true});
-  } else if (/birthday|party/.test(all)) {
-    r.push({key:'b1',label:'🎁 Buy gift — 1 week before',checked:true});
-    r.push({key:'b2',label:'🎂 Order cake — 3 days before',checked:true});
-  } else {
-    r.push({key:'g1',label:'📋 Finalize plans — 3 days before',checked:true});
-    r.push({key:'g2',label:'🎒 Pack everything — night before',checked:true});
-  }
-  r.push({key:'final',label:'🔔 Final reminder — 1 day before',checked:true});
-  if (d.friends.length > 0) r.push({key:'fr',label:'👥 Confirm with friends — 2 days before',checked:true});
-  d._aiReminders = r.slice(0, 5);
-  renderAIReminders(d._aiReminders, container);
-}
-
-function collectSmartReminders() {
-  const reminders = {};
-  document.querySelectorAll('[id^="advRemindSmart"]').forEach(cb => {
-    const key = cb.getAttribute('data-reminder-key');
-    if (key) reminders[key] = !!cb.checked;
-  });
-  return reminders;
-}
+function collectSmartReminders(){const r={};document.querySelectorAll('[id^="advRemindSmart"]').forEach(cb=>{const k=cb.getAttribute('data-reminder-key');if(k)r[k]=!!cb.checked});return r}
 
 // ===== NAVIGATION =====
 
@@ -419,9 +319,7 @@ function initAdvStep(step) {
     const nameInput = document.getElementById('advName');
     if (nameInput && !nameInput.value) nameInput.focus();
   }
-  if (step === 4) {
-    loadAIReminders();
-  }
+  if (step === 4) { loadAIReminders(); }
 
   // Scroll inputs into view on focus (keyboard fix)
   document.querySelectorAll('.adv-scroll input, .adv-scroll textarea').forEach(inp => {
