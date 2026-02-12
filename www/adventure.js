@@ -251,66 +251,50 @@ function renderAdvStep4() {
   `;
 }
 
-// Fetch AI-generated reminders when step 4 loads
 async function loadAIReminders() {
   const d = advWizard.data;
   const container = document.getElementById('advReminderList');
   if (!container) return;
-
-  // If we already fetched, use cached
-  if (d._aiReminders) {
-    renderAIReminders(d._aiReminders, container);
-    return;
-  }
+  if (d._aiReminders) { renderAIReminders(d._aiReminders, container); return; }
 
   try {
     const tokens = typeof getValidTokens === 'function' ? await getValidTokens() : null;
-    if (!tokens?.idToken) {
-      renderFallbackReminders(container);
-      return;
-    }
+    if (!tokens?.idToken) { renderFallbackReminders(container); return; }
 
-    const prompt = buildReminderPrompt(d);
+    const context = [
+      d.name ? 'Activity: ' + d.name : '',
+      d.location.name ? 'Location: ' + d.location.name : '',
+      d.category ? 'Category: ' + d.category : '',
+      d.startDate ? 'Date: ' + d.startDate : '',
+      d.friends.length > 0 ? 'Going with ' + d.friends.length + ' friends' : '',
+      'Generate exactly 4 specific preparation reminder items for this trip. Each should have an emoji, a short title, and timing. Be specific to the activity and location.'
+    ].filter(Boolean).join('. ');
+
     const resp = await fetch((typeof CONFIG !== 'undefined' ? CONFIG.API_URL : '') + '/ai-recommend', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tokens.idToken },
-      body: JSON.stringify({
-        category: 'reminders',
-        location: d.location.name || '',
-        context: prompt
-      })
+      body: JSON.stringify({ category: 'reminders', location: d.location.name || '', context: context })
     });
 
     if (resp.ok) {
       const data = await resp.json();
-      const reminders = (data.recommendations || data || []).map((r, i) => ({
+      const recs = data.recommendations || data || [];
+      const reminders = recs.slice(0, 5).map((r, i) => ({
         key: 'ai_' + i,
         label: (r.emoji || '🔔') + ' ' + (r.name || r.title || r.description || 'Reminder'),
         checked: true
       }));
       if (reminders.length > 0) {
-        d._aiReminders = reminders.slice(0, 5);
-        renderAIReminders(d._aiReminders, container);
+        d._aiReminders = reminders;
+        renderAIReminders(reminders, container);
         return;
       }
     }
-    // Fallback if API fails or returns empty
     renderFallbackReminders(container);
   } catch (e) {
     console.error('AI reminders error:', e);
     renderFallbackReminders(container);
   }
-}
-
-function buildReminderPrompt(d) {
-  const parts = [];
-  if (d.name) parts.push('Activity: ' + d.name);
-  if (d.location.name) parts.push('Location: ' + d.location.name);
-  if (d.category) parts.push('Category: ' + d.category);
-  if (d.startDate) parts.push('Date: ' + d.startDate);
-  if (d.friends.length > 0) parts.push('Going with ' + d.friends.length + ' friends');
-  parts.push('Generate 4-5 specific preparation reminders with timing (e.g. "2 days before", "1 week before"). Make them specific to this exact activity and location.');
-  return parts.join('. ');
 }
 
 function renderAIReminders(reminders, container) {
@@ -323,52 +307,49 @@ function renderAIReminders(reminders, container) {
 }
 
 function renderFallbackReminders(container) {
-  // Smart fallback based on category/name analysis
   const d = advWizard.data;
-  const all = ((d.category || '') + ' ' + (d.name || '') + ' ' + (d.location.name || '')).toLowerCase();
-  const reminders = [];
-
+  const all = ((d.category||'')+ ' ' +(d.name||'')+ ' ' +(d.location.name||'')).toLowerCase();
+  const r = [];
   if (/paddle|surf|kayak|swim|lake|beach|water|ocean/.test(all)) {
-    reminders.push({ key: 'water1', label: '🏊 Pack swimsuit, towel & sunscreen', checked: true });
-    reminders.push({ key: 'water2', label: '🌊 Check water & weather conditions — 1 day before', checked: true });
-    reminders.push({ key: 'water3', label: '🚣 Confirm equipment rental — 2 days before', checked: true });
+    r.push({key:'w1',label:'🏊 Pack swimsuit, towel & sunscreen',checked:true});
+    r.push({key:'w2',label:'🌊 Check water & weather conditions — 1 day before',checked:true});
   } else if (/ski|snowboard|ice.*skat|snow|winter/.test(all)) {
-    reminders.push({ key: 'snow1', label: '🧤 Pack warm layers & thermal gear', checked: true });
-    reminders.push({ key: 'snow2', label: '🎿 Book rentals & lift passes — 1 week before', checked: true });
-    reminders.push({ key: 'snow3', label: '❄️ Check conditions & road closures — 1 day before', checked: true });
-  } else if (/hik|trail|trek|climb|camp|backpack|mountain/.test(all)) {
-    reminders.push({ key: 'hike1', label: '🎒 Check gear, pack water & snacks — 2 days before', checked: true });
-    reminders.push({ key: 'hike2', label: '🌤️ Check weather & trail conditions — 1 day before', checked: true });
-    reminders.push({ key: 'hike3', label: '🗺️ Download offline maps — 3 days before', checked: true });
-  } else if (/jordan|norway|japan|italy|france|spain|mexico|thailand|bali|iceland|international|passport/.test(all)) {
-    reminders.push({ key: 'intl1', label: '🛂 Check passport & visa — 3 weeks before', checked: true });
-    reminders.push({ key: 'intl2', label: '🏨 Confirm flights & hotel — 1 week before', checked: true });
-    reminders.push({ key: 'intl3', label: '🧳 Pack & check currency/adapters — 2 days before', checked: true });
-    reminders.push({ key: 'intl4', label: '🏦 Notify bank of travel — 3 days before', checked: true });
-  } else if (/dinner|restaurant|brunch|food|eat|date/.test(all)) {
-    reminders.push({ key: 'food1', label: '📞 Confirm reservation — 1 day before', checked: true });
-    reminders.push({ key: 'food2', label: '👔 Plan outfit — day of', checked: false });
-  } else if (/marathon|race|run|5k|10k/.test(all)) {
-    reminders.push({ key: 'race1', label: '🏃 Pick up race bib — day before', checked: true });
-    reminders.push({ key: 'race2', label: '🍝 Carb load & hydrate — day before', checked: true });
-    reminders.push({ key: 'race3', label: '👟 Lay out race outfit — night before', checked: true });
-  } else if (/birthday|bday|party/.test(all)) {
-    reminders.push({ key: 'bday1', label: '🎁 Buy gift — 1 week before', checked: true });
-    reminders.push({ key: 'bday2', label: '🎂 Order cake — 3 days before', checked: true });
-  } else if (/concert|show|festival|theater|game/.test(all)) {
-    reminders.push({ key: 'event1', label: '🎫 Download tickets — 1 day before', checked: true });
-    reminders.push({ key: 'event2', label: '🚗 Plan transportation — day before', checked: true });
+    r.push({key:'s1',label:'🧤 Pack warm layers & thermal gear',checked:true});
+    r.push({key:'s2',label:'🎿 Book rentals & lift passes — 1 week before',checked:true});
+    r.push({key:'s3',label:'❄️ Check conditions & road closures — 1 day before',checked:true});
+  } else if (/hik|trail|trek|climb|camp|mountain/.test(all)) {
+    r.push({key:'h1',label:'🎒 Check gear & pack supplies — 2 days before',checked:true});
+    r.push({key:'h2',label:'🌤️ Check weather & trail conditions — 1 day before',checked:true});
+    r.push({key:'h3',label:'🗺️ Download offline maps — 3 days before',checked:true});
+  } else if (/jordan|norway|japan|italy|france|spain|mexico|bali|iceland/.test(all)) {
+    r.push({key:'i1',label:'🛂 Check passport & visa — 3 weeks before',checked:true});
+    r.push({key:'i2',label:'🏨 Confirm flights & hotel — 1 week before',checked:true});
+    r.push({key:'i3',label:'🧳 Pack & check currency — 2 days before',checked:true});
+  } else if (/dinner|restaurant|brunch|food|date/.test(all)) {
+    r.push({key:'f1',label:'📞 Confirm reservation — 1 day before',checked:true});
+  } else if (/marathon|race|run|5k/.test(all)) {
+    r.push({key:'r1',label:'🏃 Pick up race bib — day before',checked:true});
+    r.push({key:'r2',label:'👟 Lay out race outfit — night before',checked:true});
+  } else if (/birthday|party/.test(all)) {
+    r.push({key:'b1',label:'🎁 Buy gift — 1 week before',checked:true});
+    r.push({key:'b2',label:'🎂 Order cake — 3 days before',checked:true});
   } else {
-    reminders.push({ key: 'gen1', label: '📋 Finalize plans & logistics — 3 days before', checked: true });
-    reminders.push({ key: 'gen2', label: '🎒 Pack everything needed — night before', checked: true });
+    r.push({key:'g1',label:'📋 Finalize plans — 3 days before',checked:true});
+    r.push({key:'g2',label:'🎒 Pack everything — night before',checked:true});
   }
-
-  // Add universal timing reminders
-  reminders.push({ key: 'final', label: '🔔 Final prep check — 1 day before', checked: true });
-  if (d.friends.length > 0) reminders.push({ key: 'friends', label: '👥 Confirm with friends — 2 days before', checked: true });
-
-  d._aiReminders = reminders.slice(0, 5);
+  r.push({key:'final',label:'🔔 Final reminder — 1 day before',checked:true});
+  if (d.friends.length > 0) r.push({key:'fr',label:'👥 Confirm with friends — 2 days before',checked:true});
+  d._aiReminders = r.slice(0, 5);
   renderAIReminders(d._aiReminders, container);
+}
+
+function collectSmartReminders() {
+  const reminders = {};
+  document.querySelectorAll('[id^="advRemindSmart"]').forEach(cb => {
+    const key = cb.getAttribute('data-reminder-key');
+    if (key) reminders[key] = !!cb.checked;
+  });
+  return reminders;
 }
 
 // ===== NAVIGATION =====
@@ -439,7 +420,6 @@ function initAdvStep(step) {
     if (nameInput && !nameInput.value) nameInput.focus();
   }
   if (step === 4) {
-    // Load AI-generated reminders
     loadAIReminders();
   }
 
@@ -779,24 +759,6 @@ function buildAdvParticipants() {
 }
 
 // ===== HELPERS =====
-
-function collectSmartReminders() {
-  const reminders = {};
-  document.querySelectorAll('[id^="advRemindSmart"]').forEach(cb => {
-    const key = cb.getAttribute('data-reminder-key');
-    if (key) reminders[key] = !!cb.checked;
-  });
-  // Also include the reminder labels for display later
-  const labels = {};
-  document.querySelectorAll('.adv-reminder-opt').forEach(label => {
-    const cb = label.querySelector('input');
-    if (cb && cb.checked) {
-      const key = cb.getAttribute('data-reminder-key');
-      if (key) labels[key] = label.textContent.trim();
-    }
-  });
-  return { selections: reminders, labels: labels };
-}
 
 function getCatEmoji(cat) {
   const map = { travel:'✈️', food:'🍽️', adventure:'🏔️', roadtrip:'🚗', culture:'🎭', health:'💪', birthday:'🎂', date:'💕', hiking:'🥾', skiing:'⛷️', swimming:'🏊', running:'🏃', concert:'🎸', camping:'⛺' };

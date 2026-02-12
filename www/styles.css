@@ -307,7 +307,6 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 
 /* GitHub contribution grid */
 .hab-grid{margin-bottom:14px}
-/* GitHub-style full-width contribution grid */
 .hg-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:14px;scrollbar-width:none}
 .hg-wrap::-webkit-scrollbar{display:none}
 .hg-months{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:1px;padding-left:20px;margin-bottom:2px}
@@ -864,7 +863,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .dream-add-btn:active{background:var(--sage-600);transform:scale(.97)}
 
 /* Results phase */
-.dream-results-list{display:flex;flex-direction:column;gap:8px;margin:12px 0;max-height:50vh;overflow-y:auto}
+.dream-results-list{display:flex;flex-direction:column;gap:8px;margin:12px 0;max-height:40vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .dream-result-item{display:flex;gap:10px;padding:14px;border:1.5px solid var(--sand-200);border-radius:var(--radius-md);cursor:pointer;transition:all .15s;align-items:flex-start}
 .dream-result-item.selected{border-color:var(--sage-400);background:var(--sage-50)}
 .dream-result-emoji{font-size:1.3rem;flex-shrink:0;margin-top:2px}
@@ -876,8 +875,15 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .dream-result-item.selected .dream-result-check{background:var(--sage-500);border-color:var(--sage-500);color:white}
 
 /* Action buttons */
-.dream-results-actions{display:flex;gap:10px;margin-top:16px}
+.dream-results-actions{display:flex;gap:10px;margin-top:16px;padding-bottom:env(safe-area-inset-bottom,0);position:sticky;bottom:0;background:white;padding-top:10px}
 .dream-btn-secondary{flex:1;padding:14px;border:1.5px solid var(--sand-200);border-radius:var(--radius-md);background:white;font-size:.9rem;font-weight:600;cursor:pointer}
 .dream-btn-primary{flex:2;padding:14px;background:var(--sage-500);color:white;border:none;border-radius:var(--radius-md);font-size:.9rem;font-weight:700;cursor:pointer}
 .dream-btn-primary:active{background:var(--sage-600);transform:scale(.98)}
 .dream-btn-primary:disabled{opacity:.5}
+/* Monthly activity completion button */
+.act-chk{width:28px;height:28px;border-radius:50%;border:2px solid var(--sand-200);background:none;cursor:pointer;font-size:.75rem;color:var(--sand-300);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:var(--transition)}
+.act-chk.done{background:var(--sage-500);border-color:var(--sage-500);color:white}
+.act-item.completed{opacity:.6}
+.act-name.done-text{text-decoration:line-through;color:var(--text-tertiary)}
+/* Weekly AI prep button */
+.pcai{background:none;border:none;font-size:.85rem;cursor:pointer;padding:2px;flex-shrink:0}

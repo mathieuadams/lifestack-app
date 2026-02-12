@@ -110,6 +110,7 @@ function buildWeekView(){
         <div class="pct">${icon} ${escapeHtmlUI(p.title)}</div>
         <div class="pcm"><span>${dateStr}</span><span class="tag tag-${cat}">${cat}</span>${p.type==='misogi'?'<span class="tag tag-misogi">Misogi</span>':''}</div>
       </div>
+      <button class="pcai" onclick="event.stopPropagation();if(typeof getAIPrepTips==='function')getAIPrepTips('${p.id}')" title="AI Prep">✨</button>
       <button class="pcchk${isDone?' done':''}" onclick="event.stopPropagation();togglePlanDone('${p.id}',this)">✓</button>
     </div>`;
   }).join('');
@@ -127,8 +128,8 @@ function openPlanDetail(planId){
 }
 function togglePlanDone(planId,btn){
   btn.classList.toggle('done');
-  if(btn.classList.contains('done')){toast('✓ Completed!');if(typeof quickCompletePlan==='function')quickCompletePlan(planId)}
-  else{toast('Marked incomplete')}
+  if(btn.classList.contains('done')){toast('✓ Completed!');if(typeof togglePlanStatus==='function')togglePlanStatus(planId)}
+  else{toast('Marked incomplete');if(typeof togglePlanStatus==='function')togglePlanStatus(planId)}
 }
 
 // ===== MONTH CALENDAR =====
@@ -178,7 +179,7 @@ function buildMG(){
   if(actList&&actTitle){
     actTitle.textContent='Activities in '+MN[curM];
     if(mp.length===0){actList.innerHTML='<p style="color:var(--text-tertiary);font-size:.85rem;padding:8px 0">No activities this month</p>';return}
-    actList.innerHTML=mp.map(p=>{const cat=(p.category||p.type||'adventure').toLowerCase();const icon=catIcons[cat]||'📋';const bg=catBgs[cat]||'var(--sage-100)';const sd=p.startDate?parseWeekDate(p.startDate):null;const ds=sd?MN[curM]+' '+sd.getDate():'';return `<div class="act-item" onclick="openPlanDetail('${p.id}')"><div class="act-icon" style="background:${bg}">${icon}</div><div class="act-body"><div class="act-name">${escapeHtmlUI(p.title)}</div><div class="act-meta">${ds} <span class="tag tag-${cat}">${escapeHtmlUI(cat)}</span></div></div><button style="background:none;border:none;font-size:.9rem;padding:4px;cursor:pointer" onclick="event.stopPropagation();getAIPrepTips('${p.id}')" title="AI Prep Tips">✨</button><span class="act-arrow">›</span></div>`}).join('');
+    actList.innerHTML=mp.map(p=>{const cat=(p.category||p.type||'adventure').toLowerCase();const icon=catIcons[cat]||'📋';const bg=catBgs[cat]||'var(--sage-100)';const sd=p.startDate?parseWeekDate(p.startDate):null;const ds=sd?MN[curM]+' '+sd.getDate():'';const isDone=p.status==='completed';return `<div class="act-item${isDone?' completed':''}" onclick="openPlanDetail('${p.id}')"><div class="act-icon" style="background:${bg}">${icon}</div><div class="act-body"><div class="act-name${isDone?' done-text':''}">${escapeHtmlUI(p.title)}</div><div class="act-meta">${ds} <span class="tag tag-${cat}">${escapeHtmlUI(cat)}</span></div></div><button style="background:none;border:none;font-size:.9rem;padding:4px;cursor:pointer" onclick="event.stopPropagation();getAIPrepTips('${p.id}')" title="AI Prep Tips">✨</button><button class="act-chk${isDone?' done':''}" onclick="event.stopPropagation();togglePlanDone('${p.id}',this)">✓</button></div>`}).join('');
   }
 }
 function hlRange(){document.querySelectorAll('#mGrid .mgc').forEach(c=>{c.classList.remove('rs','rstart','rend');const d=parseInt(c.dataset.day);if(!d)return;if(calS&&!calE&&d===calS){c.classList.add('rstart','rend')}else if(calS&&calE){if(d===calS)c.classList.add('rstart');else if(d===calE)c.classList.add('rend');else if(d>calS&&d<calE)c.classList.add('rs')}})}
@@ -186,7 +187,6 @@ function openQuickAdd(d){const yr=typeof currentViewYear!=='undefined'?currentVi
 function navMonth(dir){curM=(curM+dir+12)%12;buildMG()}
 
 // ===== YEARLY VIEW =====
-// Map extended categories to the 8 base CSS color categories
 const ymcCatMap={travel:'travel',food:'food',adventure:'adventure',roadtrip:'roadtrip',birthday:'birthday',health:'health',culture:'culture',date:'date',hiking:'adventure',skiing:'adventure',swimming:'health',running:'health',concert:'culture',camping:'adventure',surfing:'health',misogi:'adventure'};
 function buildYV(){
   const g=document.getElementById('yearGrid');if(!g)return;g.innerHTML='';
@@ -202,19 +202,17 @@ function buildYV(){
       if(p.startDate){
         const sd2=parseWeekDate(p.startDate);const ed2=p.endDate?parseWeekDate(p.endDate):sd2;
         if(sd2){
-          const dim_i=i===1&&yr%4===0?29:DIM[i];
           const startDay=sd2.getMonth()===i?sd2.getDate():1;
-          const endDay=ed2&&ed2.getMonth()===i?ed2.getDate():dim_i;
+          const endDay=ed2&&ed2.getMonth()===i?ed2.getDate():(i===1&&yr%4===0?29:DIM[i]);
           for(let dd=startDay;dd<=endDay;dd++)evMap[dd]=cat;
         }
       } else if(p.targetMonth){
         if(!evMap[15])evMap[15]=cat;else if(!evMap[16])evMap[16]=cat;
       }
     });
-    const dim_i=i===1&&yr%4===0?29:DIM[i];
     let cells='';const sd=(new Date(yr,i,1).getDay()+6)%7;
     for(let b=0;b<sd;b++)cells+='<div class="ymc blank"></div>';
-    for(let d=1;d<=dim_i;d++){const c=evMap[d];cells+=`<div class="ymc ${c?'e-'+c:'day'}"></div>`}
+    for(let d=1;d<=DIM[i];d++){const c=evMap[d];cells+=`<div class="ymc ${c?'e-'+c:'day'}"></div>`}
     card.innerHTML=`<div class="ymn">${m.slice(0,3)}</div><div class="ymg">${cells}</div><div class="ymc-count">${evts.length} event${evts.length!==1?'s':''}</div>`;
     card.onclick=()=>{curM=i;buildMG();swTab('month',document.querySelectorAll('.ptb')[1])};
     g.appendChild(card);
@@ -266,18 +264,12 @@ function scheduleBucket(id){
   if(!item)return;
   if(typeof startAdventureWizardWithData==='function'){
     var catMap={travel:'travel',adventure:'adventure',skills:'culture',experiences:'culture',personal:'health',health:'health',creative:'culture'};
-    startAdventureWizardWithData({
-      name:item.title||'',
-      notes:item.description||'',
-      category:catMap[item.category]||'adventure',
-      _bucketItemId:item.id
-    });
+    startAdventureWizardWithData({name:item.title||'',notes:item.description||'',category:catMap[item.category]||'adventure',_bucketItemId:item.id});
   } else if(typeof startAdventureWizard==='function'){
     startAdventureWizard();
     setTimeout(function(){if(typeof advWizard!=='undefined'){advWizard.data.name=item.title;advWizard.data._bucketItemId=item.id}},200);
   } else if(typeof showAddPlanModal==='function'){
-    showAddPlanModal('adventure');
-    setTimeout(function(){var t=document.getElementById('planTitle');if(t)t.value=item.title},200);
+    showAddPlanModal('adventure');setTimeout(function(){var t=document.getElementById('planTitle');if(t)t.value=item.title},200);
   }
 }
 
@@ -480,22 +472,16 @@ function renderHabitsView(){
 
 // Build GitHub-style contribution grid - full width, 52 rolling weeks
 function buildHabitGrid(checkIns,totalDays){
-  const today=new Date();
-  today.setHours(0,0,0,0);
-  
+  const today=new Date();today.setHours(0,0,0,0);
   const numWeeks=52;
   const startDate=new Date(today);
   startDate.setDate(startDate.getDate()-(numWeeks*7));
   const dayOfWeek=startDate.getDay();
   const mondayOffset=(dayOfWeek===0)?-6:(1-dayOfWeek);
   startDate.setDate(startDate.getDate()+mondayOffset);
-
   const checkInSet=new Set(checkIns);
   const todayStr=today.toISOString().split('T')[0];
-
-  // Build columns (each = 1 week)
-  const weeks=[];
-  let current=new Date(startDate);
+  const weeks=[];let current=new Date(startDate);
   while(current<=today){
     const week=[];
     for(let d=0;d<7;d++){
@@ -505,30 +491,18 @@ function buildHabitGrid(checkIns,totalDays){
     }
     weeks.push(week);
   }
-
-  // Month labels across top
   const MNS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  let monthLabels='<div class="hg-rl"></div>';
-  let lastMonth=-1;
-  weeks.forEach(week=>{
-    const m=week[0].month;
-    monthLabels+=`<div class="hg-ml">${m!==lastMonth?MNS[m]:''}</div>`;
-    lastMonth=m;
-  });
-
-  // 7 rows, label Mon/Wed/Fri
-  const rowLabels=['M','','W','','F','',''];
-  let rows='';
+  let monthLabels='<div class="hg-rl"></div>';let lastMonth=-1;
+  weeks.forEach(week=>{const m=week[0].month;monthLabels+=`<div class="hg-ml">${m!==lastMonth?MNS[m]:''}</div>`;lastMonth=m});
+  const rowLabels=['M','','W','','F','',''];let rows='';
   for(let r=0;r<7;r++){
     let cells=`<div class="hg-rl">${rowLabels[r]}</div>`;
-    weeks.forEach(week=>{
-      const d=week[r];
+    weeks.forEach(week=>{const d=week[r];
       if(!d||d.future)cells+=`<div class="hg-c future"></div>`;
       else cells+=`<div class="hg-c ${d.checked?'on':'off'}${d.today?' today':''}" title="${d.date}"></div>`;
     });
     rows+=`<div class="hg-row">${cells}</div>`;
   }
-
   return `<div class="hg-wrap"><div class="hg-months">${monthLabels}</div><div class="hg-grid">${rows}</div></div>`;
 }
 function calcStreak(checkIns){
@@ -776,38 +750,25 @@ function editYearTheme(){
   }
 }
 
-// ===== CALENDAR DRAG SELECTION (long-press 1s to activate) =====
+// ===== CALENDAR DRAG SELECTION (long-press to activate) =====
 let calDragStart=null;
 let calLongPressTimer=null;
 let calLongPressActive=false;
 let calTouchMoved=false;
 function initCalendarDrag(){
   const grid=document.getElementById('mGrid');if(!grid)return;
-
-  // Cancel any existing listeners by replacing the grid content approach
   grid.addEventListener('pointerdown',function(e){
     const cell=e.target.closest('.mgc:not(.blank)');if(!cell)return;
-    calTouchMoved=false;
-    calLongPressActive=false;
+    calTouchMoved=false;calLongPressActive=false;
     const day=parseInt(cell.dataset.day);if(!day)return;
-
-    // Start long-press timer (1 second)
     calLongPressTimer=setTimeout(function(){
-      if(calTouchMoved)return; // finger moved, cancel
-      calLongPressActive=true;
-      calDragStart=day;
-      calS=day;calE=null;
-      hlRange();
-      // Haptic feedback if available
+      if(calTouchMoved)return;
+      calLongPressActive=true;calDragStart=day;calS=day;calE=null;hlRange();
       if(navigator.vibrate)navigator.vibrate(50);
-      // Visual feedback
-      cell.style.transform='scale(1.15)';
-      setTimeout(()=>{cell.style.transform=''},200);
+      cell.style.transform='scale(1.15)';setTimeout(()=>{cell.style.transform=''},200);
     },800);
-
     e.preventDefault();
   });
-
   grid.addEventListener('pointermove',function(e){
     calTouchMoved=true;
     if(!calLongPressActive||!calDragStart)return;
@@ -817,7 +778,6 @@ function initCalendarDrag(){
     if(day>=calDragStart){calS=calDragStart;calE=day}else{calS=day;calE=calDragStart}
     hlRange();
   });
-
   grid.addEventListener('pointerup',function(e){
     clearTimeout(calLongPressTimer);
     if(!calLongPressActive||!calDragStart){calDragStart=null;calLongPressActive=false;return}
@@ -825,16 +785,10 @@ function initCalendarDrag(){
     const startStr=`${yr}-${String(curM+1).padStart(2,'0')}-${String(calS).padStart(2,'0')}`;
     const endStr=calE?`${yr}-${String(curM+1).padStart(2,'0')}-${String(calE).padStart(2,'0')}`:startStr;
     startPlanFlow(1);
-    setTimeout(()=>{
-      const s=document.getElementById('pfDateStart');const en=document.getElementById('pfDateEnd');
-      if(s)s.value=startStr;if(en)en.value=endStr;
-    },100);
+    setTimeout(()=>{const s=document.getElementById('pfDateStart');const en=document.getElementById('pfDateEnd');if(s)s.value=startStr;if(en)en.value=endStr},100);
     calDragStart=null;calLongPressActive=false;
   });
-
-  grid.addEventListener('pointercancel',function(){
-    clearTimeout(calLongPressTimer);calDragStart=null;calLongPressActive=false;
-  });
+  grid.addEventListener('pointercancel',function(){clearTimeout(calLongPressTimer);calDragStart=null;calLongPressActive=false});
 }
 
 // ===== PLAN VIEW REFRESH =====
@@ -853,9 +807,13 @@ function refreshPlanView(){
   if(typeof currentUser!=='undefined'&&currentUser){
     const pn=document.getElementById('profileName');if(pn)pn.textContent=currentUser.name||'User';
   }
-  // Update year theme
-  if(typeof yearData!=='undefined'&&yearData){
-    const th=document.getElementById('yearBannerTheme');if(th&&yearData.theme)th.textContent='"'+yearData.theme+'"';
+  // Update year theme from plans or localStorage
+  const yr=typeof currentViewYear!=='undefined'?currentViewYear:new Date().getFullYear();
+  const themePlan=(typeof plans!=='undefined'&&Array.isArray(plans))?plans.find(p=>p.type==='theme'&&(parseInt(p.year)===yr||String(p.year)===String(yr))):null;
+  const themeText=themePlan?themePlan.title:localStorage.getItem('lifestack_theme_'+yr);
+  if(themeText){
+    const th=document.getElementById('yearBannerTheme');if(th)th.textContent='"'+themeText+'"';
+    const ytEl=document.getElementById('yearTheme');if(ytEl)ytEl.value=themeText;
   }
 }
 

@@ -7469,28 +7469,33 @@ function dreamShowResults(items, message) {
   var subtitle = document.getElementById('dreamResultsSubtitle');
   if (subtitle) subtitle.textContent = message || 'Select the dreams you want to keep';
 
+  // Limit to 5 items max
+  var limitedItems = items.slice(0, 5);
+  dreamGeneratedItems = limitedItems;
+
   // All selected by default
-  dreamSelectedItems = items.map(function(item) { return item.id; });
+  dreamSelectedItems = limitedItems.map(function(item) { return item.id; });
 
   var catIcons = {
     travel: '✈️', adventure: '🏔️', skills: '🎯', experiences: '🎭',
     personal: '💫', health: '💪', creative: '🎨', other: '📌'
   };
 
-  var html = items.map(function(item) {
+  var html = limitedItems.map(function(item) {
     var icon = catIcons[item.category] || '📌';
     return '<div class="dream-result-item selected" onclick="dreamToggleItem(\'' + item.id + '\', this)" data-id="' + item.id + '">' +
       '<span class="dream-result-emoji">' + icon + '</span>' +
       '<div class="dream-result-body">' +
         '<div class="dream-result-title">' + escapeHtml(item.title) + '</div>' +
         (item.description ? '<div class="dream-result-desc">' + escapeHtml(item.description) + '</div>' : '') +
-        '<div class="dream-result-cat">' + (item.category || 'other') + (item.difficulty ? ' · ' + item.difficulty : '') + '</div>' +
+        '<div class="dream-result-cat">' + (item.category || 'other').toUpperCase() + (item.difficulty ? ' · ' + item.difficulty.toUpperCase() : '') + '</div>' +
       '</div>' +
       '<div class="dream-result-check">✓</div>' +
     '</div>';
   }).join('');
 
   document.getElementById('dreamResultsList').innerHTML = html;
+  updateDreamSelectButton();
 }
 
 function dreamToggleItem(id, el) {
@@ -7501,6 +7506,17 @@ function dreamToggleItem(id, el) {
   } else {
     dreamSelectedItems.push(id);
     el.classList.add('selected');
+  }
+  updateDreamSelectButton();
+}
+
+function updateDreamSelectButton() {
+  var btn = document.querySelector('.dream-btn-primary');
+  if (btn) {
+    var count = dreamSelectedItems.length;
+    btn.textContent = count > 0 ? 'Add Selected (' + count + ')' : 'Add Selected';
+    btn.disabled = count === 0;
+    btn.style.opacity = count === 0 ? '0.5' : '1';
   }
 }
 
