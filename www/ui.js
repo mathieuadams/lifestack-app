@@ -189,7 +189,6 @@ function buildYV(){
   const yr=typeof currentViewYear!=='undefined'?currentViewYear:new Date().getFullYear();
   const cm=new Date().getMonth();
   const cy=new Date().getFullYear();
-  const card=document.createElement('div');card.className='ym'+((i===cm&&yr===cy)?' cur':'');
   MN.forEach((m,i)=>{
     const card=document.createElement('div');card.className='ym'+((i===cm&&yr===cy)?' cur':'');
     const evts=getPlansForMonth(i);const evMap={};
@@ -472,31 +471,32 @@ function renderHabitsView(){
   }
 }
 
-// Build habit grid - last 13 weeks, CSS grid with square cells
+// Habit grid - 13 weeks, single flat CSS grid
 function buildHabitGrid(checkIns,totalDays){
-  const today=new Date();today.setHours(0,0,0,0);
-  const numWeeks=13;
-  const startDate=new Date(today);startDate.setDate(startDate.getDate()-(numWeeks*7));
-  const dow=startDate.getDay();startDate.setDate(startDate.getDate()+((dow===0)?-6:(1-dow)));
-  const checkInSet=new Set(checkIns);const todayStr=today.toISOString().split('T')[0];
-  const weeks=[];let cur=new Date(startDate);
-  while(cur<=today){const wk=[];for(let d=0;d<7;d++){const ds=cur.toISOString().split('T')[0];wk.push({date:ds,month:cur.getMonth(),checked:checkInSet.has(ds),future:cur>today,today:ds===todayStr});cur.setDate(cur.getDate()+1)}weeks.push(wk)}
-  const MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  // Month header row
-  let mRow='<div class="hg-rl"></div>';let lm=-1;
-  weeks.forEach(w=>{const m=w[0].month;mRow+=`<div class="hg-mh">${m!==lm?MS[m]:''}</div>`;lm=m});
-  // Day rows
-  const rl=['M','T','W','T','F','S','S'];
-  let rows='';
-  for(let r=0;r<7;r++){
-    let cells=`<div class="hg-rl">${rl[r]}</div>`;
-    weeks.forEach(w=>{const d=w[r];
-      if(!d||d.future)cells+=`<div class="hg-cell"><div class="hg-c empty"></div></div>`;
-      else cells+=`<div class="hg-cell"><div class="hg-c ${d.checked?'on':'off'}${d.today?' today':''}"></div></div>`;
-    });
-    rows+=`<div class="hg-row">${cells}</div>`;
+  var today=new Date();today.setHours(0,0,0,0);
+  var NW=13;
+  var start=new Date(today);start.setDate(start.getDate()-(NW*7));
+  var dow=start.getDay();start.setDate(start.getDate()+((dow===0)?-6:(1-dow)));
+  var cSet=new Set(checkIns);var tStr=today.toISOString().split('T')[0];
+  var weeks=[];var cur=new Date(start);
+  while(cur<=today){var wk=[];for(var d=0;d<7;d++){var ds=cur.toISOString().split('T')[0];wk.push({d:ds,m:cur.getMonth(),c:cSet.has(ds),f:cur>today,t:ds===tStr});cur.setDate(cur.getDate()+1)}weeks.push(wk)}
+  var MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var NC=weeks.length;
+  // All cells go into one flat grid: (NC+1) columns, 8 rows (1 header + 7 days)
+  var cells='';
+  // Row 0: month headers
+  cells+='<span class="hgl"></span>';
+  var lm=-1;for(var w=0;w<NC;w++){var m=weeks[w][0].m;cells+='<span class="hgm">'+(m!==lm?MS[m]:'')+'</span>';lm=m}
+  // Rows 1-7: day data
+  var dl=['M','T','W','T','F','S','S'];
+  for(var r=0;r<7;r++){
+    cells+='<span class="hgl">'+dl[r]+'</span>';
+    for(var w=0;w<NC;w++){var dd=weeks[w][r];
+      if(!dd||dd.f)cells+='<span class="hgd"></span>';
+      else cells+='<span class="hgd '+(dd.c?'on':'off')+(dd.t?' today':'')+'"></span>';
+    }
   }
-  return `<div class="hg-wrap"><div class="hg-row hg-header">${mRow}</div>${rows}</div>`;
+  return '<div class="hgrid" style="grid-template-columns:12px repeat('+NC+',1fr)">'+cells+'</div>';
 }
 function calcStreak(checkIns){
   if(!checkIns||checkIns.length===0)return 0;

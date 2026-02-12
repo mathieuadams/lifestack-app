@@ -307,18 +307,14 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 
 /* GitHub contribution grid */
 .hab-grid{margin-bottom:14px}
-/* Habit grid - CSS grid, square cells via padding trick */
-.hg-wrap{width:100%;margin-bottom:12px}
-.hg-row{display:grid;grid-template-columns:14px repeat(13,1fr);gap:3px;align-items:center}
-.hg-header{margin-bottom:2px}
-.hg-mh{font-size:.55rem;color:var(--text-tertiary);font-weight:400;white-space:nowrap;overflow:hidden}
-.hg-rl{font-size:.5rem;color:var(--text-tertiary);text-align:right;padding-right:1px}
-.hg-cell{position:relative;width:100%;padding-bottom:100%}
-.hg-c{position:absolute;top:0;left:0;right:0;bottom:0;border-radius:2px}
-.hg-c.off{background:var(--sand-100)}
-.hg-c.on{background:var(--sage-400)}
-.hg-c.empty{background:transparent}
-.hg-c.today{outline:1.5px solid var(--sage-600);outline-offset:-1px}
+/* Habit grid - single flat CSS grid, square cells via padding trick */
+.hgrid{display:grid;gap:3px;width:100%;margin:8px 0 12px}
+.hgl{font-size:.5rem;color:var(--text-tertiary);display:flex;align-items:center;justify-content:flex-end;padding-right:1px}
+.hgm{font-size:.5rem;color:var(--text-tertiary);overflow:hidden;white-space:nowrap;height:14px;line-height:14px}
+.hgd{position:relative;width:100%;padding-bottom:100%;border-radius:2px}
+.hgd.off{background:var(--sand-100)}
+.hgd.on{background:var(--sage-400)}
+.hgd.today{outline:1.5px solid var(--sage-600);outline-offset:-1px}
 
 /* Check-in button */
 .hab-checkin-btn{width:100%;padding:12px;border:2px solid var(--sage-300);border-radius:var(--radius-md);background:white;font-size:.9rem;font-weight:600;color:var(--sage-600);cursor:pointer;transition:all .2s}
@@ -827,8 +823,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .location-status.loading{color:var(--text-tertiary)}
 
 /* ===== ADD DREAM MODAL ===== */
-.dream-modal{max-width:420px;max-height:85vh;overflow-y:auto;padding-bottom:0}
-.dream-modal .modal-content{padding-bottom:env(safe-area-inset-bottom,12px)}
+.dream-modal{max-width:420px;max-height:90vh;overflow-y:auto}
 
 /* Header */
 .dream-header{text-align:center;margin-bottom:20px}
@@ -857,7 +852,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .dream-divider span{position:relative;background:white;padding:0 12px;font-size:.78rem;color:var(--text-tertiary)}
 
 /* Text input */
-.dream-text-row{display:flex;gap:8px;align-items:center;padding-bottom:16px}
+.dream-text-row{display:flex;gap:8px;align-items:center}
 .dream-text-input{flex:1;padding:11px 12px;border:1.5px solid var(--sand-200);border-radius:var(--radius-md);font-size:.9rem}
 .dream-text-input:focus{outline:none;border-color:var(--sage-400)}
 .dream-cat-select{padding:11px 8px;border:1.5px solid var(--sand-200);border-radius:var(--radius-md);font-size:.82rem;background:white;max-width:120px}
