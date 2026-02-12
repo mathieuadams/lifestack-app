@@ -28,7 +28,9 @@ function swTab(t,b){
   b.classList.add('active');
   document.getElementById('st-'+t).classList.add('active');
   if(t==='week') buildWeekView();
-  if(t==='bucket'){buildBucketView();if(typeof fetchBucketList==='function')fetchBucketList().then(()=>buildBucketView()).catch(()=>{})}
+  if(t==='month') buildMG();
+  if(t==='year') buildYV();
+  if(t==='bucket'){buildBucketView();if(typeof fetchBucketList==='function')fetchBucketList().then(()=>{buildBucketView();refreshPlanView()}).catch(()=>{})}
 }
 function openPanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.add('open');if(p)p.classList.add('open')}
 function closePanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.remove('open');if(p)p.classList.remove('open')}
@@ -219,39 +221,61 @@ function buildBucketView(){
   const items=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList:[];
   if(items.length===0){c.innerHTML='<p style="color:var(--text-tertiary);text-align:center;padding:20px 0">No bucket list items yet. Tap "+ Add" to start!</p>';return}
   const bucketCatIcons={travel:'✈️',adventure:'🏔️',skills:'🎯',experiences:'🎭',personal:'💫',health:'💪',creative:'🎨',other:'📌'};
-  const groups={};items.forEach(i=>{const cat=i.category||'other';if(!groups[cat])groups[cat]=[];groups[cat].push(i)});
+  // Split active vs completed
+  const active=items.filter(i=>i.status!=='done'&&i.status!=='completed');
+  const completed=items.filter(i=>i.status==='done'||i.status==='completed');
   let html='';
-  html+=`<div class="bucket-summary">${items.length} Dream${items.length!==1?'s':''} · ${items.filter(i=>i.status==='planned').length} Planned · ${items.filter(i=>i.status==='done').length} Done</div>`;
+  html+=`<div class="bucket-summary">${items.length} Dream${items.length!==1?'s':''} · ${items.filter(i=>i.status==='planned').length} Planned · ${completed.length} Done</div>`;
+  // Active items grouped by category
+  const groups={};active.forEach(i=>{const cat=i.category||'other';if(!groups[cat])groups[cat]=[];groups[cat].push(i)});
   Object.keys(groups).forEach(cat=>{
     const icon=bucketCatIcons[cat]||'📌';
-    html+=`<div class="bucket-cat-header">${icon} ${cat.charAt(0).toUpperCase()+cat.slice(1)} <span class="bucket-cat-count">${groups[cat].length}</span></div>`;
+    html+=`<div class="bucket-cat-header">${icon} <strong>${cat.charAt(0).toUpperCase()+cat.slice(1)}</strong> <span class="bucket-cat-count">${groups[cat].length}</span></div>`;
     groups[cat].forEach(item=>{
-      const isDone=item.status==='done'||item.status==='completed';
-      html+=`<div class="bucket-item${isDone?' done':''}" onclick="openBucketItem('${item.id}')">
-        <div class="bucket-check${isDone?' checked':''}" onclick="event.stopPropagation();toggleBucketDone('${item.id}',this)">${isDone?'✓':'○'}</div>
+      html+=`<div class="bucket-item">
+        <div class="bucket-check" onclick="event.stopPropagation();toggleBucketDone('${item.id}')">○</div>
         <div class="bucket-info">
-          <div class="bucket-title${isDone?' done':''}">${escapeHtmlUI(item.title)}</div>
-          ${item.description?`<div class="bucket-desc">${escapeHtmlUI(item.description).substring(0,60)}</div>`:''}
+          <div class="bucket-title">${escapeHtmlUI(item.title)}</div>
+          ${item.description?`<div class="bucket-desc">${escapeHtmlUI(item.description).substring(0,80)}</div>`:''}
           ${item.difficulty?`<div class="bucket-diff">${item.difficulty}</div>`:''}
         </div>
         <div class="bucket-actions">
-          ${!isDone&&typeof showAddPlanModal==='function'?`<button class="bucket-schedule" onclick="event.stopPropagation();scheduleBucket('${item.id}')">📅</button>`:''}
+          <button class="bucket-schedule" onclick="event.stopPropagation();scheduleBucket('${item.id}')">📅</button>
           <button class="bucket-delete" onclick="event.stopPropagation();deleteBucketItem('${item.id}')">🗑</button>
         </div>
       </div>`;
     });
   });
+  // Completed section at bottom
+  if(completed.length>0){
+    html+=`<div class="bucket-done-hdr" onclick="var el=document.getElementById('bucketDoneList');el.style.display=el.style.display==='none'?'':'none'">
+      <span>✅ Completed (${completed.length})</span><span>▾</span>
+    </div>`;
+    html+=`<div id="bucketDoneList">`;
+    completed.forEach(item=>{
+      html+=`<div class="bucket-item done">
+        <div class="bucket-check checked" onclick="event.stopPropagation();toggleBucketDone('${item.id}')">✓</div>
+        <div class="bucket-info"><div class="bucket-title done">${escapeHtmlUI(item.title)}</div></div>
+        <div class="bucket-actions"><button class="bucket-delete" onclick="event.stopPropagation();deleteBucketItem('${item.id}')">🗑</button></div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
   c.innerHTML=html;
 }
 function openBucketItem(id){if(typeof showBucketListModal==='function')showBucketListModal()}
-function toggleBucketDone(id,btn){
+function toggleBucketDone(id){
   const items=typeof bucketList!=='undefined'?bucketList:[];
-  const item=items.find(i=>i.id===id);
-  if(item){item.status=item.status==='done'?'pending':'done';buildBucketView();toast(item.status==='done'?'🎉 Dream achieved!':'Unmarked')}
+  const item=items.find(i=>i.id===id);if(!item)return;
+  item.status=(item.status==='done'||item.status==='completed')?'dream':'done';
+  buildBucketView();refreshPlanView();
+  toast(item.status==='done'?'🎉 Dream achieved!':'Unmarked');
+  if(typeof saveBucketList==='function')saveBucketList(bucketList);
+  localStorage.setItem('lifestack_bucketlist',JSON.stringify(bucketList));
 }
 function deleteBucketItem(id){
   if(!confirm('Remove this bucket list item?'))return;
-  if(typeof bucketList!=='undefined'){const idx=bucketList.findIndex(i=>i.id===id);if(idx>-1){bucketList.splice(idx,1);buildBucketView();toast('Removed')}}
+  if(typeof bucketList!=='undefined'){const idx=bucketList.findIndex(i=>i.id===id);if(idx>-1){bucketList.splice(idx,1);buildBucketView();refreshPlanView();toast('Removed');if(typeof saveBucketList==='function')saveBucketList(bucketList);localStorage.setItem('lifestack_bucketlist',JSON.stringify(bucketList))}}
 }
 function scheduleBucket(id){
   var items=typeof bucketList!=='undefined'?bucketList:[];
@@ -471,7 +495,7 @@ function renderHabitsView(){
   }
 }
 
-// Habit grid - 13 weeks, single flat CSS grid
+// Habit grid - 13 weeks, single flat CSS grid for perfect alignment
 function buildHabitGrid(checkIns,totalDays){
   var today=new Date();today.setHours(0,0,0,0);
   var NW=13;
@@ -482,7 +506,6 @@ function buildHabitGrid(checkIns,totalDays){
   while(cur<=today){var wk=[];for(var d=0;d<7;d++){var ds=cur.toISOString().split('T')[0];wk.push({d:ds,m:cur.getMonth(),c:cSet.has(ds),f:cur>today,t:ds===tStr});cur.setDate(cur.getDate()+1)}weeks.push(wk)}
   var MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var NC=weeks.length;
-  // All cells go into one flat grid: (NC+1) columns, 8 rows (1 header + 7 days)
   var cells='';
   // Row 0: month headers
   cells+='<span class="hgl"></span>';
@@ -493,10 +516,10 @@ function buildHabitGrid(checkIns,totalDays){
     cells+='<span class="hgl">'+dl[r]+'</span>';
     for(var w=0;w<NC;w++){var dd=weeks[w][r];
       if(!dd||dd.f)cells+='<span class="hgd"></span>';
-      else cells+='<span class="hgd '+(dd.c?'on':'off')+(dd.t?' today':'')+'"></span>';
+      else cells+='<span class="hgd '+(dd.c?'on':'off')+(dd.t?' today':'')+'" title="'+dd.d+'"></span>';
     }
   }
-  return '<div class="hgrid" style="grid-template-columns:12px repeat('+NC+',1fr)">'+cells+'</div>';
+  return '<div class="hgrid" style="grid-template-columns:14px repeat('+NC+',1fr)">'+cells+'</div>';
 }
 function calcStreak(checkIns){
   if(!checkIns||checkIns.length===0)return 0;
@@ -776,8 +799,7 @@ function refreshPlanView(){
   if(typeof plans!=='undefined'&&Array.isArray(plans)){
     const adventures=plans.filter(p=>p.type==='adventure').length;
     const misogis=plans.filter(p=>p.type==='misogi').length;
-    const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.filter(function(b){return b.status==='completed'||b.status==='done'}).length:0;
-    const bucketPlanned=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.filter(b=>b.status==='planned').length:0;
+    const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.length:0;
     
     const el=document.getElementById('statAdventures');if(el)el.textContent=adventures;
     const mel=document.getElementById('statMisogi');if(mel)mel.textContent=misogis;
