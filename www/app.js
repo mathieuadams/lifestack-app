@@ -564,11 +564,11 @@ async function saveBucketList(items) {
 async function processBucketListWithAI(action, input) {
   const tokens = await getValidTokens();
   if (!tokens?.idToken) return null;
-  
+
   try {
-    const body = action === 'generate' 
-      ? { action: 'generate', voiceInput: input }
-      : { action: 'modify', modification: input };
+    const body = action === 'generate'
+      ? { action: 'generate', input: input }
+      : { action: 'add', input: input };
     
     const response = await fetch(`${CONFIG.API_URL}/bucketlist/ai`, {
       method: 'POST',
