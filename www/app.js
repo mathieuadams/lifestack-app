@@ -2797,8 +2797,10 @@ function showAddPlanModal(type, month = null) {
   renderPlanPeopleGrid();
   
   // Reset category display
-  document.getElementById('selectedCategoryIcon').textContent = '🎯';
-  document.getElementById('selectedCategoryName').textContent = 'Select category...';
+  const catIcon = document.getElementById('selectedCategoryIcon');
+  const catName = document.getElementById('selectedCategoryName');
+  if (catIcon) catIcon.textContent = '🎯';
+  if (catName) catName.textContent = 'Select category...';
   
   const dateGroup = document.getElementById('dateSelectorGroup');
   const peopleGroup = document.getElementById('planPeopleGroup');
@@ -2970,8 +2972,10 @@ function selectCategory(categoryId) {
   
   selectedCategory = categoryId;
   document.getElementById('planCategory').value = categoryId;
-  document.getElementById('selectedCategoryIcon').textContent = cat.icon;
-  document.getElementById('selectedCategoryName').textContent = cat.name;
+  const catIcon = document.getElementById('selectedCategoryIcon');
+  const catName = document.getElementById('selectedCategoryName');
+  if (catIcon) catIcon.textContent = cat.icon;
+  if (catName) catName.textContent = cat.name;
   closeCategoryPicker();
 }
 
@@ -3719,13 +3723,16 @@ async function togglePlanStatus(planId) {
   renderMisogis();
   renderHabits();
   renderMonthGrid();
-  
+
+  // Refresh week view if available
+  if (typeof buildWeekView === 'function') buildWeekView();
+
   // Refresh month calendar if open
   if (currentCalendarMonth) {
     renderMonthCalendarGrid(currentCalendarMonth);
     renderMonthPlansList(currentCalendarMonth);
   }
-  
+
   showToast(newStatus === 'completed' ? '🎉 Completed!' : 'Marked as planned');
 }
 
@@ -7287,6 +7294,7 @@ function getBucketListStatsForYear(year) {
 let dreamRecognition = null;
 let isDreamRecording = false;
 let dreamSelectedItems = [];
+let dreamGenerationStartTime = null;
 
 function showAddDreamModal() {
   // Reset to input phase
@@ -7423,6 +7431,9 @@ async function dreamProcessVoice(transcript) {
   var micBtn = document.getElementById('dreamMicBtn');
   if (micBtn) micBtn.disabled = true;
 
+  // Track when this generation started to prevent showing old items on retry
+  dreamGenerationStartTime = Date.now();
+
   try {
     var result = await processBucketListWithAI('generate', transcript);
 
@@ -7430,18 +7441,16 @@ async function dreamProcessVoice(transcript) {
 
     if (result && !result.error) {
       // AI returns the full updated bucket list
-      // We need to find the NEW items that were just added
-      var oldIds = new Set();
-      // Items before AI processing would have been stored — we check by creation time
+      // We need to find the NEW items that were just added AFTER this generation started
       var newItems = bucketList.filter(function(item) {
-        // Items created in last 30 seconds are likely new
+        // Only show items created after this generation started
         var created = new Date(item.createdAt);
-        return (Date.now() - created.getTime()) < 30000;
+        return created.getTime() >= dreamGenerationStartTime;
       });
 
       if (newItems.length === 0) {
-        // Fallback: show all items as confirmable
-        newItems = bucketList.slice(-5); // Last 5 items
+        // Fallback: show last 5 items
+        newItems = bucketList.slice(-5);
       }
 
       dreamShowResults(newItems, result.message);

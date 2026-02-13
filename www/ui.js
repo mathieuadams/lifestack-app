@@ -110,7 +110,7 @@ function buildWeekView(){
         <div class="pct">${icon} ${escapeHtmlUI(p.title)}</div>
         <div class="pcm"><span>${dateStr}</span><span class="tag tag-${cat}">${cat}</span>${p.type==='misogi'?'<span class="tag tag-misogi">Misogi</span>':''}</div>
       </div>
-      <button class="pcchk${isDone?' done':''}" onclick="event.stopPropagation();togglePlanDone('${p.id}',this)">✓</button>
+      <button class="pcchk${isDone?' done':''}" onclick="event.stopPropagation();if(typeof togglePlanStatus==='function')togglePlanStatus('${p.id}');else togglePlanDone('${p.id}',this)">✓</button>
     </div>`;
   }).join('');
 }
@@ -182,7 +182,7 @@ function buildMG(){
   }
 }
 function hlRange(){document.querySelectorAll('#mGrid .mgc').forEach(c=>{c.classList.remove('rs','rstart','rend');const d=parseInt(c.dataset.day);if(!d)return;if(calS&&!calE&&d===calS){c.classList.add('rstart','rend')}else if(calS&&calE){if(d===calS)c.classList.add('rstart');else if(d===calE)c.classList.add('rend');else if(d>calS&&d<calE)c.classList.add('rs')}})}
-function openQuickAdd(d){const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;const dateStr=`${yr}-${String(curM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;startPlanFlow(1);setTimeout(()=>{document.getElementById('pfDateStart').value=dateStr;document.getElementById('pfDateEnd').value=dateStr},50)}
+function openQuickAdd(d){const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;const dateStr=`${yr}-${String(curM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;startPlanFlow(1);setTimeout(()=>{const startEl=document.getElementById('pfDateStart');const endEl=document.getElementById('pfDateEnd');if(startEl)startEl.value=dateStr;if(endEl)endEl.value=dateStr},50)}
 function navMonth(dir){curM=(curM+dir+12)%12;buildMG()}
 
 // ===== YEARLY VIEW =====
@@ -353,7 +353,7 @@ function pfSetQuickDate(which,btn){
   if(which==='tomorrow'){d=new Date(now);d.setDate(d.getDate()+1)}
   else if(which==='saturday'){d=new Date(now);d.setDate(d.getDate()+((6-d.getDay()+7)%7)||7)}
   else if(which==='nextweek'){d=new Date(now);d.setDate(d.getDate()+((6-d.getDay()+7)%7)+7)}
-  if(d){const ds=d.toISOString().split('T')[0];document.getElementById('pfDateStart').value=ds;document.getElementById('pfDateEnd').value=ds}
+  if(d){const ds=d.toISOString().split('T')[0];const startEl=document.getElementById('pfDateStart');const endEl=document.getElementById('pfDateEnd');if(startEl)startEl.value=ds;if(endEl)endEl.value=ds}
 }
 
 function pfNext(step){
@@ -541,6 +541,11 @@ function fmtMisogiDate(dateStr){
 }
 
 function habitCheckinUI(habitId,btn){
+  // Prevent duplicate check-ins if button is already in done state
+  if(btn.classList.contains('done')){
+    toast('Already checked in today');
+    return;
+  }
   if(typeof quickCheckin==='function'){
     quickCheckin(habitId);
     btn.classList.add('done');
@@ -789,7 +794,7 @@ function initCalendarDrag(){
     const startStr=`${yr}-${String(curM+1).padStart(2,'0')}-${String(calS).padStart(2,'0')}`;
     const endStr=calE?`${yr}-${String(curM+1).padStart(2,'0')}-${String(calE).padStart(2,'0')}`:startStr;
     startPlanFlow(1);
-    setTimeout(()=>{document.getElementById('pfDateStart').value=startStr;document.getElementById('pfDateEnd').value=endStr},50);
+    setTimeout(()=>{const startEl=document.getElementById('pfDateStart');const endEl=document.getElementById('pfDateEnd');if(startEl)startEl.value=startStr;if(endEl)endEl.value=endStr},50);
     calDragStart=null;
   });
 }
