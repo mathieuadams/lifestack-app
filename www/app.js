@@ -5555,18 +5555,23 @@ async function savePrepReminders(planId) {
 // AI PLACE RECOMMENDATIONS
 // =====================================================
 
-async function getAIRecommendations(category) {
+async function getAIRecommendations(category, location) {
   const tokens = await getValidTokens();
   if (!tokens?.idToken) { showToast('Please log in'); return null; }
 
-  // Check hometown
-  if (!currentUser?.hometown?.name) {
-    showToast('Set your hometown in Profile to get AI recommendations!');
-    return null;
-  }
-
   const titleInput = document.getElementById('pfActName');
   const title = titleInput ? titleInput.value.trim() : '';
+
+  // Get location from parameter or pfState
+  const searchLocation = location ||
+                         (typeof pfState !== 'undefined' && pfState.locName) ||
+                         currentUser?.hometown?.name ||
+                         '';
+
+  if (!searchLocation) {
+    showToast('Enter a location first!');
+    return null;
+  }
 
   try {
     const response = await fetch(`${CONFIG.API_URL}/ai-recommend`, {
@@ -5575,7 +5580,11 @@ async function getAIRecommendations(category) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${tokens.idToken}`
       },
-      body: JSON.stringify({ category, title })
+      body: JSON.stringify({
+        category,
+        title,
+        location: searchLocation  // ← NOW SENDING LOCATION
+      })
     });
 
     if (response.ok) {
