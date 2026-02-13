@@ -53,6 +53,14 @@ function closeAdvWizard() {
   closePanel('planFlow');
 }
 
+function createAdventureOnDate(dateStr) {
+  // dateStr format: YYYY-MM-DD
+  startAdventureWizardWithData({
+    startDate: dateStr,
+    endDate: dateStr
+  });
+}
+
 // ===== RENDER CURRENT STEP =====
 
 function renderAdvWizard() {

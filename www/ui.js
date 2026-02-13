@@ -71,7 +71,8 @@ function buildWeekView(){
       const d=new Date(range.start);d.setDate(range.start.getDate()+i);
       const isToday=d.toDateString()===today.toDateString();
       const isPast=d<today;
-      html+=`<div class="wdi${isToday?' today':''}${isPast?' past':''}">
+      const dateStr=d.toISOString().split('T')[0]; // YYYY-MM-DD format
+      html+=`<div class="wdi${isToday?' today':''}${isPast?' past':''}" onclick="createAdventureOnDate('${dateStr}')" style="cursor:pointer">
         <span class="wdl">${dayNames[i]}</span>
         <span class="wdn${isToday?' today':''}">${d.getDate()}</span>
       </div>`;
@@ -124,6 +125,22 @@ function openPlanDetail(planId){
   document.getElementById('tripTitle').textContent=p.title||'Activity Detail';
   if(p.startDate)document.getElementById('tripStartDate').value=p.startDate;
   if(p.endDate)document.getElementById('tripEndDate').value=p.endDate;
+
+  // Display sub-activities
+  const subList=document.getElementById('subActivitiesList');
+  if(subList){
+    if(p.subActivities&&p.subActivities.length>0){
+      subList.innerHTML=p.subActivities.map(s=>
+        `<div style="padding:8px;background:var(--sage-50);border-radius:8px;margin-bottom:6px">
+          <div style="font-weight:600;color:var(--text-primary)">${s.emoji||'•'} ${escapeHtmlUI(s.name)}</div>
+          ${s.description?`<div style="font-size:.8rem;color:var(--text-tertiary);margin-top:2px">${escapeHtmlUI(s.description)}</div>`:''}
+        </div>`
+      ).join('');
+    }else{
+      subList.innerHTML='<div style="color:var(--text-tertiary);font-size:.9rem">No sub-activities</div>';
+    }
+  }
+
   openPanel('trip');
 }
 function togglePlanDone(planId,btn){
@@ -142,14 +159,26 @@ function getPlansForMonth(month0){
   const safePlans=typeof plans!=='undefined'&&Array.isArray(plans)?plans:[];
   return safePlans.filter(p=>{
     if(p.type==='habit'||p.type==='theme')return false;
-    const pYear=parseInt(p.year);if(pYear&&pYear!==yr)return false;
+    const pYear=parseInt(p.year);
+
+    // Filter by year - if plan has explicit year set, must match
+    if(pYear&&pYear!==yr)return false;
+
+    // Has startDate - check month range
     if(p.startDate){
       const sd=parseWeekDate(p.startDate);if(!sd)return false;
       if(sd.getFullYear()!==yr)return false;
       const ed=p.endDate?parseWeekDate(p.endDate):sd;
       return month0>=sd.getMonth()&&month0<=(ed?ed.getMonth():sd.getMonth());
     }
+
+    // Has targetMonth - check if matches
     if(p.targetMonth)return parseInt(p.targetMonth)===month1;
+
+    // No dates but has year field matching - show in all months
+    if(pYear===yr)return true;
+
+    // No dates, no year - don't show
     return false;
   });
 }

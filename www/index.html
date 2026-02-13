@@ -314,6 +314,8 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
       </div>
       <div class="fl">👥 Friends</div>
       <div class="fr" id="tripFriends"><button class="afb" onclick="openFriendSelector('trip')">+ Add friend</button></div>
+      <div class="fl">✨ Sub-Activities</div>
+      <div id="subActivitiesList" style="margin-bottom:16px;color:var(--text-secondary);font-size:.9rem">No sub-activities</div>
       <div class="fl">📋 Checklist & Reminders</div>
       <div id="remList"></div>
       <div class="fl" style="margin-top:16px">Add reminder</div>
@@ -502,6 +504,14 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
             <div><label style="font-size:.75rem;">Start</label><input type="date" id="planStartDate"></div>
             <div><label style="font-size:.75rem;">End</label><input type="date" id="planEndDate"></div>
           </div>
+        </div>
+        <div class="form-group" id="planLocationGroup">
+          <label for="planLocation">Where?</label>
+          <input type="text" id="planLocation" placeholder="e.g., Yosemite National Park">
+        </div>
+        <div class="form-group" id="planRemindersGroup">
+          <label>Reminders</label>
+          <div id="planRemindersList" style="font-size:.85rem;color:var(--text-secondary)">No reminders set</div>
         </div>
         <div class="form-group" id="planPeopleGroup">
           <label>Who's involved?</label>

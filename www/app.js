@@ -2868,19 +2868,43 @@ function showEditPlanModal(planId) {
     selectedPeopleIds = plan.people || [];
   }
   renderPlanPeopleGrid();
-  
+
+  // Load location
+  const locationInput = document.getElementById('planLocation');
+  if (locationInput) {
+    locationInput.value = plan.location?.name || plan.location || '';
+  }
+
+  // Load reminders
+  const remindersList = document.getElementById('planRemindersList');
+  if (remindersList) {
+    if (plan.reminderPrefs && plan.reminderPrefs.length > 0) {
+      remindersList.innerHTML = plan.reminderPrefs.map(r =>
+        `<div style="padding:6px 0;border-bottom:1px solid var(--sand-100)">${r.emoji || '📌'} ${escapeHtml(r.name)} <span style="color:var(--text-tertiary);font-size:.8em">${r.timing || ''}</span></div>`
+      ).join('');
+    } else {
+      remindersList.textContent = 'No reminders set';
+    }
+  }
+
   const dateGroup = document.getElementById('dateSelectorGroup');
   const peopleGroup = document.getElementById('planPeopleGroup');
   const categoryGroup = document.getElementById('categoryPickerGroup');
+  const locationGroup = document.getElementById('planLocationGroup');
+  const remindersGroup = document.getElementById('planRemindersGroup');
   
   if (plan.type === 'habit') {
     if (dateGroup) dateGroup.classList.add('hidden');
     if (peopleGroup) peopleGroup.classList.add('hidden');
     if (categoryGroup) categoryGroup.classList.add('hidden');
+    if (locationGroup) locationGroup.classList.add('hidden');
+    if (remindersGroup) remindersGroup.classList.add('hidden');
   } else {
     if (dateGroup) dateGroup.classList.remove('hidden');
     if (peopleGroup) peopleGroup.classList.remove('hidden');
     if (categoryGroup) categoryGroup.classList.remove('hidden');
+    if (locationGroup) locationGroup.classList.remove('hidden');
+    if (remindersGroup) remindersGroup.classList.remove('hidden');
   }
   
   document.getElementById('planModalTitle').textContent = `Edit ${plan.type === 'misogi' ? 'Misogi' : plan.type === 'habit' ? 'Habit' : 'Adventure'}`;
@@ -3605,6 +3629,9 @@ async function handlePlanSubmit(event) {
   }
   
   // For shared adventures, only allow updating completion status and notes
+  // Get location value
+  const locationValue = document.getElementById('planLocation')?.value?.trim() || '';
+
   const planData = isSharedAdventure ? {
     // Preserve original type so the Lambda knows how to handle it
     type: 'shared-adventure',
@@ -3616,7 +3643,8 @@ async function handlePlanSubmit(event) {
     targetMonth: existingPlan.targetMonth,
     startDate: existingPlan.startDate,
     endDate: existingPlan.endDate,
-    category: existingPlan.category
+    category: existingPlan.category,
+    location: existingPlan.location
   } : {
     type,
     title,
@@ -3627,6 +3655,7 @@ async function handlePlanSubmit(event) {
     endDate: endDate || null,
     targetQuarter: type === 'habit' ? parseInt(targetQuarter) : null,
     category: category || null,
+    location: locationValue ? { name: locationValue, lat: null, lng: null, placeId: '' } : null,
     people: selectedPeopleIds,
     participants: participants && participants.length > 0 ? participants : null,
     ownerName: currentUser?.name || 'Unknown'
