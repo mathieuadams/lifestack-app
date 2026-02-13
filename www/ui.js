@@ -179,7 +179,7 @@ function buildMG(){
   if(actList&&actTitle){
     actTitle.textContent='Activities in '+MN[curM];
     if(mp.length===0){actList.innerHTML='<p style="color:var(--text-tertiary);font-size:.85rem;padding:8px 0">No activities this month</p>';return}
-    actList.innerHTML=mp.map(p=>{const cat=(p.category||p.type||'adventure').toLowerCase();const icon=catIcons[cat]||'📋';const bg=catBgs[cat]||'var(--sage-100)';const sd=p.startDate?parseWeekDate(p.startDate):null;const ds=sd?MN[curM]+' '+sd.getDate():'';return `<div class="act-item" onclick="openPlanDetail('${p.id}')"><div class="act-icon" style="background:${bg}">${icon}</div><div class="act-body"><div class="act-name">${escapeHtmlUI(p.title)}</div><div class="act-meta">${ds} <span class="tag tag-${cat}">${escapeHtmlUI(cat)}</span></div></div><button style="background:none;border:none;font-size:.9rem;padding:4px;cursor:pointer" onclick="event.stopPropagation();getAIPrepTips('${p.id}')" title="AI Prep Tips">✨</button><span class="act-arrow">›</span></div>`}).join('');
+    actList.innerHTML=mp.map(p=>{const cat=(p.category||p.type||'adventure').toLowerCase();const icon=catIcons[cat]||'📋';const bg=catBgs[cat]||'var(--sage-100)';const sd=p.startDate?parseWeekDate(p.startDate):null;const ds=sd?MN[curM]+' '+sd.getDate():'';const isDone=p.status==='completed';return `<div class="act-item" onclick="openPlanDetail('${p.id}')"><div class="act-icon" style="background:${bg}">${icon}</div><div class="act-body"><div class="act-name">${escapeHtmlUI(p.title)}</div><div class="act-meta">${ds} <span class="tag tag-${cat}">${escapeHtmlUI(cat)}</span></div></div><button style="background:none;border:none;font-size:.9rem;padding:4px;cursor:pointer" onclick="event.stopPropagation();getAIPrepTips('${p.id}')" title="AI Prep Tips">✨</button><button class="pcchk${isDone?' done':''}" onclick="event.stopPropagation();if(typeof togglePlanStatus==='function')togglePlanStatus('${p.id}')" style="margin-right:8px">✓</button></div>`}).join('');
   }
 }
 function hlRange(){document.querySelectorAll('#mGrid .mgc').forEach(c=>{c.classList.remove('rs','rstart','rend');const d=parseInt(c.dataset.day);if(!d)return;if(calS&&!calE&&d===calS){c.classList.add('rstart','rend')}else if(calS&&calE){if(d===calS)c.classList.add('rstart');else if(d===calE)c.classList.add('rend');else if(d>calS&&d<calE)c.classList.add('rs')}})}
@@ -774,15 +774,26 @@ function editYearTheme(){
 
 // ===== CALENDAR DRAG SELECTION =====
 let calDragStart=null;
+let calLongPressTimer=null;
+let calLongPressActivated=false;
 function initCalendarDrag(){
   const grid=document.getElementById('mGrid');if(!grid)return;
   grid.addEventListener('pointerdown',function(e){
     const cell=e.target.closest('.mgc:not(.blank)');if(!cell)return;
-    calDragStart=parseInt(cell.dataset.day);if(!calDragStart)return;
-    calS=calDragStart;calE=null;hlRange();e.preventDefault();
+    const day=parseInt(cell.dataset.day);if(!day)return;
+
+    // Start long-press timer (800ms)
+    calLongPressActivated=false;
+    calLongPressTimer=setTimeout(()=>{
+      calLongPressActivated=true;
+      calDragStart=day;
+      calS=calDragStart;calE=null;hlRange();
+    },800);
+
+    e.preventDefault();
   });
   grid.addEventListener('pointermove',function(e){
-    if(!calDragStart)return;
+    if(!calLongPressActivated||!calDragStart)return;
     const cell=document.elementFromPoint(e.clientX,e.clientY);
     if(!cell||!cell.classList.contains('mgc')||cell.classList.contains('blank'))return;
     const day=parseInt(cell.dataset.day);if(!day)return;
@@ -790,13 +801,22 @@ function initCalendarDrag(){
     hlRange();
   });
   grid.addEventListener('pointerup',function(e){
-    if(!calDragStart)return;
+    // Clear long-press timer
+    if(calLongPressTimer){clearTimeout(calLongPressTimer);calLongPressTimer=null}
+
+    if(!calLongPressActivated||!calDragStart){calLongPressActivated=false;return}
     const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;
     const startStr=`${yr}-${String(curM+1).padStart(2,'0')}-${String(calS).padStart(2,'0')}`;
     const endStr=calE?`${yr}-${String(curM+1).padStart(2,'0')}-${String(calE).padStart(2,'0')}`:startStr;
     startPlanFlow(1);
     setTimeout(()=>{const startEl=document.getElementById('pfDateStart');const endEl=document.getElementById('pfDateEnd');if(startEl)startEl.value=startStr;if(endEl)endEl.value=endStr},50);
     calDragStart=null;
+    calLongPressActivated=false;
+  });
+  // Cancel long-press if pointer leaves the grid
+  grid.addEventListener('pointercancel',function(){
+    if(calLongPressTimer){clearTimeout(calLongPressTimer);calLongPressTimer=null}
+    calLongPressActivated=false;
   });
 }
 

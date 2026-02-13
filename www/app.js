@@ -7546,6 +7546,9 @@ function dreamShowResults(items, message) {
   }).join('');
 
   document.getElementById('dreamResultsList').innerHTML = html;
+
+  // Update button with count
+  updateDreamAddButton();
 }
 
 function dreamToggleItem(id, el) {
@@ -7557,6 +7560,17 @@ function dreamToggleItem(id, el) {
     dreamSelectedItems.push(id);
     el.classList.add('selected');
   }
+  // Update button count
+  updateDreamAddButton();
+}
+
+function updateDreamAddButton() {
+  var btn = document.getElementById('dreamAddSelectedBtn');
+  if (!btn) return;
+
+  var count = dreamSelectedItems.length;
+  btn.textContent = 'Add Selected (' + count + ')';
+  btn.disabled = count === 0;
 }
 
 function dreamBackToInput() {
