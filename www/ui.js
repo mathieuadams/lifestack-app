@@ -222,11 +222,12 @@ function buildBucketView(){
   const items=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList:[];
   if(items.length===0){c.innerHTML='<p style="color:var(--text-tertiary);text-align:center;padding:20px 0">No bucket list items yet. Tap "+ Add" to start!</p>';return}
   const bucketCatIcons={travel:'✈️',adventure:'🏔️',skills:'🎯',experiences:'🎭',personal:'💫',health:'💪',creative:'🎨',other:'📌'};
-  // Split active vs completed
-  const active=items.filter(i=>i.status!=='done'&&i.status!=='completed');
-  const completed=items.filter(i=>i.status==='done'||i.status==='completed');
+  // Split active vs completed (filter out temporary items)
+  const active=items.filter(i=>i.status!=='done'&&i.status!=='completed'&&!i.temporary);
+  const completed=items.filter(i=>(i.status==='done'||i.status==='completed')&&!i.temporary);
+  const confirmedItems=items.filter(i=>!i.temporary);
   let html='';
-  html+=`<div class="bucket-summary">${items.length} Dream${items.length!==1?'s':''} · ${items.filter(i=>i.status==='planned').length} Planned · ${completed.length} Done</div>`;
+  html+=`<div class="bucket-summary">${confirmedItems.length} Dream${confirmedItems.length!==1?'s':''} · ${confirmedItems.filter(i=>i.status==='planned').length} Planned · ${completed.length} Done</div>`;
   // Active items grouped by category
   const groups={};active.forEach(i=>{const cat=i.category||'other';if(!groups[cat])groups[cat]=[];groups[cat].push(i)});
   Object.keys(groups).forEach(cat=>{
@@ -817,6 +818,14 @@ function initCalendarDrag(){
   grid.addEventListener('pointercancel',function(){
     if(calLongPressTimer){clearTimeout(calLongPressTimer);calLongPressTimer=null}
     calLongPressActivated=false;
+  });
+
+  // Click outside calendar to deselect range
+  document.addEventListener('click',function(e){
+    if(!grid.contains(e.target)&&(calS||calE)){
+      calS=null;calE=null;calDragStart=null;
+      document.querySelectorAll('#mGrid .mgc').forEach(c=>c.classList.remove('rs','rstart','rend'));
+    }
   });
 }
 

@@ -3974,16 +3974,25 @@ async function saveYearTheme() {
 function loadYearTheme() {
   var el = document.getElementById('yearTheme');
   if (!el) return;
-  
+
   const themePlan = plans.find(p => p.type === 'theme' && parseInt(p.year) === currentViewYear);
+  let themeText = '';
+
   if (themePlan) {
-    el.value = themePlan.title || '';
-    localStorage.setItem(`lifestack_theme_${currentViewYear}`, themePlan.title || '');
-    return;
+    themeText = themePlan.title || '';
+    el.value = themeText;
+    localStorage.setItem(`lifestack_theme_${currentViewYear}`, themeText);
+  } else {
+    const savedTheme = localStorage.getItem(`lifestack_theme_${currentViewYear}`);
+    themeText = savedTheme || '';
+    el.value = themeText;
   }
-  
-  const savedTheme = localStorage.getItem(`lifestack_theme_${currentViewYear}`);
-  el.value = savedTheme || '';
+
+  // Update banner display
+  const bannerEl = document.getElementById('yearBannerTheme');
+  if (bannerEl && themeText) {
+    bannerEl.textContent = '"' + themeText + '"';
+  }
 }
 
 // =====================================================
@@ -7056,10 +7065,10 @@ function renderBucketList() {
   
   let html = '';
   
-  // Stats at top
-  const dreamCount = bucketList.filter(i => i.status === 'dream').length;
-  const plannedCount = bucketList.filter(i => i.status === 'planned').length;
-  const completedCount = bucketList.filter(i => i.status === 'completed').length;
+  // Stats at top (exclude temporary items)
+  const dreamCount = bucketList.filter(i => i.status === 'dream' && !i.temporary).length;
+  const plannedCount = bucketList.filter(i => i.status === 'planned' && !i.temporary).length;
+  const completedCount = bucketList.filter(i => i.status === 'completed' && !i.temporary).length;
   
   html += `
     <div class="bucket-list-stats">
@@ -7263,7 +7272,19 @@ async function scheduleBucketItem(itemId) {
         };
         advWizard.data.category = catMap[item.category] || 'adventure';
         advWizard.data._bucketItemId = itemId;
+
+        // Pre-fill location if bucket item has one
+        if (item.location) {
+          advWizard.data.location = {
+            name: item.location,
+            lat: null,
+            lng: null,
+            placeId: ''
+          };
+        }
       }
+      // Trigger re-render to show pre-filled data
+      if (typeof renderAdvWizard === 'function') renderAdvWizard();
     }, 200);
   } else {
     showAddPlanModal('adventure');
@@ -7341,8 +7362,8 @@ function linkAdventureToBucketItem(adventureId, bucketItemId) {
 }
 
 function getBucketListStatsForYear(year) {
-  const completed = bucketList.filter(i => i.completedYear === year);
-  const planned = bucketList.filter(i => i.plannedYear === year);
+  const completed = bucketList.filter(i => i.completedYear === year && !i.temporary);
+  const planned = bucketList.filter(i => i.plannedYear === year && !i.temporary);
   return { completedCount: completed.length, plannedCount: planned.length, completedItems: completed, plannedItems: planned };
 }
 
@@ -7590,23 +7611,19 @@ function dreamBackToInput() {
 }
 
 async function dreamConfirmSelected() {
-  // Remove unselected items from bucket list
-  var removeIds = [];
+  // Mark selected items as confirmed (remove temporary flag)
   bucketList.forEach(function(item) {
-    var created = new Date(item.createdAt);
-    var isRecent = (Date.now() - created.getTime()) < 60000;
-    if (isRecent && dreamSelectedItems.indexOf(item.id) === -1) {
-      removeIds.push(item.id);
+    if (dreamSelectedItems.indexOf(item.id) >= 0) {
+      delete item.temporary;  // Confirm this item
     }
   });
 
-  if (removeIds.length > 0) {
-    bucketList = bucketList.filter(function(item) {
-      return removeIds.indexOf(item.id) === -1;
-    });
-    await saveBucketList(bucketList);
-  }
+  // Remove unselected temporary items
+  bucketList = bucketList.filter(function(item) {
+    return !item.temporary;  // Keep confirmed items and non-temporary items
+  });
 
+  await saveBucketList(bucketList);
   closeAddDreamModal();
 
   // Refresh bucket view
