@@ -6726,12 +6726,62 @@ async function loadNotificationPreferences() {
 function updateNotificationUI() {
   const emailToggle = document.getElementById('notifEmailToggle');
   const pushToggle = document.getElementById('notifPushToggle');
-  
+
   if (emailToggle) emailToggle.checked = notificationPreferences.email !== false;
   if (pushToggle) pushToggle.checked = notificationPreferences.push === true;
-  
+
   // Update push status
   updatePushNotificationStatus();
+}
+
+// Render notification list with upcoming reminders
+function renderNotificationList() {
+  const notifList = document.getElementById('notifList');
+  if (!notifList) return;
+
+  // Get upcoming adventures with reminders
+  const upcomingPlans = plans.filter(p => {
+    if (p.type === 'habit' || p.type === 'theme') return false;
+    if (p.status === 'completed') return false;
+    if (!p.reminderPrefs || (Array.isArray(p.reminderPrefs) && p.reminderPrefs.length === 0)) return false;
+    if (!p.startDate) return false;
+
+    const startDate = new Date(p.startDate);
+    const now = new Date();
+    // Show events in the next 30 days
+    const daysDiff = Math.ceil((startDate - now) / (1000 * 60 * 60 * 24));
+    return daysDiff >= 0 && daysDiff <= 30;
+  }).sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+  if (upcomingPlans.length === 0) {
+    notifList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);font-size:.9rem">No upcoming reminders</div>';
+    return;
+  }
+
+  const html = upcomingPlans.map(p => {
+    const startDate = new Date(p.startDate);
+    const daysDiff = Math.ceil((startDate - now) / (1000 * 60 * 60 * 24));
+    const dateStr = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const daysText = daysDiff === 0 ? 'Today' : daysDiff === 1 ? 'Tomorrow' : `${daysDiff} days`;
+
+    const reminders = Array.isArray(p.reminderPrefs) ? p.reminderPrefs : [];
+    const reminderText = reminders.length > 0
+      ? reminders.slice(0, 2).map(r => r.label || r.key).join(', ') + (reminders.length > 2 ? '...' : '')
+      : 'Reminders set';
+
+    return `
+      <div class="notif-item" onclick="if(typeof showEditPlanModal==='function')showEditPlanModal('${p.id}');closePanel('notif')">
+        <div class="notif-icon">${getCategoryIcon(p.category) || '📅'}</div>
+        <div class="notif-body">
+          <div class="notif-title">${escapeHtml(p.title)}</div>
+          <div class="notif-desc">${reminderText}</div>
+          <div class="notif-date">${dateStr} · ${daysText}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  notifList.innerHTML = html;
 }
 
 // Save notification preferences
@@ -8000,6 +8050,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (cachedJournals) journalEntries = JSON.parse(cachedJournals);
         const cachedFriendships = localStorage.getItem('lifestack_friendships');
         if (cachedFriendships) friendships = JSON.parse(cachedFriendships);
+
+        // Load cached bucket list for banner stats
+        const cachedBucketList = localStorage.getItem('lifestack_bucketlist');
+        if (cachedBucketList) {
+          try {
+            bucketList = JSON.parse(cachedBucketList);
+            console.log('Loaded', bucketList.length, 'bucket items from cache');
+          } catch(e) { console.log('Bucket list cache parse error:', e); }
+        }
+
         updateFriendBadge();
         showApp();
       } catch (cacheErr) {

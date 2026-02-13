@@ -32,7 +32,7 @@ function swTab(t,b){
   if(t==='year') buildYV();
   if(t==='bucket'){buildBucketView();if(typeof fetchBucketList==='function')fetchBucketList().then(()=>{buildBucketView();refreshPlanView()}).catch(()=>{})}
 }
-function openPanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.add('open');if(p)p.classList.add('open')}
+function openPanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.add('open');if(p)p.classList.add('open');if(n==='notif'&&typeof renderNotificationList==='function')renderNotificationList()}
 function closePanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.remove('open');if(p)p.classList.remove('open')}
 function toggleFab(){const m=document.getElementById('fabMenu'),b=document.getElementById('fabBtn');m.classList.toggle('open');b.textContent=m.classList.contains('open')?'×':'+'}
 function closeFab(){document.getElementById('fabMenu').classList.remove('open');document.getElementById('fabBtn').textContent='+'}
@@ -110,6 +110,7 @@ function buildWeekView(){
         <div class="pct">${icon} ${escapeHtmlUI(p.title)}</div>
         <div class="pcm"><span>${dateStr}</span><span class="tag tag-${cat}">${cat}</span>${p.type==='misogi'?'<span class="tag tag-misogi">Misogi</span>':''}</div>
       </div>
+      <button style="background:none;border:none;font-size:.9rem;padding:4px 8px;cursor:pointer" onclick="event.stopPropagation();if(typeof getAIPrepTips==='function')getAIPrepTips('${p.id}')" title="AI Prep Tips">✨</button>
       <button class="pcchk${isDone?' done':''}" onclick="event.stopPropagation();if(typeof togglePlanStatus==='function')togglePlanStatus('${p.id}');else togglePlanDone('${p.id}',this)">✓</button>
     </div>`;
   }).join('');

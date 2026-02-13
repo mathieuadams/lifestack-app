@@ -28,10 +28,14 @@ function startAdventureWizard() {
 function startAdventureWizardWithData(prefill) {
   prefill = prefill || {};
   advWizard.step = 1;
+
+  // Check if pfState has a pre-selected type (from weekend quick-picks)
+  const defaultCategory = (typeof pfState !== 'undefined' && pfState?.type) ? pfState.type : '';
+
   advWizard.data = {
     location: prefill.location || { name: '', lat: null, lng: null, placeId: '' },
     name: prefill.name || '',
-    category: prefill.category || '',
+    category: prefill.category || defaultCategory,
     startDate: prefill.startDate || '',
     endDate: prefill.endDate || '',
     friends: [], subActivities: [],
