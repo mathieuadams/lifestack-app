@@ -847,11 +847,22 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .dream-status.error{color:var(--coral)}
 
 /* Divider */
+/* New textarea */
+.dream-text-area{width:100%;padding:14px;border:1.5px solid var(--sand-200);border-radius:var(--radius-md);font-size:.9rem;font-family:inherit;line-height:1.5;margin:16px 0;resize:vertical;min-height:100px}
+.dream-text-area:focus{outline:none;border-color:var(--sage-400)}
+
+/* Action buttons */
+.dream-action-buttons{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.dream-action-buttons .dream-btn-primary{flex:1;padding:14px;background:var(--sage-500);color:white;border:none;border-radius:var(--radius-md);font-size:.9rem;font-weight:700;cursor:pointer;width:100%}
+.dream-action-buttons .dream-btn-secondary{flex:1;padding:14px;border:1.5px solid var(--sage-400);border-radius:var(--radius-md);background:white;color:var(--sage-600);font-size:.9rem;font-weight:600;cursor:pointer;width:100%}
+.dream-action-buttons .dream-btn-primary:active{background:var(--sage-600);transform:scale(.98)}
+.dream-action-buttons .dream-btn-secondary:active{background:var(--sage-50);transform:scale(.98)}
+
 .dream-divider{text-align:center;margin:18px 0;position:relative}
 .dream-divider::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:var(--sand-200)}
 .dream-divider span{position:relative;background:white;padding:0 12px;font-size:.78rem;color:var(--text-tertiary)}
 
-/* Text input */
+/* Old text input (not used anymore) */
 .dream-text-row{display:flex;gap:8px;align-items:center;padding-bottom:20px}
 .dream-text-input{flex:1;padding:11px 12px;border:1.5px solid var(--sand-200);border-radius:var(--radius-md);font-size:.9rem}
 .dream-text-input:focus{outline:none;border-color:var(--sage-400)}

@@ -800,10 +800,11 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
   <!-- Phase 1: Input (voice or text) -->
   <div id="dreamInputPhase">
     <div class="dream-header">
-      <h2>Add a Dream</h2>
-      <p>Tell me what you want to do in life</p>
+      <h2>✨ Add Dream</h2>
+      <p>Speak or type what you want to do in life</p>
     </div>
 
+    <!-- Microphone at top -->
     <div class="dream-mic-area">
       <button type="button" class="dream-mic-btn" id="dreamMicBtn" onclick="dreamToggleRecording()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="36" height="36">
@@ -814,27 +815,17 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
         </svg>
       </button>
       <div class="dream-mic-label" id="dreamMicLabel">Tap to speak</div>
-      <div class="dream-mic-hint" id="dreamMicHint">Say something like: "I want to visit Japan, learn surfing, and run a marathon"</div>
     </div>
 
-    <div class="dream-transcript" id="dreamTranscript" contenteditable="true"></div>
+    <!-- Text field below microphone -->
+    <textarea id="dreamTextInput" class="dream-text-area" placeholder="Or type here... (e.g., Visit Japan, learn surfing, run a marathon)" rows="4"></textarea>
+
     <div class="dream-status" id="dreamStatus"></div>
 
-    <div class="dream-divider"><span>or type it in</span></div>
-
-    <div class="dream-text-row">
-      <input type="text" id="dreamTextInput" class="dream-text-input" placeholder="Add a dream...">
-      <select id="dreamCategorySelect" class="dream-cat-select">
-        <option value="travel">✈️ Travel</option>
-        <option value="adventure">🏔️ Adventure</option>
-        <option value="skills">🎯 Skills</option>
-        <option value="experiences">🎭 Experiences</option>
-        <option value="personal">💫 Personal</option>
-        <option value="health">💪 Health</option>
-        <option value="creative">🎨 Creative</option>
-        <option value="other">📌 Other</option>
-      </select>
-      <button class="dream-add-btn" onclick="dreamAddManual()">Add</button>
+    <!-- Two action buttons -->
+    <div class="dream-action-buttons">
+      <button class="dream-btn-primary" onclick="dreamGenerateWithAI()">✨ Generate AI Ideas</button>
+      <button class="dream-btn-secondary" onclick="dreamAddDirectly()">➕ Add to Bucket List</button>
     </div>
   </div>
 

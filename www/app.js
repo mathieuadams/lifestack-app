@@ -7422,9 +7422,6 @@ function dreamInitRecognition() {
     fullText = '';
     document.getElementById('dreamMicBtn').classList.add('recording');
     document.getElementById('dreamMicLabel').textContent = 'Listening... Tap to stop';
-    document.getElementById('dreamMicHint').style.display = 'none';
-    document.getElementById('dreamTranscript').classList.add('visible');
-    document.getElementById('dreamTranscript').textContent = '';
     document.getElementById('dreamStatus').textContent = '';
     document.getElementById('dreamStatus').className = 'dream-status';
   };
@@ -7436,7 +7433,9 @@ function dreamInitRecognition() {
       if (event.results[i].isFinal) fullText += t + ' ';
       else interim = t;
     }
-    document.getElementById('dreamTranscript').textContent = fullText + interim;
+    // Update the textarea with voice input
+    var textArea = document.getElementById('dreamTextInput');
+    if (textArea) textArea.value = fullText + interim;
   };
 
   dreamRecognition.onerror = function(event) {
@@ -7450,11 +7449,13 @@ function dreamInitRecognition() {
 
   dreamRecognition.onend = function() {
     if (isDreamRecording) {
-      var text = document.getElementById('dreamTranscript').textContent.trim();
+      var textArea = document.getElementById('dreamTextInput');
+      var text = textArea ? textArea.value.trim() : '';
       if (text.length > 10) {
         dreamStopRecording();
-        dreamProcessVoice(text);
+        // Don't auto-process - let user choose which button to click
       } else {
+        // Keep listening if text is too short
         try { dreamRecognition.start(); } catch(e) { dreamStopRecording(); }
       }
     }
@@ -7466,7 +7467,7 @@ function dreamInitRecognition() {
 function dreamToggleRecording() {
   if (!dreamRecognition) {
     if (!dreamInitRecognition()) {
-      document.getElementById('dreamStatus').textContent = 'Voice not supported. Use text input below.';
+      document.getElementById('dreamStatus').textContent = 'Voice not supported. Use text input.';
       document.getElementById('dreamStatus').className = 'dream-status error';
       return;
     }
@@ -7474,8 +7475,7 @@ function dreamToggleRecording() {
 
   if (isDreamRecording) {
     dreamStopRecording();
-    var text = document.getElementById('dreamTranscript').textContent.trim();
-    if (text.length > 5) dreamProcessVoice(text);
+    // Don't auto-process - let user choose which button to click
   } else {
     dreamStartRecording();
   }
@@ -7483,7 +7483,8 @@ function dreamToggleRecording() {
 
 function dreamStartRecording() {
   try {
-    document.getElementById('dreamTranscript').textContent = '';
+    var textArea = document.getElementById('dreamTextInput');
+    if (textArea) textArea.value = '';
     dreamRecognition.start();
   } catch(e) {
     document.getElementById('dreamStatus').textContent = 'Could not start microphone.';
@@ -7500,6 +7501,57 @@ function dreamStopRecording() {
   if (btn) btn.classList.remove('recording');
   var label = document.getElementById('dreamMicLabel');
   if (label) label.textContent = 'Tap to speak';
+}
+
+// ===== TWO ACTION BUTTONS =====
+
+async function dreamGenerateWithAI() {
+  var textArea = document.getElementById('dreamTextInput');
+  var text = textArea ? textArea.value.trim() : '';
+
+  if (!text || text.length < 5) {
+    var status = document.getElementById('dreamStatus');
+    status.textContent = 'Please enter or speak what you want to add first';
+    status.className = 'dream-status error';
+    return;
+  }
+
+  // Call the AI generation flow
+  dreamProcessVoice(text);
+}
+
+async function dreamAddDirectly() {
+  var textArea = document.getElementById('dreamTextInput');
+  var text = textArea ? textArea.value.trim() : '';
+
+  if (!text || text.length < 3) {
+    var status = document.getElementById('dreamStatus');
+    status.textContent = 'Please enter or speak what you want to add first';
+    status.className = 'dream-status error';
+    return;
+  }
+
+  var status = document.getElementById('dreamStatus');
+  status.textContent = '✨ Adding to your bucket list...';
+  status.className = 'dream-status thinking';
+
+  try {
+    var result = await processBucketListWithAI('add', text);
+
+    if (result && !result.error) {
+      // Successfully added
+      closeAddDreamModal();
+      if (typeof buildBucketView === 'function') buildBucketView();
+      if (typeof refreshPlanView === 'function') refreshPlanView();
+      showToast('✨ Added to your bucket list!');
+    } else {
+      status.textContent = result?.error || 'Failed to add. Try again.';
+      status.className = 'dream-status error';
+    }
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'dream-status error';
+  }
 }
 
 // ===== PROCESS WITH AI =====
