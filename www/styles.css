@@ -195,6 +195,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .ymc.e-golf{background:var(--sage-500)}.ymc.e-fishing{background:var(--blue)}
 .ymc.e-sailing{background:var(--blue)}.ymc.e-diving{background:var(--blue)}
 .ymc.e-skydiving{background:var(--teal)}.ymc.e-misogi{background:var(--sage-600)}
+.ymc.e-other{background:var(--sand-300)}
 .ymc-count{margin-top:4px;font-size:.68rem;color:var(--text-tertiary)}
 
 /* PANELS (slide-up sheets) */
