@@ -4,9 +4,9 @@
 // =====================================================
 
 // ===== GLOBALS =====
-const catIcons={travel:'✈️',food:'🍽️',adventure:'🏔️',roadtrip:'🚗',culture:'🎭',date:'💕',health:'💪',birthday:'🎂',hiking:'🥾',skiing:'⛷️',running:'🏃',surfing:'🏄',swimming:'🏊',camping:'⛺',cycling:'🚴',climbing:'🧗',concert:'🎸',misogi:'🏔️'};
-const catColors={travel:'var(--cat-travel)',food:'var(--cat-food)',adventure:'var(--cat-adventure)',roadtrip:'var(--cat-roadtrip)',culture:'var(--cat-culture)',date:'var(--cat-date)',health:'var(--cat-health)',birthday:'var(--cat-birthday)',hiking:'var(--sage-500)',skiing:'var(--blue-500)',running:'var(--teal-500)',surfing:'var(--blue-400)',swimming:'var(--blue-400)',camping:'var(--sage-500)',cycling:'var(--teal-400)',climbing:'var(--sage-600)',concert:'var(--lavender-500)'};
-const catBgs={travel:'var(--cat-travel-bg)',food:'var(--cat-food-bg)',adventure:'var(--cat-adventure-bg)',roadtrip:'var(--cat-roadtrip-bg)',culture:'var(--cat-culture-bg)',date:'var(--cat-date-bg)',health:'var(--cat-health-bg)',birthday:'var(--cat-birthday-bg)',hiking:'var(--sage-100)',skiing:'var(--blue-100)',running:'var(--teal-100)',surfing:'var(--blue-50)',swimming:'var(--blue-50)',camping:'var(--sage-100)',cycling:'var(--teal-50)',climbing:'var(--sage-100)',concert:'var(--lavender-100)'};
+const catIcons={travel:'✈️',food:'🍽️',adventure:'🏔️',roadtrip:'🚗',culture:'🎭',date:'💕',health:'💪',birthday:'🎂',hiking:'🥾',skiing:'⛷️',running:'🏃',surfing:'🏄',swimming:'🏊',camping:'⛺',cycling:'🚴',climbing:'🧗',concert:'🎸',beach:'🏖️',marathon:'🏅',festival:'🎪',theater:'🎭',museum:'🏛️',dining:'🍽️',cooking:'👨‍🍳',wine:'🍷',spa:'💆',yoga:'🧘',meditation:'🙏',photography:'📸',art:'🎨',dance:'💃',sports:'⚽',golf:'⛳',fishing:'🎣',sailing:'⛵',diving:'🤿',skydiving:'🪂',misogi:'🏔️'};
+const catColors={travel:'var(--cat-travel)',food:'var(--cat-food)',adventure:'var(--cat-adventure)',roadtrip:'var(--cat-roadtrip)',culture:'var(--cat-culture)',date:'var(--cat-date)',health:'var(--cat-health)',birthday:'var(--cat-birthday)',hiking:'var(--sage-500)',skiing:'var(--blue-500)',running:'var(--teal-500)',surfing:'var(--blue-400)',swimming:'var(--blue-400)',camping:'var(--sage-500)',cycling:'var(--teal-400)',climbing:'var(--sage-600)',concert:'var(--lavender-500)',beach:'var(--blue-300)',marathon:'var(--teal-600)',festival:'var(--pink-500)',theater:'var(--lavender-600)',museum:'var(--sand-500)',dining:'var(--amber-500)',cooking:'var(--amber-600)',wine:'var(--pink-600)',spa:'var(--sage-400)',yoga:'var(--sage-400)',meditation:'var(--lavender-400)',photography:'var(--sand-600)',art:'var(--pink-400)',dance:'var(--coral-500)',sports:'var(--teal-600)',golf:'var(--sage-600)',fishing:'var(--blue-500)',sailing:'var(--blue-600)',diving:'var(--blue-700)',skydiving:'var(--teal-700)'};
+const catBgs={travel:'var(--cat-travel-bg)',food:'var(--cat-food-bg)',adventure:'var(--cat-adventure-bg)',roadtrip:'var(--cat-roadtrip-bg)',culture:'var(--cat-culture-bg)',date:'var(--cat-date-bg)',health:'var(--cat-health-bg)',birthday:'var(--cat-birthday-bg)',hiking:'var(--sage-100)',skiing:'var(--blue-100)',running:'var(--teal-100)',surfing:'var(--blue-50)',swimming:'var(--blue-50)',camping:'var(--sage-100)',cycling:'var(--teal-50)',climbing:'var(--sage-100)',concert:'var(--lavender-100)',beach:'var(--blue-50)',marathon:'var(--teal-100)',festival:'var(--pink-100)',theater:'var(--lavender-100)',museum:'var(--sand-100)',dining:'var(--amber-100)',cooking:'var(--amber-100)',wine:'var(--pink-100)',spa:'var(--sage-50)',yoga:'var(--sage-50)',meditation:'var(--lavender-50)',photography:'var(--sand-100)',art:'var(--pink-50)',dance:'var(--coral-100)',sports:'var(--teal-100)',golf:'var(--sage-100)',fishing:'var(--blue-100)',sailing:'var(--blue-100)',diving:'var(--blue-100)',skydiving:'var(--teal-100)'};
 
 // ===== UI CORE =====
 function swView(v){
@@ -216,14 +216,14 @@ function buildYV(){
       if(p.startDate){
         const sd2=parseWeekDate(p.startDate);const ed2=p.endDate?parseWeekDate(p.endDate):sd2;
         if(sd2&&ed2){
-          // Check if plan overlaps with month i in year yr
-          const planStart=new Date(yr,i,1);  // First day of month i
-          const planEnd=new Date(yr,i+1,0);  // Last day of month i
+          // Check if plan overlaps with month i (plans already filtered by year)
+          const startMonth=sd2.getMonth();
+          const endMonth=ed2.getMonth();
 
-          // Only render if plan dates overlap with this month
-          if(sd2<=planEnd&&ed2>=planStart){
-            const startDay=sd2.getMonth()===i&&sd2.getFullYear()===yr?sd2.getDate():1;
-            const endDay=ed2.getMonth()===i&&ed2.getFullYear()===yr?ed2.getDate():(i===1&&yr%4===0?29:DIM[i]);
+          // Only render if plan's month range includes month i
+          if(startMonth<=i&&endMonth>=i){
+            const startDay=startMonth===i?sd2.getDate():1;
+            const endDay=endMonth===i?ed2.getDate():(i===1&&yr%4===0?29:DIM[i]);
             for(let dd=startDay;dd<=endDay;dd++)evMap[dd]=cat;
           }
         }
