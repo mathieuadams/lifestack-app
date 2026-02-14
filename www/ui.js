@@ -178,7 +178,7 @@ function buildMG(){
   const dim=curM===1&&yr%4===0?29:DIM[curM];
   const mp=getPlansForMonth(curM);
   // Map day -> plans
-  const pbd={};mp.forEach(p=>{if(p.startDate){const sd=parseWeekDate(p.startDate);const ed=p.endDate?parseWeekDate(p.endDate):sd;if(!sd)return;const s1=sd.getMonth()===curM?sd.getDate():1;const e1=ed&&ed.getMonth()===curM?ed.getDate():dim;for(let d=s1;d<=e1;d++){if(!pbd[d])pbd[d]=[];pbd[d].push(p)}}});
+  const pbd={};mp.forEach(p=>{if(p.startDate){const sd=parseWeekDate(p.startDate);const ed=p.endDate?parseWeekDate(p.endDate):sd;if(!sd)return;const startMonth=sd.getMonth();const endMonth=ed.getMonth();if(startMonth<=curM&&endMonth>=curM){const s1=startMonth===curM?sd.getDate():1;const e1=endMonth===curM?ed.getDate():dim;for(let d=s1;d<=e1;d++){if(!pbd[d])pbd[d]=[];pbd[d].push(p)}}}});
   let html='<div class="mgh">M</div><div class="mgh">T</div><div class="mgh">W</div><div class="mgh">T</div><div class="mgh">F</div><div class="mgh">S</div><div class="mgh">S</div>';
   for(let b=0;b<fd;b++)html+='<div class="mgc blank"></div>';
   const today=new Date();
@@ -190,12 +190,13 @@ function buildMG(){
   }
   g.innerHTML=html;calS=null;calE=null;
   initCalendarDrag();
-  // Activity list
+  // Activity list - filter to only show activities in current month
   const actList=document.getElementById('actList');const actTitle=document.getElementById('actListTitle');
   if(actList&&actTitle){
     actTitle.textContent='Activities in '+MN[curM];
-    if(mp.length===0){actList.innerHTML='<p style="color:var(--text-tertiary);font-size:.85rem;padding:8px 0">No activities this month</p>';return}
-    actList.innerHTML=mp.map(p=>{const cat=(p.category||p.type||'adventure').toLowerCase();const icon=catIcons[cat]||'📋';const bg=catBgs[cat]||'var(--sage-100)';const sd=p.startDate?parseWeekDate(p.startDate):null;const ds=sd?MN[curM]+' '+sd.getDate():'';const isDone=p.status==='completed';return `<div class="act-item" onclick="openPlanDetail('${p.id}')"><div class="act-icon" style="background:${bg}">${icon}</div><div class="act-body"><div class="act-name">${escapeHtmlUI(p.title)}</div><div class="act-meta">${ds} <span class="tag tag-${cat}">${escapeHtmlUI(cat)}</span></div></div><button style="background:none;border:none;font-size:.9rem;padding:4px;cursor:pointer" onclick="event.stopPropagation();getAIPrepTips('${p.id}')" title="AI Prep Tips">✨</button><button class="pcchk${isDone?' done':''}" onclick="event.stopPropagation();if(typeof togglePlanStatus==='function')togglePlanStatus('${p.id}')" style="margin-right:8px">✓</button></div>`}).join('');
+    const monthPlans=mp.filter(p=>{if(!p.startDate)return false;const sd=parseWeekDate(p.startDate);const ed=p.endDate?parseWeekDate(p.endDate):sd;if(!sd)return false;const startMonth=sd.getMonth();const endMonth=ed.getMonth();return startMonth<=curM&&endMonth>=curM});
+    if(monthPlans.length===0){actList.innerHTML='<p style="color:var(--text-tertiary);font-size:.85rem;padding:8px 0">No activities this month</p>';return}
+    actList.innerHTML=monthPlans.map(p=>{const cat=(p.category||p.type||'adventure').toLowerCase();const icon=catIcons[cat]||'📋';const bg=catBgs[cat]||'var(--sage-100)';const sd=p.startDate?parseWeekDate(p.startDate):null;const ds=sd?MN[curM]+' '+sd.getDate():'';const isDone=p.status==='completed';return `<div class="act-item" onclick="openPlanDetail('${p.id}')"><div class="act-icon" style="background:${bg}">${icon}</div><div class="act-body"><div class="act-name">${escapeHtmlUI(p.title)}</div><div class="act-meta">${ds} <span class="tag tag-${cat}">${escapeHtmlUI(cat)}</span></div></div><button style="background:none;border:none;font-size:.9rem;padding:4px;cursor:pointer" onclick="event.stopPropagation();getAIPrepTips('${p.id}')" title="AI Prep Tips">✨</button><button class="pcchk${isDone?' done':''}" onclick="event.stopPropagation();if(typeof togglePlanStatus==='function')togglePlanStatus('${p.id}')" style="margin-right:8px">✓</button></div>`}).join('');
   }
 }
 function hlRange(){document.querySelectorAll('#mGrid .mgc').forEach(c=>{c.classList.remove('rs','rstart','rend');const d=parseInt(c.dataset.day);if(!d)return;if(calS&&!calE&&d===calS){c.classList.add('rstart','rend')}else if(calS&&calE){if(d===calS)c.classList.add('rstart');else if(d===calE)c.classList.add('rend');else if(d>calS&&d<calE)c.classList.add('rs')}})}
@@ -232,10 +233,8 @@ function buildYV(){
         if(tm===i+1){  // targetMonth is 1-based, i is 0-based
           if(!evMap[15])evMap[15]=cat;else if(!evMap[16])evMap[16]=cat;
         }
-      } else{
-        // Plan has no specific date but is in this year - mark mid-month
-        if(!evMap[15])evMap[15]=cat;else if(!evMap[16])evMap[16]=cat;else if(!evMap[17])evMap[17]=cat;
       }
+      // Note: Plans without startDate or targetMonth are not displayed in yearly view
     });
     let cells='';const sd=(new Date(yr,i,1).getDay()+6)%7;
     for(let b=0;b<sd;b++)cells+='<div class="ymc blank"></div>';
