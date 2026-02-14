@@ -2887,11 +2887,27 @@ function showEditPlanModal(planId) {
     }
   }
 
+  // Load sub-activities
+  const subActivitiesList = document.getElementById('planSubActivitiesList');
+  if (subActivitiesList) {
+    if (plan.subActivities && plan.subActivities.length > 0) {
+      subActivitiesList.innerHTML = plan.subActivities.map(s =>
+        `<div style="padding:8px;background:var(--sage-50);border-radius:8px;margin-bottom:6px">
+          <div style="font-weight:600;color:var(--text-primary)">${s.emoji || '•'} ${escapeHtml(s.name)}</div>
+          ${s.description ? `<div style="font-size:.8rem;color:var(--text-tertiary);margin-top:2px">${escapeHtml(s.description)}</div>` : ''}
+        </div>`
+      ).join('');
+    } else {
+      subActivitiesList.textContent = 'No sub-activities';
+    }
+  }
+
   const dateGroup = document.getElementById('dateSelectorGroup');
   const peopleGroup = document.getElementById('planPeopleGroup');
   const categoryGroup = document.getElementById('categoryPickerGroup');
   const locationGroup = document.getElementById('planLocationGroup');
   const remindersGroup = document.getElementById('planRemindersGroup');
+  const subActivitiesGroup = document.getElementById('planSubActivitiesGroup');
   
   if (plan.type === 'habit') {
     if (dateGroup) dateGroup.classList.add('hidden');
@@ -2899,12 +2915,14 @@ function showEditPlanModal(planId) {
     if (categoryGroup) categoryGroup.classList.add('hidden');
     if (locationGroup) locationGroup.classList.add('hidden');
     if (remindersGroup) remindersGroup.classList.add('hidden');
+    if (subActivitiesGroup) subActivitiesGroup.classList.add('hidden');
   } else {
     if (dateGroup) dateGroup.classList.remove('hidden');
     if (peopleGroup) peopleGroup.classList.remove('hidden');
     if (categoryGroup) categoryGroup.classList.remove('hidden');
     if (locationGroup) locationGroup.classList.remove('hidden');
     if (remindersGroup) remindersGroup.classList.remove('hidden');
+    if (subActivitiesGroup) subActivitiesGroup.classList.remove('hidden');
   }
   
   document.getElementById('planModalTitle').textContent = `Edit ${plan.type === 'misogi' ? 'Misogi' : plan.type === 'habit' ? 'Habit' : 'Adventure'}`;
@@ -3712,7 +3730,8 @@ async function handlePlanSubmit(event) {
   renderMisogis();
   renderHabits();
   renderMonthGrid();
-  
+  if (typeof refreshPlanView === 'function') refreshPlanView(); // Refresh stats and views
+
   if (btn) {
     btn.disabled = false;
     btn.textContent = 'Save Plan';
@@ -6787,6 +6806,7 @@ function renderNotificationList() {
   if (!notifList) return;
 
   // Get upcoming adventures with reminders
+  const now = new Date(); // Define now here so it's accessible everywhere
   const upcomingPlans = plans.filter(p => {
     if (p.type === 'habit' || p.type === 'theme') return false;
     if (p.status === 'completed') return false;
@@ -6794,7 +6814,6 @@ function renderNotificationList() {
     if (!p.startDate) return false;
 
     const startDate = new Date(p.startDate);
-    const now = new Date();
     // Show events in the next 30 days
     const daysDiff = Math.ceil((startDate - now) / (1000 * 60 * 60 * 24));
     return daysDiff >= 0 && daysDiff <= 30;
@@ -7335,6 +7354,7 @@ async function completeBucketItem(itemId) {
   const success = await saveBucketList(bucketList);
   if (success) {
     renderBucketList();
+    if (typeof refreshPlanView === 'function') refreshPlanView(); // Update stats
     showToast('🎉 Bucket list item completed!');
   } else {
     showError('Failed to save');
@@ -7349,6 +7369,7 @@ async function removeBucketItem(itemId) {
   const success = await saveBucketList(bucketList);
   if (success) {
     renderBucketList();
+    if (typeof refreshPlanView === 'function') refreshPlanView(); // Update stats
     showToast('Item removed');
   } else {
     showError('Failed to save');

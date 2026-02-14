@@ -235,6 +235,9 @@ function buildYV(){
         }
       } else if(p.targetMonth){
         if(!evMap[15])evMap[15]=cat;else if(!evMap[16])evMap[16]=cat;
+      } else{
+        // Plan has no specific date but is in this year - mark mid-month
+        if(!evMap[15])evMap[15]=cat;else if(!evMap[16])evMap[16]=cat;else if(!evMap[17])evMap[17]=cat;
       }
     });
     let cells='';const sd=(new Date(yr,i,1).getDay()+6)%7;
