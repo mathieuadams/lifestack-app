@@ -180,6 +180,11 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .ymc.e-adventure{background:var(--cat-adventure)}.ymc.e-roadtrip{background:var(--cat-roadtrip)}
 .ymc.e-birthday{background:var(--cat-birthday)}.ymc.e-health{background:var(--cat-health)}
 .ymc.e-culture{background:var(--cat-culture)}.ymc.e-date{background:var(--cat-date)}
+.ymc.e-hiking{background:var(--sage-400)}.ymc.e-skiing{background:var(--blue-400)}
+.ymc.e-running{background:var(--teal-400)}.ymc.e-surfing{background:var(--blue-300)}
+.ymc.e-swimming{background:var(--blue-300)}.ymc.e-camping{background:var(--sage-400)}
+.ymc.e-cycling{background:var(--teal-300)}.ymc.e-climbing{background:var(--sage-500)}
+.ymc.e-concert{background:var(--lavender-400)}
 .ymc-count{margin-top:4px;font-size:.68rem;color:var(--text-tertiary)}
 
 /* PANELS (slide-up sheets) */

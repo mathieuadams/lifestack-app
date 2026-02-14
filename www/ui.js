@@ -4,9 +4,9 @@
 // =====================================================
 
 // ===== GLOBALS =====
-const catIcons={travel:'✈️',food:'🍽️',adventure:'🏔️',roadtrip:'🚗',culture:'🎭',date:'💕',health:'💪',birthday:'🎂',hiking:'🥾',skiing:'⛷️',misogi:'🏔️'};
-const catColors={travel:'var(--cat-travel)',food:'var(--cat-food)',adventure:'var(--cat-adventure)',roadtrip:'var(--cat-roadtrip)',culture:'var(--cat-culture)',date:'var(--cat-date)',health:'var(--cat-health)',birthday:'var(--cat-birthday)'};
-const catBgs={travel:'var(--cat-travel-bg)',food:'var(--cat-food-bg)',adventure:'var(--cat-adventure-bg)',roadtrip:'var(--cat-roadtrip-bg)',culture:'var(--cat-culture-bg)',date:'var(--cat-date-bg)',health:'var(--cat-health-bg)',birthday:'var(--cat-birthday-bg)'};
+const catIcons={travel:'✈️',food:'🍽️',adventure:'🏔️',roadtrip:'🚗',culture:'🎭',date:'💕',health:'💪',birthday:'🎂',hiking:'🥾',skiing:'⛷️',running:'🏃',surfing:'🏄',swimming:'🏊',camping:'⛺',cycling:'🚴',climbing:'🧗',concert:'🎸',misogi:'🏔️'};
+const catColors={travel:'var(--cat-travel)',food:'var(--cat-food)',adventure:'var(--cat-adventure)',roadtrip:'var(--cat-roadtrip)',culture:'var(--cat-culture)',date:'var(--cat-date)',health:'var(--cat-health)',birthday:'var(--cat-birthday)',hiking:'var(--sage-500)',skiing:'var(--blue-500)',running:'var(--teal-500)',surfing:'var(--blue-400)',swimming:'var(--blue-400)',camping:'var(--sage-500)',cycling:'var(--teal-400)',climbing:'var(--sage-600)',concert:'var(--lavender-500)'};
+const catBgs={travel:'var(--cat-travel-bg)',food:'var(--cat-food-bg)',adventure:'var(--cat-adventure-bg)',roadtrip:'var(--cat-roadtrip-bg)',culture:'var(--cat-culture-bg)',date:'var(--cat-date-bg)',health:'var(--cat-health-bg)',birthday:'var(--cat-birthday-bg)',hiking:'var(--sage-100)',skiing:'var(--blue-100)',running:'var(--teal-100)',surfing:'var(--blue-50)',swimming:'var(--blue-50)',camping:'var(--sage-100)',cycling:'var(--teal-50)',climbing:'var(--sage-100)',concert:'var(--lavender-100)'};
 
 // ===== UI CORE =====
 function swView(v){
@@ -155,30 +155,18 @@ const DIM=[31,28,31,30,31,30,31,31,30,31,30,31];
 let curM=new Date().getMonth();
 function getPlansForMonth(month0){
   const month1=month0+1;
-  const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;
+  const yr=typeof currentViewYear!=='undefined'?currentViewYear:new Date().getFullYear();
   const safePlans=typeof plans!=='undefined'&&Array.isArray(plans)?plans:[];
   return safePlans.filter(p=>{
-    // Only exclude habits and themes - include ALL other activity types
+    // Exclude habits and themes
     if(p.type==='habit'||p.type==='theme')return false;
 
+    // Year filter: include plans for current year OR plans without a year set
     const pYear=parseInt(p.year);
-    // Filter by year - if plan has valid year set and doesn't match, exclude
     if(!isNaN(pYear)&&pYear>0&&pYear!==yr)return false;
 
-    // Has startDate - check month range
-    if(p.startDate){
-      const sd=parseWeekDate(p.startDate);if(!sd)return false;
-      if(sd.getFullYear()!==yr)return false;
-      const ed=p.endDate?parseWeekDate(p.endDate):sd;
-      return month0>=sd.getMonth()&&month0<=(ed?ed.getMonth():sd.getMonth());
-    }
-
-    // Has targetMonth - check if matches
-    if(p.targetMonth)return parseInt(p.targetMonth)===month1;
-
-    // No dates - if has matching year OR no year field at all, show in all months
-    // This catches plans created without proper date/year fields
-    return !pYear || pYear===yr;
+    // Include all other plans (adventures with any category: skiing, hiking, etc.)
+    return true;
   });
 }
 let calS=null,calE=null;
@@ -227,13 +215,23 @@ function buildYV(){
       const cat=(p.category||p.type||'adventure').toLowerCase();
       if(p.startDate){
         const sd2=parseWeekDate(p.startDate);const ed2=p.endDate?parseWeekDate(p.endDate):sd2;
-        if(sd2){
-          const startDay=sd2.getMonth()===i?sd2.getDate():1;
-          const endDay=ed2&&ed2.getMonth()===i?ed2.getDate():(i===1&&yr%4===0?29:DIM[i]);
-          for(let dd=startDay;dd<=endDay;dd++)evMap[dd]=cat;
+        if(sd2&&ed2){
+          // Check if plan overlaps with month i in year yr
+          const planStart=new Date(yr,i,1);  // First day of month i
+          const planEnd=new Date(yr,i+1,0);  // Last day of month i
+
+          // Only render if plan dates overlap with this month
+          if(sd2<=planEnd&&ed2>=planStart){
+            const startDay=sd2.getMonth()===i&&sd2.getFullYear()===yr?sd2.getDate():1;
+            const endDay=ed2.getMonth()===i&&ed2.getFullYear()===yr?ed2.getDate():(i===1&&yr%4===0?29:DIM[i]);
+            for(let dd=startDay;dd<=endDay;dd++)evMap[dd]=cat;
+          }
         }
       } else if(p.targetMonth){
-        if(!evMap[15])evMap[15]=cat;else if(!evMap[16])evMap[16]=cat;
+        const tm=parseInt(p.targetMonth);
+        if(tm===i+1){  // targetMonth is 1-based, i is 0-based
+          if(!evMap[15])evMap[15]=cat;else if(!evMap[16])evMap[16]=cat;
+        }
       } else{
         // Plan has no specific date but is in this year - mark mid-month
         if(!evMap[15])evMap[15]=cat;else if(!evMap[16])evMap[16]=cat;else if(!evMap[17])evMap[17]=cat;
