@@ -212,6 +212,7 @@ function buildYV(){
   MN.forEach((m,i)=>{
     const card=document.createElement('div');card.className='ym'+((i===cm&&yr===cy)?' cur':'');
     const evts=getPlansForMonth(i);const evMap={};
+    let monthEventCount=0;
     evts.forEach(p=>{
       const cat=(p.category||p.type||'adventure').toLowerCase();
       if(p.startDate){
@@ -223,6 +224,7 @@ function buildYV(){
 
           // Only render if plan's month range includes month i
           if(startMonth<=i&&endMonth>=i){
+            monthEventCount++;
             const startDay=startMonth===i?sd2.getDate():1;
             const endDay=endMonth===i?ed2.getDate():(i===1&&yr%4===0?29:DIM[i]);
             for(let dd=startDay;dd<=endDay;dd++)evMap[dd]=cat;
@@ -231,6 +233,7 @@ function buildYV(){
       } else if(p.targetMonth){
         const tm=parseInt(p.targetMonth);
         if(tm===i+1){  // targetMonth is 1-based, i is 0-based
+          monthEventCount++;
           if(!evMap[15])evMap[15]=cat;else if(!evMap[16])evMap[16]=cat;
         }
       }
@@ -239,7 +242,7 @@ function buildYV(){
     let cells='';const sd=(new Date(yr,i,1).getDay()+6)%7;
     for(let b=0;b<sd;b++)cells+='<div class="ymc blank"></div>';
     for(let d=1;d<=DIM[i];d++){const c=evMap[d];cells+=`<div class="ymc ${c?'e-'+c:'day'}"></div>`}
-    card.innerHTML=`<div class="ymn">${m.slice(0,3)}</div><div class="ymg">${cells}</div><div class="ymc-count">${evts.length} event${evts.length!==1?'s':''}</div>`;
+    card.innerHTML=`<div class="ymn">${m.slice(0,3)}</div><div class="ymg">${cells}</div><div class="ymc-count">${monthEventCount} event${monthEventCount!==1?'s':''}</div>`;
     card.onclick=()=>{curM=i;buildMG();swTab('month',document.querySelectorAll('.ptb')[1])};
     g.appendChild(card);
   });

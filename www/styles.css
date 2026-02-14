@@ -180,21 +180,21 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .ymc.e-adventure{background:var(--cat-adventure)}.ymc.e-roadtrip{background:var(--cat-roadtrip)}
 .ymc.e-birthday{background:var(--cat-birthday)}.ymc.e-health{background:var(--cat-health)}
 .ymc.e-culture{background:var(--cat-culture)}.ymc.e-date{background:var(--cat-date)}
-.ymc.e-hiking{background:var(--sage-400)}.ymc.e-skiing{background:var(--blue-400)}
-.ymc.e-running{background:var(--teal-400)}.ymc.e-surfing{background:var(--blue-300)}
-.ymc.e-swimming{background:var(--blue-300)}.ymc.e-camping{background:var(--sage-400)}
-.ymc.e-cycling{background:var(--teal-300)}.ymc.e-climbing{background:var(--sage-500)}
-.ymc.e-concert{background:var(--lavender-400)}.ymc.e-beach{background:var(--blue-200)}
-.ymc.e-marathon{background:var(--teal-500)}.ymc.e-festival{background:var(--pink-400)}
-.ymc.e-theater{background:var(--lavender-500)}.ymc.e-museum{background:var(--sand-400)}
-.ymc.e-dining{background:var(--amber-400)}.ymc.e-cooking{background:var(--amber-500)}
-.ymc.e-wine{background:var(--pink-500)}.ymc.e-spa{background:var(--sage-300)}
-.ymc.e-yoga{background:var(--sage-300)}.ymc.e-meditation{background:var(--lavender-300)}
-.ymc.e-photography{background:var(--sand-500)}.ymc.e-art{background:var(--pink-300)}
-.ymc.e-dance{background:var(--coral-400)}.ymc.e-sports{background:var(--teal-500)}
-.ymc.e-golf{background:var(--sage-500)}.ymc.e-fishing{background:var(--blue-400)}
-.ymc.e-sailing{background:var(--blue-500)}.ymc.e-diving{background:var(--blue-600)}
-.ymc.e-skydiving{background:var(--teal-600)}.ymc.e-misogi{background:var(--sage-600)}
+.ymc.e-hiking{background:var(--sage-400)}.ymc.e-skiing{background:var(--blue)}
+.ymc.e-running{background:var(--teal)}.ymc.e-surfing{background:var(--blue)}
+.ymc.e-swimming{background:var(--blue)}.ymc.e-camping{background:var(--sage-400)}
+.ymc.e-cycling{background:var(--teal)}.ymc.e-climbing{background:var(--sage-500)}
+.ymc.e-concert{background:var(--lavender)}.ymc.e-beach{background:var(--blue-light)}
+.ymc.e-marathon{background:var(--teal)}.ymc.e-festival{background:var(--pink)}
+.ymc.e-theater{background:var(--lavender)}.ymc.e-museum{background:var(--sand-300)}
+.ymc.e-dining{background:var(--amber)}.ymc.e-cooking{background:var(--amber)}
+.ymc.e-wine{background:var(--pink)}.ymc.e-spa{background:var(--sage-300)}
+.ymc.e-yoga{background:var(--sage-300)}.ymc.e-meditation{background:var(--lavender-light)}
+.ymc.e-photography{background:var(--sand-300)}.ymc.e-art{background:var(--pink-light)}
+.ymc.e-dance{background:var(--coral)}.ymc.e-sports{background:var(--teal)}
+.ymc.e-golf{background:var(--sage-500)}.ymc.e-fishing{background:var(--blue)}
+.ymc.e-sailing{background:var(--blue)}.ymc.e-diving{background:var(--blue)}
+.ymc.e-skydiving{background:var(--teal)}.ymc.e-misogi{background:var(--sage-600)}
 .ymc-count{margin-top:4px;font-size:.68rem;color:var(--text-tertiary)}
 
 /* PANELS (slide-up sheets) */
