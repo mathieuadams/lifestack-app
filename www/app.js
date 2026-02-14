@@ -2792,8 +2792,10 @@ function showAddPlanModal(type, month = null) {
   document.getElementById('planStartDate').value = '';
   document.getElementById('planEndDate').value = '';
   document.getElementById('planCategory').value = '';
+  document.getElementById('planLocation').value = '';
   selectedPeopleIds = [];
   selectedCategory = null;
+  planLocationData = { name: '', lat: null, lng: null, placeId: '' };
   renderPlanPeopleGrid();
   
   // Reset category display
@@ -2837,6 +2839,9 @@ function showAddPlanModal(type, month = null) {
   document.getElementById('planSubmitBtn').textContent = 'Save Plan';
   document.getElementById('deletePlanBtn').style.display = 'none';
   document.getElementById('planModal').classList.add('active');
+
+  // Initialize location autocomplete
+  initPlanLocationAutocomplete();
 }
 
 function showEditPlanModal(planId) {
@@ -2873,6 +2878,17 @@ function showEditPlanModal(planId) {
   const locationInput = document.getElementById('planLocation');
   if (locationInput) {
     locationInput.value = plan.location?.name || plan.location || '';
+    // Store location data for autocomplete
+    if (plan.location?.name) {
+      planLocationData = {
+        name: plan.location.name,
+        lat: plan.location.lat || null,
+        lng: plan.location.lng || null,
+        placeId: plan.location.placeId || ''
+      };
+    } else if (plan.location) {
+      planLocationData = { name: plan.location, lat: null, lng: null, placeId: '' };
+    }
   }
 
   // Load reminders
@@ -2970,6 +2986,108 @@ function showEditPlanModal(planId) {
   }
   
   document.getElementById('planModal').classList.add('active');
+
+  // Initialize location autocomplete
+  initPlanLocationAutocomplete();
+}
+
+// =====================================================
+// LOCATION AUTOCOMPLETE FOR EDIT MODAL
+// =====================================================
+
+let planLocationTimeout = null;
+let planLocationData = { name: '', lat: null, lng: null, placeId: '' };
+
+function initPlanLocationAutocomplete() {
+  const input = document.getElementById('planLocation');
+  const dropdown = document.getElementById('planLocDropdown');
+
+  if (!input || !dropdown) return;
+
+  // Remove existing listeners by cloning
+  const newInput = input.cloneNode(true);
+  input.parentNode.replaceChild(newInput, input);
+
+  newInput.addEventListener('input', function() {
+    const q = this.value.trim();
+    clearTimeout(planLocationTimeout);
+
+    if (q.length < 2) {
+      dropdown.style.display = 'none';
+      return;
+    }
+
+    planLocationTimeout = setTimeout(() => searchPlanLocation(q), 300);
+  });
+
+  // Store value when manually typed
+  newInput.addEventListener('blur', function() {
+    setTimeout(() => {
+      if (dropdown.style.display !== 'block') {
+        planLocationData = { name: this.value, lat: null, lng: null, placeId: '' };
+      }
+    }, 200);
+  });
+}
+
+async function searchPlanLocation(query) {
+  const dropdown = document.getElementById('planLocDropdown');
+  if (!dropdown) return;
+
+  dropdown.innerHTML = '<div class="adv-loc-loading">Searching...</div>';
+  dropdown.style.display = 'block';
+
+  try {
+    const response = await fetch(
+      `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`,
+      { headers: { 'Accept': 'application/json' } }
+    );
+
+    if (!response.ok) throw new Error('Search failed');
+
+    const data = await response.json();
+
+    if (!data.features || data.features.length === 0) {
+      dropdown.innerHTML = '<div class="adv-loc-empty">No results found</div>';
+      return;
+    }
+
+    dropdown.innerHTML = data.features.map(f => {
+      const p = f.properties;
+      const coords = f.geometry.coordinates;
+      const name = p.name || '';
+      const city = p.city || p.county || '';
+      const state = p.state || '';
+      const country = p.country || '';
+
+      let displayParts = [name, city, state, country].filter(Boolean);
+      const displayName = displayParts.join(', ');
+
+      return `
+        <div class="adv-loc-item" onclick='selectPlanLocation(${JSON.stringify({
+          name: displayName,
+          lat: coords[1],
+          lng: coords[0],
+          placeId: ''
+        })})'>
+          <div class="adv-loc-name">${displayName}</div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (error) {
+    console.error('Location search error:', error);
+    dropdown.innerHTML = '<div class="adv-loc-empty">Search failed</div>';
+  }
+}
+
+function selectPlanLocation(loc) {
+  planLocationData = loc;
+  const input = document.getElementById('planLocation');
+  const dropdown = document.getElementById('planLocDropdown');
+
+  if (input) input.value = loc.name;
+  if (dropdown) dropdown.style.display = 'none';
 }
 
 // Category Picker Functions
@@ -3648,8 +3766,8 @@ async function handlePlanSubmit(event) {
   }
   
   // For shared adventures, only allow updating completion status and notes
-  // Get location value
-  const locationValue = document.getElementById('planLocation')?.value?.trim() || '';
+  // Get location value - use stored planLocationData if available
+  const locationValue = planLocationData.name || document.getElementById('planLocation')?.value?.trim() || '';
 
   const planData = isSharedAdventure ? {
     // Preserve original type so the Lambda knows how to handle it
@@ -3674,7 +3792,7 @@ async function handlePlanSubmit(event) {
     endDate: endDate || null,
     targetQuarter: type === 'habit' ? parseInt(targetQuarter) : null,
     category: category || null,
-    location: locationValue ? { name: locationValue, lat: null, lng: null, placeId: '' } : null,
+    location: locationValue ? planLocationData : null,
     people: selectedPeopleIds,
     participants: participants && participants.length > 0 ? participants : null,
     ownerName: currentUser?.name || 'Unknown'
@@ -7306,35 +7424,29 @@ async function processBucketListVoice(transcript) {
 async function scheduleBucketItem(itemId) {
   var item = bucketList.find(function(i) { return i.id === itemId; });
   if (!item) return;
-  
-  closeBucketListModal();
-  
-  if (typeof startAdventureWizard === 'function') {
-    startAdventureWizard();
-    setTimeout(function() {
-      if (typeof advWizard !== 'undefined') {
-        advWizard.data.name = item.title;
-        advWizard.data.notes = item.description || '';
-        var catMap = {
-          travel: 'travel', adventure: 'adventure', skills: 'culture', experiences: 'culture',
-          personal: 'health', health: 'health', creative: 'culture'
-        };
-        advWizard.data.category = catMap[item.category] || 'adventure';
-        advWizard.data._bucketItemId = itemId;
 
-        // Pre-fill location if bucket item has one
-        if (item.location) {
-          advWizard.data.location = {
-            name: item.location,
-            lat: null,
-            lng: null,
-            placeId: ''
-          };
-        }
-      }
-      // Trigger re-render to show pre-filled data
-      if (typeof renderAdvWizard === 'function') renderAdvWizard();
-    }, 200);
+  closeBucketListModal();
+
+  if (typeof startAdventureWizardWithData === 'function') {
+    // Map bucket category to adventure category
+    var catMap = {
+      travel: 'travel', adventure: 'adventure', skills: 'culture', experiences: 'culture',
+      personal: 'health', health: 'health', creative: 'culture'
+    };
+
+    // Pre-fill data directly when starting wizard
+    startAdventureWizardWithData({
+      name: item.title,
+      notes: item.description || '',
+      category: catMap[item.category] || 'adventure',
+      location: item.location ? {
+        name: item.location,
+        lat: null,
+        lng: null,
+        placeId: ''
+      } : { name: '', lat: null, lng: null, placeId: '' },
+      _bucketItemId: itemId
+    });
   } else {
     showAddPlanModal('adventure');
     setTimeout(function() {
