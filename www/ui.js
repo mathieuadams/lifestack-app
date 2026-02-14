@@ -840,8 +840,14 @@ function initCalendarDrag(){
     const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;
     const startStr=`${yr}-${String(curM+1).padStart(2,'0')}-${String(calS).padStart(2,'0')}`;
     const endStr=calE?`${yr}-${String(curM+1).padStart(2,'0')}-${String(calE).padStart(2,'0')}`:startStr;
-    startPlanFlow(1);
-    setTimeout(()=>{const startEl=document.getElementById('pfDateStart');const endEl=document.getElementById('pfDateEnd');if(startEl)startEl.value=startStr;if(endEl)endEl.value=endStr},50);
+
+    // Use adventure wizard with date pre-fill
+    if(typeof startAdventureWizardWithData==='function'){
+      startAdventureWizardWithData({startDate:startStr,endDate:endStr});
+    }else{
+      startPlanFlow(1);
+      setTimeout(()=>{const startEl=document.getElementById('pfDateStart');const endEl=document.getElementById('pfDateEnd');if(startEl)startEl.value=startStr;if(endEl)endEl.value=endStr},50);
+    }
     calDragStart=null;
     calLongPressActivated=false;
   });
