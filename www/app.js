@@ -3101,7 +3101,8 @@ async function executeDeletePlan(planId) {
     renderHabits();
     renderMonthGrid();
     populateMemoryFilter();
-    
+    if (typeof refreshPlanView === 'function') refreshPlanView(); // Update stats and views
+
     // If month calendar is open, refresh it instead of closing
     if (currentCalendarMonth) {
       renderMonthCalendarGrid(currentCalendarMonth);
@@ -7498,16 +7499,9 @@ function dreamInitRecognition() {
   };
 
   dreamRecognition.onend = function() {
+    // Just stop - don't auto-restart (let user control start/stop)
     if (isDreamRecording) {
-      var textArea = document.getElementById('dreamTextInput');
-      var text = textArea ? textArea.value.trim() : '';
-      if (text.length > 10) {
-        dreamStopRecording();
-        // Don't auto-process - let user choose which button to click
-      } else {
-        // Keep listening if text is too short
-        try { dreamRecognition.start(); } catch(e) { dreamStopRecording(); }
-      }
+      dreamStopRecording();
     }
   };
 

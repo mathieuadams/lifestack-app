@@ -188,16 +188,10 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
         <div class="wd" id="weekDays"></div>
         <div class="slsm">Plans</div>
         <div id="planCards"></div>
-        <div style="background:linear-gradient(135deg,var(--sand-100),var(--sage-50));border-radius:var(--radius-lg);padding:20px;margin-top:20px">
-          <div style="font-family:'Fraunces',serif;font-size:1.05rem;font-weight:500;color:var(--sage-700);margin-bottom:4px">✨ Plan your weekend</div>
-          <div style="font-size:.8rem;color:var(--text-tertiary);margin-bottom:14px">Tap to start planning</div>
-          <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px" class="ideas-scroll">
-            <button class="fo" onclick="pfQuick('adventure')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">🏔️ Day hike</button>
-            <button class="fo" onclick="pfQuick('food')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">🍳 Brunch spot</button>
-            <button class="fo" onclick="pfQuick('culture')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">📸 Photo walk</button>
-            <button class="fo" onclick="pfQuick('health')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">🧘 Yoga</button>
-            <button class="fo" onclick="pfQuick('date')" style="box-shadow:var(--shadow-soft);font-size:.82rem;padding:8px 14px">💕 Date idea</button>
-          </div>
+        <div style="background:linear-gradient(135deg,var(--sand-100),var(--sage-50));border-radius:var(--radius-lg);padding:20px;margin-top:20px;text-align:center">
+          <button onclick="typeof startAdventureWizard==='function'&&startAdventureWizard()" style="background:var(--sage-500);color:white;border:none;border-radius:var(--radius-lg);padding:16px 32px;font-size:1rem;font-weight:700;cursor:pointer;box-shadow:var(--shadow-soft);width:100%">
+            ✨ Plan your weekend
+          </button>
         </div>
       </div>
 

@@ -158,11 +158,12 @@ function getPlansForMonth(month0){
   const yr=typeof currentViewYear!=='undefined'?currentViewYear:2026;
   const safePlans=typeof plans!=='undefined'&&Array.isArray(plans)?plans:[];
   return safePlans.filter(p=>{
+    // Only exclude habits and themes - include ALL other activity types
     if(p.type==='habit'||p.type==='theme')return false;
-    const pYear=parseInt(p.year);
 
-    // Filter by year - if plan has explicit year set, must match
-    if(pYear&&pYear!==yr)return false;
+    const pYear=parseInt(p.year);
+    // Filter by year - if plan has valid year set and doesn't match, exclude
+    if(!isNaN(pYear)&&pYear>0&&pYear!==yr)return false;
 
     // Has startDate - check month range
     if(p.startDate){
@@ -175,11 +176,9 @@ function getPlansForMonth(month0){
     // Has targetMonth - check if matches
     if(p.targetMonth)return parseInt(p.targetMonth)===month1;
 
-    // No dates but has year field matching - show in all months
-    if(pYear===yr)return true;
-
-    // No dates, no year - don't show
-    return false;
+    // No dates - if has matching year OR no year field at all, show in all months
+    // This catches plans created without proper date/year fields
+    return !pYear || pYear===yr;
   });
 }
 let calS=null,calE=null;
@@ -199,7 +198,7 @@ function buildMG(){
     const isToday=d===today.getDate()&&curM===today.getMonth()&&yr===today.getFullYear();
     const dayPlans=pbd[d]||[];
     const dots=dayPlans.slice(0,2).map(p=>{const cat=(p.category||p.type||'adventure').toLowerCase();return `<div class="mgev" style="background:var(--cat-${cat},var(--sage-400));font-size:.55rem;color:white;padding:1px 3px;border-radius:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escapeHtmlUI(p.title).substring(0,8)}</div>`}).join('');
-    html+=`<div class="mgc${isToday?' today':''}" data-day="${d}" onclick="openQuickAdd(${d})">${d}${dots}</div>`;
+    html+=`<div class="mgc${isToday?' today':''}" data-day="${d}">${d}${dots}</div>`;
   }
   g.innerHTML=html;calS=null;calE=null;
   initCalendarDrag();

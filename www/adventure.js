@@ -106,9 +106,10 @@ function renderAdvWizard() {
 function renderAdvStep1() {
   return `
     <div class="adv-step">
-      <h2 class="adv-question">Where are you going?</h2>
-      <p class="adv-hint">Search for a city, restaurant, park, or any place</p>
+      <h2 class="adv-question">Where and when?</h2>
+      <p class="adv-hint">Search for a place and pick your dates</p>
 
+      <label class="adv-label">Location</label>
       <div class="adv-loc-wrapper">
         <input type="text" class="adv-loc-input" id="advLocation"
           placeholder="Search for a place..."
@@ -119,13 +120,16 @@ function renderAdvStep1() {
       <div class="adv-loc-dropdown" id="advLocDropdown"></div>
       <div class="adv-loc-status" id="advLocStatus"></div>
 
-      <div class="adv-or">or just pick a type</div>
-
-      <div class="adv-quick-types">
-        <button class="adv-qt${advWizard.data.category==='date'?' sel':''}" onclick="advQuickType('date')">💕 Date Night</button>
-        <button class="adv-qt${advWizard.data.category==='food'?' sel':''}" onclick="advQuickType('food')">🍽️ Food</button>
-        <button class="adv-qt${advWizard.data.category==='hiking'?' sel':''}" onclick="advQuickType('hiking')">🥾 Hiking</button>
-        <button class="adv-qt${advWizard.data.category==='adventure'?' sel':''}" onclick="advQuickType('adventure')">🏔️ Adventure</button>
+      <label class="adv-label" style="margin-top:20px">Dates</label>
+      <div class="adv-date-row">
+        <div class="adv-date-field">
+          <label>Start</label>
+          <input type="date" class="adv-date" id="advStartDate" value="${advWizard.data.startDate}" onchange="advStartChanged()">
+        </div>
+        <div class="adv-date-field">
+          <label>End</label>
+          <input type="date" class="adv-date" id="advEndDate" value="${advWizard.data.endDate}">
+        </div>
       </div>
     </div>
   `;
@@ -135,10 +139,11 @@ function renderAdvStep1() {
 
 function renderAdvStep2() {
   const locName = advWizard.data.location.name;
+  const dateStr = advWizard.data.startDate ? new Date(advWizard.data.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
   return `
     <div class="adv-step">
-      <h2 class="adv-question">What and when?</h2>
-      ${locName ? `<p class="adv-hint">📍 ${escapeHtmlUI(locName)}</p>` : ''}
+      <h2 class="adv-question">What is it?</h2>
+      <p class="adv-hint">${locName ? `📍 ${escapeHtmlUI(locName)}` : ''}${dateStr ? ` • 📅 ${dateStr}` : ''}</p>
 
       <label class="adv-label">Activity name</label>
       <input type="text" class="adv-input" id="advName"
@@ -149,21 +154,6 @@ function renderAdvStep2() {
       <div class="adv-cats" id="advCats">
           ${buildAdvCatPills()}
       </div>
-
-      <label class="adv-label" style="margin-top:16px">When?</label>
-      <div class="adv-quick-dates">
-        <button class="adv-qd" onclick="advQuickDate('tomorrow')">Tomorrow</button>
-        <button class="adv-qd" onclick="advQuickDate('saturday')">This Saturday</button>
-        <button class="adv-qd" onclick="advQuickDate('nextweek')">Next weekend</button>
-      </div>
-      <div class="adv-date-row">
-        <div class="adv-date-field">
-          <label>Start</label>
-          <input type="date" class="adv-date" id="advStartDate" value="${advWizard.data.startDate}" onchange="advStartChanged()">
-        </div>
-        <div class="adv-date-field">
-          <label>End</label>
-          <input type="date" class="adv-date" id="advEndDate" value="${advWizard.data.endDate}">
         </div>
       </div>
     </div>
