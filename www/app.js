@@ -205,6 +205,28 @@ async function apiResendCode(email) {
   return data;
 }
 
+async function apiForgotPassword(email) {
+  const response = await fetch(`${CONFIG.API_URL}/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Failed to send reset code');
+  return data;
+}
+
+async function apiResetPassword(email, code, newPassword) {
+  const response = await fetch(`${CONFIG.API_URL}/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, code, newPassword })
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Failed to reset password');
+  return data;
+}
+
 // =====================================================
 // PLANS API CALLS
 // =====================================================
@@ -1457,6 +1479,171 @@ async function resendCode() {
     showToast('Verification code sent!');
   } catch (error) {
     showError(error.message);
+  }
+}
+
+// =====================================================
+// PASSWORD RECOVERY HANDLERS
+// =====================================================
+
+let pendingResetEmail = '';
+
+// Show forgot password modal
+function showForgotPasswordModal() {
+  closeAllModals();
+  document.getElementById('forgotPasswordModal').classList.add('active');
+  document.getElementById('forgotPasswordEmail').value = '';
+  document.getElementById('forgotPasswordError').classList.add('hidden');
+  document.getElementById('forgotPasswordSuccess').classList.add('hidden');
+}
+
+// Close forgot password modal
+function closeForgotPasswordModal() {
+  document.getElementById('forgotPasswordModal').classList.remove('active');
+}
+
+// Show reset password modal
+function showResetPasswordModal() {
+  closeAllModals();
+  document.getElementById('resetPasswordModal').classList.add('active');
+  document.getElementById('resetPasswordCode').value = '';
+  document.getElementById('resetPasswordNew').value = '';
+  document.getElementById('resetPasswordConfirm').value = '';
+  document.getElementById('resetPasswordError').classList.add('hidden');
+  document.getElementById('resetPasswordSuccess').classList.add('hidden');
+}
+
+// Close reset password modal
+function closeResetPasswordModal() {
+  document.getElementById('resetPasswordModal').classList.remove('active');
+}
+
+// Handle forgot password form submission
+async function handleForgotPassword(event) {
+  event.preventDefault();
+
+  const emailEl = document.getElementById('forgotPasswordEmail');
+  const btn = document.getElementById('forgotPasswordBtn');
+  const errorDiv = document.getElementById('forgotPasswordError');
+  const successDiv = document.getElementById('forgotPasswordSuccess');
+
+  if (!emailEl || !btn || !errorDiv || !successDiv) {
+    console.error('Forgot password UI is missing required elements');
+    return;
+  }
+
+  const email = emailEl.value.trim();
+
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  errorDiv.classList.add('hidden');
+  successDiv.classList.add('hidden');
+
+  try {
+    // Call API to send reset code
+    await apiForgotPassword(email);
+
+    // Store email for reset step
+    pendingResetEmail = email;
+
+    // Show success message
+    successDiv.textContent = `Reset code sent to ${email}. Check your inbox!`;
+    successDiv.classList.remove('hidden');
+
+    // Automatically show reset password modal after 2 seconds
+    setTimeout(() => {
+      closeForgotPasswordModal();
+      showResetPasswordModal();
+    }, 2000);
+
+  } catch (error) {
+    errorDiv.textContent = error.message || 'Failed to send reset code. Please try again.';
+    errorDiv.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Reset Code';
+  }
+}
+
+// Handle reset password form submission
+async function handleResetPassword(event) {
+  event.preventDefault();
+
+  const codeEl = document.getElementById('resetPasswordCode');
+  const newPasswordEl = document.getElementById('resetPasswordNew');
+  const confirmPasswordEl = document.getElementById('resetPasswordConfirm');
+  const btn = document.getElementById('resetPasswordBtn');
+  const errorDiv = document.getElementById('resetPasswordError');
+  const successDiv = document.getElementById('resetPasswordSuccess');
+
+  if (!codeEl || !newPasswordEl || !confirmPasswordEl || !btn || !errorDiv || !successDiv) {
+    console.error('Reset password UI is missing required elements');
+    return;
+  }
+
+  const code = codeEl.value.trim();
+  const newPassword = newPasswordEl.value;
+  const confirmPassword = confirmPasswordEl.value;
+
+  // Validate passwords match
+  if (newPassword !== confirmPassword) {
+    errorDiv.textContent = 'Passwords do not match';
+    errorDiv.classList.remove('hidden');
+    return;
+  }
+
+  // Validate password strength
+  if (newPassword.length < 8) {
+    errorDiv.textContent = 'Password must be at least 8 characters';
+    errorDiv.classList.remove('hidden');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Resetting...';
+  errorDiv.classList.add('hidden');
+  successDiv.classList.add('hidden');
+
+  try {
+    // Call API to reset password
+    await apiResetPassword(pendingResetEmail, code, newPassword);
+
+    // Show success message
+    successDiv.textContent = 'Password reset successfully! Redirecting to sign in...';
+    successDiv.classList.remove('hidden');
+
+    // Redirect to sign in after 2 seconds
+    setTimeout(() => {
+      closeResetPasswordModal();
+      showSignInModal();
+      showToast('Password reset! Please sign in with your new password.');
+    }, 2000);
+
+  } catch (error) {
+    errorDiv.textContent = error.message || 'Failed to reset password. Please check your code and try again.';
+    errorDiv.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Reset Password';
+  }
+}
+
+// Resend reset code
+async function resendResetCode() {
+  if (!pendingResetEmail) {
+    showToast('Please enter your email first');
+    closeResetPasswordModal();
+    showForgotPasswordModal();
+    return;
+  }
+
+  try {
+    // Resend reset code
+    await apiForgotPassword(pendingResetEmail);
+
+    showToast('Reset code sent!');
+  } catch (error) {
+    showToast('Failed to send code. Please try again.');
   }
 }
 
