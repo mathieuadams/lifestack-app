@@ -206,25 +206,41 @@ async function apiResendCode(email) {
 }
 
 async function apiForgotPassword(email) {
-  const response = await fetch(`${CONFIG.API_URL}/auth/forgot-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email })
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || 'Failed to send reset code');
-  return data;
+  console.log('apiForgotPassword: Calling API:', `${CONFIG.API_URL}/auth/forgot-password`);
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    console.log('apiForgotPassword: Response status:', response.status);
+    const data = await response.json();
+    console.log('apiForgotPassword: Response data:', data);
+    if (!response.ok) throw new Error(data.error || 'Failed to send reset code');
+    return data;
+  } catch (error) {
+    console.error('apiForgotPassword: Error:', error);
+    throw error;
+  }
 }
 
 async function apiResetPassword(email, code, newPassword) {
-  const response = await fetch(`${CONFIG.API_URL}/auth/reset-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, code, newPassword })
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || 'Failed to reset password');
-  return data;
+  console.log('apiResetPassword: Calling API:', `${CONFIG.API_URL}/auth/reset-password`);
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code, newPassword })
+    });
+    console.log('apiResetPassword: Response status:', response.status);
+    const data = await response.json();
+    console.log('apiResetPassword: Response data:', data);
+    if (!response.ok) throw new Error(data.error || 'Failed to reset password');
+    return data;
+  } catch (error) {
+    console.error('apiResetPassword: Error:', error);
+    throw error;
+  }
 }
 
 // =====================================================
@@ -1541,6 +1557,7 @@ async function handleForgotPassword(event) {
 
   try {
     // Call API to send reset code
+    console.log('Calling apiForgotPassword for:', email);
     await apiForgotPassword(email);
 
     // Store email for reset step
@@ -1557,6 +1574,7 @@ async function handleForgotPassword(event) {
     }, 2000);
 
   } catch (error) {
+    console.error('Forgot password error:', error);
     errorDiv.textContent = error.message || 'Failed to send reset code. Please try again.';
     errorDiv.classList.remove('hidden');
   } finally {
@@ -1606,6 +1624,7 @@ async function handleResetPassword(event) {
 
   try {
     // Call API to reset password
+    console.log('Calling apiResetPassword for:', pendingResetEmail);
     await apiResetPassword(pendingResetEmail, code, newPassword);
 
     // Show success message
@@ -1620,6 +1639,7 @@ async function handleResetPassword(event) {
     }, 2000);
 
   } catch (error) {
+    console.error('Reset password error:', error);
     errorDiv.textContent = error.message || 'Failed to reset password. Please check your code and try again.';
     errorDiv.classList.remove('hidden');
   } finally {
@@ -1645,6 +1665,13 @@ async function resendResetCode() {
   } catch (error) {
     showToast('Failed to send code. Please try again.');
   }
+}
+
+// Helper to scroll form fields into view when keyboard appears (mobile)
+function scrollFormIntoView(element) {
+  setTimeout(() => {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 300);
 }
 
 // =====================================================
