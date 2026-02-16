@@ -21,6 +21,12 @@ workflows:
         script: npm install
       - name: Sync Capacitor
         script: npx cap sync ios
+      - name: Verify iOS web bundle sync
+        script: |
+          diff -q www/index.html ios/App/App/public/index.html
+          diff -q www/app.js ios/App/App/public/app.js
+          diff -q www/ui.js ios/App/App/public/ui.js
+          diff -q www/adventure.js ios/App/App/public/adventure.js
       - name: Increment build number
         script: |
           cd ios/App

@@ -3142,6 +3142,13 @@ document.addEventListener('click', function(e) {
   }
 });
 
+function setPlanGroupVisibility(groupEl, isVisible) {
+  if (!groupEl) return;
+  groupEl.classList.toggle('hidden', !isVisible);
+  // Keep an inline fallback for iOS webviews that can miss class-only updates.
+  groupEl.style.display = isVisible ? '' : 'none';
+}
+
 function showAddPlanModal(type, month = null) {
   document.getElementById('planId').value = '';
   document.getElementById('planType').value = type;
@@ -3165,18 +3172,44 @@ function showAddPlanModal(type, month = null) {
   const dateGroup = document.getElementById('dateSelectorGroup');
   const peopleGroup = document.getElementById('planPeopleGroup');
   const categoryGroup = document.getElementById('categoryPickerGroup');
+  const locationGroup = document.getElementById('planLocationGroup');
+  const remindersGroup = document.getElementById('planRemindersGroup');
+  const subActivitiesGroup = document.getElementById('planSubActivitiesGroup');
+  const remindersList = document.getElementById('planRemindersList');
+  const subActivitiesList = document.getElementById('planSubActivitiesList');
+  const sharedInfoEl = document.getElementById('sharedAdventureInfo');
+  
+  // Reset optional sections to avoid stale data leaking from previous edits.
+  if (remindersList) remindersList.innerHTML = 'No reminders set';
+  if (subActivitiesList) subActivitiesList.innerHTML = 'No sub-activities';
+  if (sharedInfoEl) {
+    sharedInfoEl.style.display = 'none';
+    sharedInfoEl.innerHTML = '';
+  }
+  // Always re-enable form fields in add mode (they are disabled for shared edit mode).
+  ['planTitle', 'planStartDate', 'planEndDate', 'planDescription'].forEach(id => {
+    const field = document.getElementById(id);
+    if (field) field.disabled = false;
+  });
   
   if (type === 'habit') {
-    if (dateGroup) dateGroup.classList.add('hidden');
-    if (peopleGroup) peopleGroup.classList.add('hidden');
-    if (categoryGroup) categoryGroup.classList.add('hidden');
+    setPlanGroupVisibility(dateGroup, false);
+    setPlanGroupVisibility(peopleGroup, false);
+    setPlanGroupVisibility(categoryGroup, false);
+    setPlanGroupVisibility(locationGroup, false);
+    setPlanGroupVisibility(remindersGroup, false);
+    setPlanGroupVisibility(subActivitiesGroup, false);
     document.getElementById('planTargetQuarter').value = month || 1;
     document.getElementById('planTargetMonth').value = '';
     document.getElementById('planModalTitle').textContent = `Add Q${month} Habit`;
   } else {
-    if (dateGroup) dateGroup.classList.remove('hidden');
-    if (peopleGroup) peopleGroup.classList.remove('hidden');
-    if (categoryGroup) categoryGroup.classList.remove('hidden');
+    setPlanGroupVisibility(dateGroup, true);
+    setPlanGroupVisibility(peopleGroup, true);
+    setPlanGroupVisibility(categoryGroup, true);
+    setPlanGroupVisibility(locationGroup, true);
+    // New plans should not pre-show edit-only sections.
+    setPlanGroupVisibility(remindersGroup, false);
+    setPlanGroupVisibility(subActivitiesGroup, false);
     document.getElementById('planTargetQuarter').value = '';
     
     if (month) {
@@ -3300,19 +3333,19 @@ function showEditPlanModal(planId) {
   const subActivitiesGroup = document.getElementById('planSubActivitiesGroup');
   
   if (plan.type === 'habit') {
-    if (dateGroup) dateGroup.classList.add('hidden');
-    if (peopleGroup) peopleGroup.classList.add('hidden');
-    if (categoryGroup) categoryGroup.classList.add('hidden');
-    if (locationGroup) locationGroup.classList.add('hidden');
-    if (remindersGroup) remindersGroup.classList.add('hidden');
-    if (subActivitiesGroup) subActivitiesGroup.classList.add('hidden');
+    setPlanGroupVisibility(dateGroup, false);
+    setPlanGroupVisibility(peopleGroup, false);
+    setPlanGroupVisibility(categoryGroup, false);
+    setPlanGroupVisibility(locationGroup, false);
+    setPlanGroupVisibility(remindersGroup, false);
+    setPlanGroupVisibility(subActivitiesGroup, false);
   } else {
-    if (dateGroup) dateGroup.classList.remove('hidden');
-    if (peopleGroup) peopleGroup.classList.remove('hidden');
-    if (categoryGroup) categoryGroup.classList.remove('hidden');
-    if (locationGroup) locationGroup.classList.remove('hidden');
-    if (remindersGroup) remindersGroup.classList.remove('hidden');
-    if (subActivitiesGroup) subActivitiesGroup.classList.remove('hidden');
+    setPlanGroupVisibility(dateGroup, true);
+    setPlanGroupVisibility(peopleGroup, true);
+    setPlanGroupVisibility(categoryGroup, true);
+    setPlanGroupVisibility(locationGroup, true);
+    setPlanGroupVisibility(remindersGroup, true);
+    setPlanGroupVisibility(subActivitiesGroup, true);
   }
   
   document.getElementById('planModalTitle').textContent = `Edit ${plan.type === 'misogi' ? 'Misogi' : plan.type === 'habit' ? 'Habit' : 'Adventure'}`;
@@ -3338,7 +3371,7 @@ function showEditPlanModal(planId) {
         <div style="background: #e8f4fd; padding: 12px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #4a90d9;">
           <strong>👤 Shared by ${escapeHtml(plan.originalOwnerName || 'a friend')}</strong>
           <p style="margin: 4px 0 0 0; font-size: 0.9em; color: #666;">
-            This adventure was shared with you. You can mark it complete independently.
+            This adventure syncs from the owner. Status and deletion update automatically.
           </p>
         </div>
       `;
@@ -3346,7 +3379,7 @@ function showEditPlanModal(planId) {
     }
     
     // Hide people selector for shared adventures
-    document.getElementById('planPeopleGroup').classList.add('hidden');
+    setPlanGroupVisibility(document.getElementById('planPeopleGroup'), false);
   } else {
     // Reset for regular adventures
     document.getElementById('planTitle').disabled = false;
@@ -3356,6 +3389,9 @@ function showEditPlanModal(planId) {
     
     if (sharedInfoEl) {
       sharedInfoEl.style.display = 'none';
+    }
+    if (plan.type !== 'habit') {
+      setPlanGroupVisibility(document.getElementById('planPeopleGroup'), true);
     }
   }
   
@@ -3581,11 +3617,12 @@ async function deletePlanFromModal() {
 }
 
 async function executeDeletePlan(planId) {
-  try {
-    const plan = plans.find(p => p.id === planId);
+  const plan = plans.find(p => p.id === planId);
+  const needsSharedSync = !!(plan && (plan.type === 'adventure' || plan.type === 'misogi') && plan.type !== 'shared-adventure');
 
+  try {
     // Ensure shared copies are removed for tagged people before deleting the owner plan.
-    if (plan && (plan.type === 'adventure' || plan.type === 'misogi') && plan.type !== 'shared-adventure') {
+    if (needsSharedSync) {
       const taggedFromPeople = Array.isArray(plan.people) ? plan.people.filter(Boolean) : [];
       const taggedFromParticipants = Array.isArray(plan.participants)
         ? plan.participants.map(p => p?.odId).filter(Boolean)
@@ -3622,7 +3659,7 @@ async function executeDeletePlan(planId) {
     showToast('Plan deleted');
   } catch (error) {
     console.error('Delete plan error:', error);
-    if (error?.message && error.message.includes('remove shared copies')) {
+    if (needsSharedSync) {
       showError(error.message);
       return;
     }
@@ -4281,6 +4318,12 @@ async function togglePlanStatus(planId) {
   const plan = plans.find(p => p.id === planId);
   if (!plan) {
     console.error('togglePlanStatus: Plan not found:', planId);
+    return;
+  }
+
+  // Shared copies are owner-driven; recipients shouldn't desync status manually.
+  if (plan.type === 'shared-adventure') {
+    showToast('This shared adventure syncs from the owner');
     return;
   }
   
@@ -5575,10 +5618,12 @@ function renderMonthPlansList(month) {
     const isCompleted = p.status === 'completed';
     const isShared = p.type === 'shared-adventure';
     
+    const checkboxClick = isShared ? '' : ` onclick="event.stopPropagation(); togglePlanStatus('${p.id}');"`;
+    const checkboxLabel = isShared ? '👤' : (isCompleted ? '✅' : '⬜');
     return `
       <div class="month-plan-card ${isCompleted ? 'completed' : ''} ${isShared ? 'from-friend' : ''}" onclick="selectAdventureForMemories('${p.id}'); closeMonthCalendarModal();">
-        <div class="month-plan-card-checkbox" onclick="event.stopPropagation(); togglePlanStatus('${p.id}');">
-          ${isCompleted ? '✅' : '⬜'}
+        <div class="month-plan-card-checkbox"${checkboxClick}>
+          ${checkboxLabel}
         </div>
         <div class="month-plan-card-color ${p.type}"></div>
         <div class="month-plan-card-content">

@@ -2,6 +2,15 @@
 // LIFESTACK - APP.JS
 // =====================================================
 
+// GLOBAL ERROR HANDLER — catches uncaught errors on iOS
+window.onerror = function(msg, source, lineno, colno, error) {
+  alert('JS Error: ' + msg + '\nLine: ' + lineno + ':' + colno);
+  return false;
+};
+window.addEventListener('unhandledrejection', function(event) {
+  alert('Promise Error: ' + (event.reason?.message || event.reason));
+});
+
 // =====================================================
 // STATE
 // =====================================================
@@ -99,6 +108,47 @@ function ensureArray(data) {
 }
 
 // =====================================================
+// HOMETOWN
+// =====================================================
+
+async function saveHometown() {
+  const input = document.getElementById('settingsHometown');
+  if (!input) return;
+  const hometown = input.value.trim();
+  if (!hometown) { showToast('Please enter your hometown'); return; }
+
+  const tokens = await getValidTokens();
+  if (!tokens?.idToken) { showToast('Please log in'); return; }
+
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/users`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokens.idToken}`
+      },
+      body: JSON.stringify({ hometown: { name: hometown } })
+    });
+
+    if (response.ok) {
+      currentUser = { ...currentUser, hometown: { name: hometown } };
+      localStorage.setItem('lifestack_user', JSON.stringify(currentUser));
+      showToast('✓ Hometown saved!');
+    }
+  } catch (error) {
+    console.error('Save hometown error:', error);
+    showToast('Failed to save');
+  }
+}
+
+function loadHometown() {
+  const input = document.getElementById('settingsHometown');
+  if (input && currentUser?.hometown?.name) {
+    input.value = currentUser.hometown.name;
+  }
+}
+
+// =====================================================
 // AUTH API CALLS
 // =====================================================
 
@@ -114,14 +164,23 @@ async function apiSignUp(email, password) {
 }
 
 async function apiSignIn(email, password) {
-  const response = await fetch(`${CONFIG.API_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || 'Login failed');
-  return data;
+  // DEBUG: Log the request
+  console.log('apiSignIn called with:', email);
+  
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Login failed');
+    return data;
+  } catch (error) {
+    console.error('API Error:', error.message);
+    throw error;
+  }
 }
 
 async function apiVerify(email, code, password) {
@@ -144,6 +203,74 @@ async function apiResendCode(email) {
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || 'Failed to resend code');
   return data;
+}
+
+async function apiForgotPassword(email) {
+  console.log('apiForgotPassword: Calling API:', `${CONFIG.API_URL}/auth/forgot-password`);
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    console.log('apiForgotPassword: Response status:', response.status);
+    console.log('apiForgotPassword: Response ok:', response.ok);
+
+    // Try to parse response
+    let data;
+    try {
+      const text = await response.text();
+      console.log('apiForgotPassword: Raw response:', text);
+      data = text ? JSON.parse(text) : {};
+    } catch (parseError) {
+      console.error('apiForgotPassword: JSON parse error:', parseError);
+      throw new Error('Invalid response from server');
+    }
+
+    console.log('apiForgotPassword: Parsed data:', data);
+    if (!response.ok) throw new Error(data.error || 'Failed to send reset code');
+    return data;
+  } catch (error) {
+    console.error('apiForgotPassword: Error:', error);
+    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+      throw new Error('Network error. Check your connection or CORS settings.');
+    }
+    throw error;
+  }
+}
+
+async function apiResetPassword(email, code, newPassword) {
+  console.log('apiResetPassword: Calling API:', `${CONFIG.API_URL}/auth/reset-password`);
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code, newPassword })
+    });
+    console.log('apiResetPassword: Response status:', response.status);
+    console.log('apiResetPassword: Response ok:', response.ok);
+
+    // Try to parse response
+    let data;
+    try {
+      const text = await response.text();
+      console.log('apiResetPassword: Raw response:', text);
+      data = text ? JSON.parse(text) : {};
+    } catch (parseError) {
+      console.error('apiResetPassword: JSON parse error:', parseError);
+      throw new Error('Invalid response from server');
+    }
+
+    console.log('apiResetPassword: Parsed data:', data);
+    if (!response.ok) throw new Error(data.error || 'Failed to reset password');
+    return data;
+  } catch (error) {
+    console.error('apiResetPassword: Error:', error);
+    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+      throw new Error('Network error. Check your connection or CORS settings.');
+    }
+    throw error;
+  }
 }
 
 // =====================================================
@@ -195,14 +322,25 @@ async function getValidTokens() {
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.log('Token refresh failed:', errorData);
-        showToast('Session expired. Please sign in again.', 'error');
-        signOut();
+        const appVisible = !document.getElementById('app')?.classList.contains('hidden');
+        if (!appVisible) {
+          showToast('Session expired. Please sign in again.', 'error');
+          signOut();
+        } else {
+          console.log('Token refresh failed but app is showing cached data — continuing offline');
+        }
         return null;
       }
     } catch (error) {
       console.error('Token refresh error:', error);
-      showToast('Session expired. Please sign in again.', 'error');
-      signOut();
+      // Only force sign-out if the app isn't already showing cached data
+      const appVisible = !document.getElementById('app')?.classList.contains('hidden');
+      if (!appVisible) {
+        showToast('Session expired. Please sign in again.', 'error');
+        signOut();
+      } else {
+        console.log('Token refresh failed but app is showing cached data — continuing offline');
+      }
       return null;
     }
   }
@@ -212,11 +350,12 @@ async function getValidTokens() {
 
 async function fetchPlans(year) {
   const tokens = await getValidTokens();
-  
   // Try API first
   if (tokens?.idToken) {
     try {
+      const url = `${CONFIG.API_URL}/plans?year=${year}`;
       const response = await fetch(`${CONFIG.API_URL}/plans?year=${year}`, {
+
         headers: { 'Authorization': `Bearer ${tokens.idToken}` }
       });
       if (response.ok) {
@@ -269,6 +408,9 @@ async function syncAllData() {
       fetchJournalEntries()
     ]);
     
+    // Also fetch bucket list for banner stats
+    if (typeof fetchBucketList === 'function') fetchBucketList().catch(()=>{});
+    
     console.log('Fetched plans:', plansData?.length, plansData?.map(p => `${p.type}: ${p.title}`));
     
     // Debug: Log detailed info for adventures
@@ -289,7 +431,6 @@ async function syncAllData() {
     if (journalsData) journalEntries = journalsData;
     
     // Re-render everything
-    renderMisogis();
     renderHabits();
     renderMonthGrid();
     renderYearMemories(currentViewYear);
@@ -430,6 +571,88 @@ async function deletePlan(planId) {
 }
 
 // =====================================================
+// REMINDER & SUB-ACTIVITY COMPLETION
+// =====================================================
+
+async function toggleReminderComplete(planId, reminderIndex) {
+  try {
+    const plan = plans.find(p => p.id === planId);
+    if (!plan || !plan.reminderPrefs || !plan.reminderPrefs[reminderIndex]) {
+      console.error('Reminder not found');
+      return;
+    }
+
+    // Toggle completed status
+    const reminder = plan.reminderPrefs[reminderIndex];
+    reminder.completed = !reminder.completed;
+
+    // Update plan in backend
+    const result = await updatePlan(planId, {
+      reminderPrefs: plan.reminderPrefs
+    });
+
+    if (result) {
+      // Update local cache
+      const planIndex = plans.findIndex(p => p.id === planId);
+      if (planIndex !== -1) {
+        plans[planIndex] = result;
+        localStorage.setItem(`lifestack_plans_${plan.year}`, JSON.stringify(plans));
+      }
+
+      // Re-render the edit modal if it's open
+      const modal = document.getElementById('editPlanModal');
+      if (modal && modal.classList.contains('active')) {
+        showEditPlanModal(planId);
+      }
+
+      showToast(reminder.completed ? '✅ Reminder completed!' : '↩️ Reminder reopened');
+    }
+  } catch (error) {
+    console.error('Error toggling reminder:', error);
+    showError('Failed to update reminder');
+  }
+}
+
+async function toggleSubActivityComplete(planId, activityIndex) {
+  try {
+    const plan = plans.find(p => p.id === planId);
+    if (!plan || !plan.subActivities || !plan.subActivities[activityIndex]) {
+      console.error('Sub-activity not found');
+      return;
+    }
+
+    // Toggle completed status
+    const activity = plan.subActivities[activityIndex];
+    activity.completed = !activity.completed;
+
+    // Update plan in backend
+    const result = await updatePlan(planId, {
+      subActivities: plan.subActivities
+    });
+
+    if (result) {
+      // Update local cache
+      const planIndex = plans.findIndex(p => p.id === planId);
+      if (planIndex !== -1) {
+        plans[planIndex] = result;
+        localStorage.setItem(`lifestack_plans_${plan.year}`, JSON.stringify(plans));
+      }
+
+      // Re-render the edit modal if it's open
+      const modal = document.getElementById('editPlanModal');
+      if (modal && modal.classList.contains('active')) {
+        showEditPlanModal(planId);
+      }
+
+      showToast(activity.completed ? '✅ Activity completed!' : '↩️ Activity reopened');
+    }
+  } catch (error) {
+    console.error('Error toggling sub-activity:', error);
+    showError('Failed to update activity');
+  }
+}
+
+// =====================================================
 // BUCKET LIST API CALLS
 // =====================================================
 
@@ -490,11 +713,11 @@ async function saveBucketList(items) {
 async function processBucketListWithAI(action, input) {
   const tokens = await getValidTokens();
   if (!tokens?.idToken) return null;
-  
+
   try {
-    const body = action === 'generate' 
-      ? { action: 'generate', voiceInput: input }
-      : { action: 'modify', modification: input };
+    const body = action === 'generate'
+      ? { action: 'generate', input: input }
+      : { action: 'add', input: input };
     
     const response = await fetch(`${CONFIG.API_URL}/bucketlist/ai`, {
       method: 'POST',
@@ -790,12 +1013,14 @@ function updateFriendBadge() {
 // Show friends modal
 function showFriendsModal() {
   loadFriendships();
-  document.getElementById('friendsModal').classList.add('active');
+  const modal = document.getElementById('friendsModal');
+  if (modal) modal.classList.add('active');
 }
 
 // Close friends modal
 function closeFriendsModal() {
-  document.getElementById('friendsModal').classList.remove('active');
+  const modal = document.getElementById('friendsModal');
+  if (modal) modal.classList.remove('active');
 }
 
 // Load and render friendships
@@ -811,9 +1036,10 @@ function renderFriendsList() {
   const pendingSection = document.getElementById('pendingRequestsSection');
   const pendingList = document.getElementById('pendingRequestsList');
   
-  if (friendships.pendingReceived?.length > 0) {
-    pendingSection.classList.remove('hidden');
-    pendingList.innerHTML = friendships.pendingReceived.map(req => `
+  if (pendingSection && pendingList) {
+    if (friendships.pendingReceived?.length > 0) {
+      pendingSection.classList.remove('hidden');
+      pendingList.innerHTML = friendships.pendingReceived.map(req => `
       <div class="friend-request-card">
         <div class="friend-avatar">${getInitials(req.requesterName)}</div>
         <div class="friend-info">
@@ -826,12 +1052,14 @@ function renderFriendsList() {
         </div>
       </div>
     `).join('');
-  } else {
-    pendingSection.classList.add('hidden');
+    } else {
+      pendingSection.classList.add('hidden');
+    }
   }
   
   // Friends list
   const friendsList = document.getElementById('friendsList');
+  if (!friendsList) return;
   if (friendships.friends?.length > 0) {
     friendsList.innerHTML = friendships.friends.map(friend => `
       <div class="friend-card">
@@ -1205,57 +1433,91 @@ function formatFriendDate(dateStr) {
 
 async function handleSignIn(event) {
   event.preventDefault();
-  const email = document.getElementById('signInEmail').value;
-  const password = document.getElementById('signInPassword').value;
+
+  const emailEl = document.getElementById('signInEmail');
+  const passwordEl = document.getElementById('signInPassword');
   const btn = document.getElementById('signInBtn');
   const errorDiv = document.getElementById('signInError');
-  
+
+  // Guard (prevents iOS “silent halt” if an element is missing)
+  if (!emailEl || !passwordEl || !btn || !errorDiv) {
+    console.error('Sign-in UI is missing required elements');
+    return;
+  }
+
+  const email = emailEl.value;
+  const password = passwordEl.value;
+
   btn.disabled = true;
   btn.textContent = 'Signing in...';
   errorDiv.classList.add('hidden');
 
   try {
     const result = await apiSignIn(email, password);
-    
+
     // IMPORTANT: Clear ALL old cached data BEFORE storing new tokens
-    // This prevents data from previous user showing up
     console.log('Sign in successful, clearing previous cache...');
     localStorage.removeItem('lifestack_user');
     localStorage.removeItem('lifestack_memories');
     localStorage.removeItem('lifestack_people');
     localStorage.removeItem('lifestack_friendships');
     localStorage.removeItem('lifestack_plans');
+
     // Clear year-specific plan caches
     for (let year = 2020; year <= 2035; year++) {
       localStorage.removeItem(`lifestack_plans_${year}`);
       localStorage.removeItem(`lifestack_theme_${year}`);
     }
-    // Reset in-memory state
-    memories = [];
-    plans = [];
-    people = [];
-    friendships = { friends: [], pendingReceived: [], pendingSent: [] };
-    shares = { sent: [], received: [] };
-    selectedPeopleIds = [];
-    currentUser = null;
-    
-    // Now store new tokens
-    localStorage.setItem('lifestack_tokens', JSON.stringify({
-      idToken: result.tokens.idToken,
-      accessToken: result.tokens.accessToken,
-      refreshToken: result.tokens.refreshToken,
-      expiresAt: Date.now() + (result.tokens.expiresIn * 1000)
-    }));
-    localStorage.setItem('lifestack_auth', JSON.stringify({ email: result.email, userId: result.userId }));
-    closeAllModals();
-    await loadUserData();
+
+    // Reset in-memory state (only if these globals exist)
+    if (typeof memories !== 'undefined') memories = [];
+    if (typeof plans !== 'undefined') plans = [];
+    if (typeof people !== 'undefined') people = [];
+    if (typeof friendships !== 'undefined') friendships = { friends: [], pendingReceived: [], pendingSent: [] };
+    if (typeof shares !== 'undefined') shares = { sent: [], received: [] };
+    if (typeof selectedPeopleIds !== 'undefined') selectedPeopleIds = [];
+    if (typeof currentUser !== 'undefined') currentUser = null;
+
+    // Store new tokens
+    localStorage.setItem(
+      'lifestack_tokens',
+      JSON.stringify({
+        idToken: result.tokens.idToken,
+        accessToken: result.tokens.accessToken,
+        refreshToken: result.tokens.refreshToken,
+        expiresAt: Date.now() + result.tokens.expiresIn * 1000
+      })
+    );
+
+    localStorage.setItem(
+      'lifestack_auth',
+      JSON.stringify({ email: result.email, userId: result.userId })
+    );
+
+    // Wrap UI calls so a missing DOM element doesn’t crash iOS builds
+    try {
+      if (typeof closeAllModals === 'function') closeAllModals();
+    } catch (e) {
+      console.log('closeAllModals error:', e);
+    }
+
+    try {
+      if (typeof loadUserData === 'function') {
+        await loadUserData();
+      } else {
+        alert('loadUserData is not defined!');
+      }
+    } catch (e) {
+      console.error('loadUserData error:', e);
+      alert('handleSignIn > loadUserData error: ' + e.message);
+    }
   } catch (error) {
-    if (error.message.includes('verify')) {
+    if (error?.message && error.message.includes('verify')) {
       pendingEmail = email;
       pendingPassword = password;
-      showVerifyModal();
+      if (typeof showVerifyModal === 'function') showVerifyModal();
     } else {
-      errorDiv.textContent = error.message;
+      errorDiv.textContent = error?.message || String(error);
       errorDiv.classList.remove('hidden');
     }
   } finally {
@@ -1263,6 +1525,7 @@ async function handleSignIn(event) {
     btn.textContent = 'Sign In';
   }
 }
+
 
 async function handleSignUp(event) {
   event.preventDefault();
@@ -1344,6 +1607,195 @@ async function resendCode() {
   } catch (error) {
     showError(error.message);
   }
+}
+
+// =====================================================
+// PASSWORD RECOVERY HANDLERS
+// =====================================================
+
+let pendingResetEmail = '';
+
+// Show forgot password modal
+function showForgotPasswordModal() {
+  closeAllModals();
+  document.getElementById('forgotPasswordModal').classList.add('active');
+  document.getElementById('forgotPasswordEmail').value = '';
+  document.getElementById('forgotPasswordError').classList.add('hidden');
+  document.getElementById('forgotPasswordSuccess').classList.add('hidden');
+}
+
+// Close forgot password modal
+function closeForgotPasswordModal() {
+  document.getElementById('forgotPasswordModal').classList.remove('active');
+}
+
+// Show reset password modal
+function showResetPasswordModal() {
+  closeAllModals();
+  document.getElementById('resetPasswordModal').classList.add('active');
+  document.getElementById('resetPasswordCode').value = '';
+  document.getElementById('resetPasswordNew').value = '';
+  document.getElementById('resetPasswordConfirm').value = '';
+  document.getElementById('resetPasswordError').classList.add('hidden');
+  document.getElementById('resetPasswordSuccess').classList.add('hidden');
+}
+
+// Close reset password modal
+function closeResetPasswordModal() {
+  document.getElementById('resetPasswordModal').classList.remove('active');
+}
+
+// Handle forgot password form submission
+async function handleForgotPassword(event) {
+  event.preventDefault();
+
+  const emailEl = document.getElementById('forgotPasswordEmail');
+  const btn = document.getElementById('forgotPasswordBtn');
+  const errorDiv = document.getElementById('forgotPasswordError');
+  const successDiv = document.getElementById('forgotPasswordSuccess');
+
+  if (!emailEl || !btn || !errorDiv || !successDiv) {
+    console.error('Forgot password UI is missing required elements');
+    return;
+  }
+
+  const email = emailEl.value.trim();
+
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  errorDiv.classList.add('hidden');
+  successDiv.classList.add('hidden');
+
+  try {
+    // Call API to send reset code
+    console.log('Calling apiForgotPassword for:', email);
+    await apiForgotPassword(email);
+
+    // Store email for reset step
+    pendingResetEmail = email;
+
+    // Show success message
+    successDiv.textContent = `Reset code sent to ${email}. Check your inbox!`;
+    successDiv.classList.remove('hidden');
+
+    // Automatically show reset password modal after 2 seconds
+    setTimeout(() => {
+      closeForgotPasswordModal();
+      showResetPasswordModal();
+    }, 2000);
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    errorDiv.textContent = error.message || 'Failed to send reset code. Please try again.';
+    errorDiv.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Reset Code';
+  }
+}
+
+// Handle reset password form submission
+async function handleResetPassword(event) {
+  event.preventDefault();
+
+  const codeEl = document.getElementById('resetPasswordCode');
+  const newPasswordEl = document.getElementById('resetPasswordNew');
+  const confirmPasswordEl = document.getElementById('resetPasswordConfirm');
+  const btn = document.getElementById('resetPasswordBtn');
+  const errorDiv = document.getElementById('resetPasswordError');
+  const successDiv = document.getElementById('resetPasswordSuccess');
+
+  if (!codeEl || !newPasswordEl || !confirmPasswordEl || !btn || !errorDiv || !successDiv) {
+    console.error('Reset password UI is missing required elements');
+    return;
+  }
+
+  const code = codeEl.value.trim();
+  const newPassword = newPasswordEl.value;
+  const confirmPassword = confirmPasswordEl.value;
+
+  // Validate passwords match
+  if (newPassword !== confirmPassword) {
+    errorDiv.textContent = 'Passwords do not match';
+    errorDiv.classList.remove('hidden');
+    return;
+  }
+
+  // Validate password strength
+  if (newPassword.length < 8) {
+    errorDiv.textContent = 'Password must be at least 8 characters';
+    errorDiv.classList.remove('hidden');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Resetting...';
+  errorDiv.classList.add('hidden');
+  successDiv.classList.add('hidden');
+
+  try {
+    // Call API to reset password
+    console.log('Calling apiResetPassword for:', pendingResetEmail);
+    await apiResetPassword(pendingResetEmail, code, newPassword);
+
+    // Show success message
+    successDiv.textContent = 'Password reset successfully! Redirecting to sign in...';
+    successDiv.classList.remove('hidden');
+
+    // Redirect to sign in after 2 seconds
+    setTimeout(() => {
+      closeResetPasswordModal();
+      showSignInModal();
+      showToast('Password reset! Please sign in with your new password.');
+    }, 2000);
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    errorDiv.textContent = error.message || 'Failed to reset password. Please check your code and try again.';
+    errorDiv.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Reset Password';
+  }
+}
+
+// Resend reset code
+async function resendResetCode() {
+  if (!pendingResetEmail) {
+    showToast('Please enter your email first');
+    closeResetPasswordModal();
+    showForgotPasswordModal();
+    return;
+  }
+
+  try {
+    // Resend reset code
+    await apiForgotPassword(pendingResetEmail);
+
+    showToast('Reset code sent!');
+  } catch (error) {
+    showToast('Failed to send code. Please try again.');
+  }
+}
+
+// Helper to scroll form fields into view when keyboard appears (mobile)
+function scrollFormIntoView(element) {
+  setTimeout(() => {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 300);
+}
+
+// Helper to scroll memory form fields into view (for location autocomplete)
+function scrollMemoryFieldIntoView(element) {
+  setTimeout(() => {
+    // Scroll the input and its dropdown container into view
+    const wrapper = element.closest('.form-group');
+    if (wrapper) {
+      wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 350);
 }
 
 // =====================================================
@@ -1532,7 +1984,8 @@ function showMemoryModal(memoryToEdit = null) {
   selectedPhotos = [];
   uploadedPhotos = [];
   selectedPeopleIds = [];
-  document.getElementById('photoPreview').innerHTML = '';
+  const photoPreview = document.getElementById('photoPreview');
+  if (photoPreview) photoPreview.innerHTML = '';
   
   // If an adventure is selected, pre-link it
   const planSelector = document.getElementById('memoryPlanId');
@@ -1628,7 +2081,27 @@ function showMemoryModal(memoryToEdit = null) {
     
     // Set plan link after populating
     populatePlanSelector();
-    if (planSelector) planSelector.value = memoryToEdit.planId || '';
+    if (planSelector) {
+      planSelector.value = memoryToEdit.planId || '';
+      // Trigger plan change to show sub-activities if plan has them
+      handleMemoryPlanChange();
+
+      // Set selected sub-activity if editing and memory has one
+      if (memoryToEdit.subActivity) {
+        const selectedPlan = plans.find(p => p.id === memoryToEdit.planId);
+        if (selectedPlan && selectedPlan.subActivities) {
+          const subActivityIndex = selectedPlan.subActivities.findIndex(
+            sa => sa.name === memoryToEdit.subActivity.name
+          );
+          if (subActivityIndex !== -1) {
+            const subActivitySelect = document.getElementById('memorySubActivity');
+            if (subActivitySelect) {
+              subActivitySelect.value = subActivityIndex.toString();
+            }
+          }
+        }
+      }
+    }
   } else {
     // Create mode
     document.getElementById('memoryModalTitle').textContent = 'Capture a Memory';
@@ -1658,6 +2131,17 @@ function showMemoryModal(memoryToEdit = null) {
     if (selectedAdventureFilter !== 'all' && planSelector) {
       planSelector.value = selectedAdventureFilter;
     }
+      setTimeout(() => {
+    const memModal = document.getElementById('memoryModal');
+    if (!memModal) return;
+    memModal.querySelectorAll('input, textarea, select').forEach(inp => {
+      inp.addEventListener('focus', function() {
+        setTimeout(() => {
+          this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 350);
+      });
+    });
+  }, 200);
   }
   
   renderMemoryPeopleGrid();
@@ -1690,10 +2174,13 @@ function removeExistingPhoto(index) {
 }
 
 function closeMemoryModal() {
-  document.getElementById('memoryModal').classList.remove('active');
-  document.getElementById('memoryForm').reset();
-  document.getElementById('memoryId').value = '';
-  clearLocationFields();
+  const modal = document.getElementById('memoryModal');
+  if (modal) modal.classList.remove('active');
+  const form = document.getElementById('memoryForm');
+  if (form) form.reset();
+  const memId = document.getElementById('memoryId');
+  if (memId) memId.value = '';
+  try { clearLocationFields(); } catch(e) { console.log('clearLocationFields error:', e); }
   selectedPhotos = [];
   uploadedPhotos = [];
   selectedPeopleIds = [];
@@ -1821,16 +2308,22 @@ function clearLocation() {
 }
 
 function clearLocationFields() {
-  document.getElementById('memoryLocation').value = '';
-  document.getElementById('memoryLat').value = '';
-  document.getElementById('memoryLng').value = '';
-  if (document.getElementById('memoryPlaceId')) {
-    document.getElementById('memoryPlaceId').value = '';
+  const locInput = document.getElementById('memoryLocation');
+  if (locInput) locInput.value = '';
+  const latInput = document.getElementById('memoryLat');
+  if (latInput) latInput.value = '';
+  const lngInput = document.getElementById('memoryLng');
+  if (lngInput) lngInput.value = '';
+  const placeInput = document.getElementById('memoryPlaceId');
+  if (placeInput) placeInput.value = '';
+  const clearBtn = document.getElementById('locationClearBtn');
+  if (clearBtn) clearBtn.style.display = 'none';
+  const status = document.getElementById('locationStatus');
+  if (status) {
+    status.textContent = '';
+    status.className = 'location-status';
   }
-  document.getElementById('locationClearBtn').style.display = 'none';
-  document.getElementById('locationStatus').textContent = '';
-  document.getElementById('locationStatus').className = 'location-status';
-  hideLocationDropdown();
+  try { hideLocationDropdown(); } catch(e) {}
 }
 
 function getLocationData() {
@@ -2657,29 +3150,49 @@ function showAddPlanModal(type, month = null) {
   document.getElementById('planStartDate').value = '';
   document.getElementById('planEndDate').value = '';
   document.getElementById('planCategory').value = '';
+  document.getElementById('planLocation').value = '';
   selectedPeopleIds = [];
   selectedCategory = null;
+  planLocationData = { name: '', lat: null, lng: null, placeId: '' };
   renderPlanPeopleGrid();
   
   // Reset category display
-  document.getElementById('selectedCategoryIcon').textContent = '🎯';
-  document.getElementById('selectedCategoryName').textContent = 'Select category...';
+  const catIcon = document.getElementById('selectedCategoryIcon');
+  const catName = document.getElementById('selectedCategoryName');
+  if (catIcon) catIcon.textContent = '🎯';
+  if (catName) catName.textContent = 'Select category...';
   
   const dateGroup = document.getElementById('dateSelectorGroup');
   const peopleGroup = document.getElementById('planPeopleGroup');
   const categoryGroup = document.getElementById('categoryPickerGroup');
+  const locationGroup = document.getElementById('planLocationGroup');
+  const remindersGroup = document.getElementById('planRemindersGroup');
+  const subActivitiesGroup = document.getElementById('planSubActivitiesGroup');
+  const remindersList = document.getElementById('planRemindersList');
+  const subActivitiesList = document.getElementById('planSubActivitiesList');
+  
+  // Reset optional sections to avoid stale data leaking from previous edits.
+  if (remindersList) remindersList.textContent = 'No reminders set';
+  if (subActivitiesList) subActivitiesList.textContent = 'No sub-activities';
   
   if (type === 'habit') {
-    dateGroup.classList.add('hidden');
-    peopleGroup.classList.add('hidden');
-    categoryGroup.classList.add('hidden');
+    if (dateGroup) dateGroup.classList.add('hidden');
+    if (peopleGroup) peopleGroup.classList.add('hidden');
+    if (categoryGroup) categoryGroup.classList.add('hidden');
+    if (locationGroup) locationGroup.classList.add('hidden');
+    if (remindersGroup) remindersGroup.classList.add('hidden');
+    if (subActivitiesGroup) subActivitiesGroup.classList.add('hidden');
     document.getElementById('planTargetQuarter').value = month || 1;
     document.getElementById('planTargetMonth').value = '';
     document.getElementById('planModalTitle').textContent = `Add Q${month} Habit`;
   } else {
-    dateGroup.classList.remove('hidden');
-    peopleGroup.classList.remove('hidden');
-    categoryGroup.classList.remove('hidden');
+    if (dateGroup) dateGroup.classList.remove('hidden');
+    if (peopleGroup) peopleGroup.classList.remove('hidden');
+    if (categoryGroup) categoryGroup.classList.remove('hidden');
+    if (locationGroup) locationGroup.classList.remove('hidden');
+    // New plans should not pre-show edit-only sections.
+    if (remindersGroup) remindersGroup.classList.add('hidden');
+    if (subActivitiesGroup) subActivitiesGroup.classList.add('hidden');
     document.getElementById('planTargetQuarter').value = '';
     
     if (month) {
@@ -2700,6 +3213,9 @@ function showAddPlanModal(type, month = null) {
   document.getElementById('planSubmitBtn').textContent = 'Save Plan';
   document.getElementById('deletePlanBtn').style.display = 'none';
   document.getElementById('planModal').classList.add('active');
+
+  // Initialize location autocomplete
+  initPlanLocationAutocomplete();
 }
 
 function showEditPlanModal(planId) {
@@ -2723,19 +3239,6 @@ function showEditPlanModal(planId) {
   document.getElementById('planTargetQuarter').value = plan.targetQuarter || '';
   document.getElementById('planCategory').value = plan.category || '';
   
-  // Set category display
-  selectedCategory = plan.category || null;
-  if (plan.category) {
-    const cat = getAllCategories().find(c => c.id === plan.category);
-    if (cat) {
-      document.getElementById('selectedCategoryIcon').textContent = cat.icon;
-      document.getElementById('selectedCategoryName').textContent = cat.name;
-    }
-  } else {
-    document.getElementById('selectedCategoryIcon').textContent = '🎯';
-    document.getElementById('selectedCategoryName').textContent = 'Select category...';
-  }
-  
   // Load people/participants
   // Handle both old format (people: [id1, id2]) and new format (participants: [{odId, name}])
   if (plan.participants && plan.participants.length > 0) {
@@ -2744,19 +3247,88 @@ function showEditPlanModal(planId) {
     selectedPeopleIds = plan.people || [];
   }
   renderPlanPeopleGrid();
-  
+
+  // Load location
+  const locationInput = document.getElementById('planLocation');
+  if (locationInput) {
+    locationInput.value = plan.location?.name || plan.location || '';
+    // Store location data for autocomplete
+    if (plan.location?.name) {
+      planLocationData = {
+        name: plan.location.name,
+        lat: plan.location.lat || null,
+        lng: plan.location.lng || null,
+        placeId: plan.location.placeId || ''
+      };
+    } else if (plan.location) {
+      planLocationData = { name: plan.location, lat: null, lng: null, placeId: '' };
+    }
+  }
+
+  // Load reminders with checkboxes
+  const remindersList = document.getElementById('planRemindersList');
+  if (remindersList) {
+    console.log('Loading reminders for plan:', plan.id, 'reminderPrefs:', plan.reminderPrefs);
+    if (plan.reminderPrefs && plan.reminderPrefs.length > 0) {
+      remindersList.innerHTML = plan.reminderPrefs.map((r, index) =>
+        `<div style="padding:6px 0;border-bottom:1px solid var(--sand-100);display:flex;align-items:center;gap:8px">
+          <input type="checkbox" ${r.completed ? 'checked' : ''}
+                 onchange="toggleReminderComplete('${plan.id}', ${index})"
+                 style="width:18px;height:18px;cursor:pointer">
+          <span style="${r.completed ? 'text-decoration:line-through;color:var(--text-tertiary)' : ''};flex:1">
+            ${escapeHtml(r.label || r.name || 'Reminder')}
+          </span>
+        </div>`
+      ).join('');
+    } else {
+      remindersList.textContent = 'No reminders set';
+    }
+  }
+
+  // Load sub-activities with checkboxes
+  const subActivitiesList = document.getElementById('planSubActivitiesList');
+  if (subActivitiesList) {
+    console.log('Loading sub-activities for plan:', plan.id, 'subActivities:', plan.subActivities);
+    if (plan.subActivities && plan.subActivities.length > 0) {
+      subActivitiesList.innerHTML = plan.subActivities.map((s, index) =>
+        `<div style="padding:8px;background:var(--sage-50);border-radius:8px;margin-bottom:6px;display:flex;align-items:start;gap:8px">
+          <input type="checkbox" ${s.completed ? 'checked' : ''}
+                 onchange="toggleSubActivityComplete('${plan.id}', ${index})"
+                 style="width:18px;height:18px;margin-top:2px;cursor:pointer;flex-shrink:0">
+          <div style="flex:1">
+            <div style="font-weight:600;color:var(--text-primary);${s.completed ? 'text-decoration:line-through;color:var(--text-tertiary)' : ''}">
+              ${s.emoji || '•'} ${escapeHtml(s.name)}
+            </div>
+            ${s.description ? `<div style="font-size:.8rem;color:var(--text-tertiary);margin-top:2px">${escapeHtml(s.description)}</div>` : ''}
+          </div>
+        </div>`
+      ).join('');
+    } else {
+      subActivitiesList.textContent = 'No sub-activities';
+    }
+  }
+
   const dateGroup = document.getElementById('dateSelectorGroup');
   const peopleGroup = document.getElementById('planPeopleGroup');
   const categoryGroup = document.getElementById('categoryPickerGroup');
+  const locationGroup = document.getElementById('planLocationGroup');
+  const remindersGroup = document.getElementById('planRemindersGroup');
+  const subActivitiesGroup = document.getElementById('planSubActivitiesGroup');
   
   if (plan.type === 'habit') {
-    dateGroup.classList.add('hidden');
-    peopleGroup.classList.add('hidden');
-    categoryGroup.classList.add('hidden');
+    if (dateGroup) dateGroup.classList.add('hidden');
+    if (peopleGroup) peopleGroup.classList.add('hidden');
+    if (categoryGroup) categoryGroup.classList.add('hidden');
+    if (locationGroup) locationGroup.classList.add('hidden');
+    if (remindersGroup) remindersGroup.classList.add('hidden');
+    if (subActivitiesGroup) subActivitiesGroup.classList.add('hidden');
   } else {
-    dateGroup.classList.remove('hidden');
-    peopleGroup.classList.remove('hidden');
-    categoryGroup.classList.remove('hidden');
+    if (dateGroup) dateGroup.classList.remove('hidden');
+    if (peopleGroup) peopleGroup.classList.remove('hidden');
+    if (categoryGroup) categoryGroup.classList.remove('hidden');
+    if (locationGroup) locationGroup.classList.remove('hidden');
+    if (remindersGroup) remindersGroup.classList.remove('hidden');
+    if (subActivitiesGroup) subActivitiesGroup.classList.remove('hidden');
   }
   
   document.getElementById('planModalTitle').textContent = `Edit ${plan.type === 'misogi' ? 'Misogi' : plan.type === 'habit' ? 'Habit' : 'Adventure'}`;
@@ -2782,7 +3354,7 @@ function showEditPlanModal(planId) {
         <div style="background: #e8f4fd; padding: 12px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #4a90d9;">
           <strong>👤 Shared by ${escapeHtml(plan.originalOwnerName || 'a friend')}</strong>
           <p style="margin: 4px 0 0 0; font-size: 0.9em; color: #666;">
-            This adventure was shared with you. You can mark it complete independently.
+            This adventure syncs from the owner. Status and deletion update automatically.
           </p>
         </div>
       `;
@@ -2804,6 +3376,108 @@ function showEditPlanModal(planId) {
   }
   
   document.getElementById('planModal').classList.add('active');
+
+  // Initialize location autocomplete
+  initPlanLocationAutocomplete();
+}
+
+// =====================================================
+// LOCATION AUTOCOMPLETE FOR EDIT MODAL
+// =====================================================
+
+let planLocationTimeout = null;
+let planLocationData = { name: '', lat: null, lng: null, placeId: '' };
+
+function initPlanLocationAutocomplete() {
+  const input = document.getElementById('planLocation');
+  const dropdown = document.getElementById('planLocDropdown');
+
+  if (!input || !dropdown) return;
+
+  // Remove existing listeners by cloning
+  const newInput = input.cloneNode(true);
+  input.parentNode.replaceChild(newInput, input);
+
+  newInput.addEventListener('input', function() {
+    const q = this.value.trim();
+    clearTimeout(planLocationTimeout);
+
+    if (q.length < 2) {
+      dropdown.style.display = 'none';
+      return;
+    }
+
+    planLocationTimeout = setTimeout(() => searchPlanLocation(q), 300);
+  });
+
+  // Store value when manually typed
+  newInput.addEventListener('blur', function() {
+    setTimeout(() => {
+      if (dropdown.style.display !== 'block') {
+        planLocationData = { name: this.value, lat: null, lng: null, placeId: '' };
+      }
+    }, 200);
+  });
+}
+
+async function searchPlanLocation(query) {
+  const dropdown = document.getElementById('planLocDropdown');
+  if (!dropdown) return;
+
+  dropdown.innerHTML = '<div class="adv-loc-loading">Searching...</div>';
+  dropdown.style.display = 'block';
+
+  try {
+    const response = await fetch(
+      `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`,
+      { headers: { 'Accept': 'application/json' } }
+    );
+
+    if (!response.ok) throw new Error('Search failed');
+
+    const data = await response.json();
+
+    if (!data.features || data.features.length === 0) {
+      dropdown.innerHTML = '<div class="adv-loc-empty">No results found</div>';
+      return;
+    }
+
+    dropdown.innerHTML = data.features.map(f => {
+      const p = f.properties;
+      const coords = f.geometry.coordinates;
+      const name = p.name || '';
+      const city = p.city || p.county || '';
+      const state = p.state || '';
+      const country = p.country || '';
+
+      let displayParts = [name, city, state, country].filter(Boolean);
+      const displayName = displayParts.join(', ');
+
+      return `
+        <div class="adv-loc-item" onclick='selectPlanLocation(${JSON.stringify({
+          name: displayName,
+          lat: coords[1],
+          lng: coords[0],
+          placeId: ''
+        })})'>
+          <div class="adv-loc-name">${displayName}</div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (error) {
+    console.error('Location search error:', error);
+    dropdown.innerHTML = '<div class="adv-loc-empty">Search failed</div>';
+  }
+}
+
+function selectPlanLocation(loc) {
+  planLocationData = loc;
+  const input = document.getElementById('planLocation');
+  const dropdown = document.getElementById('planLocDropdown');
+
+  if (input) input.value = loc.name;
+  if (dropdown) dropdown.style.display = 'none';
 }
 
 // Category Picker Functions
@@ -2848,8 +3522,10 @@ function selectCategory(categoryId) {
   
   selectedCategory = categoryId;
   document.getElementById('planCategory').value = categoryId;
-  document.getElementById('selectedCategoryIcon').textContent = cat.icon;
-  document.getElementById('selectedCategoryName').textContent = cat.name;
+  const catIcon = document.getElementById('selectedCategoryIcon');
+  const catName = document.getElementById('selectedCategoryName');
+  if (catIcon) catIcon.textContent = cat.icon;
+  if (catName) catName.textContent = cat.name;
   closeCategoryPicker();
 }
 
@@ -2889,9 +3565,12 @@ function getCategoryIcon(categoryId) {
 }
 
 function closePlanModal() {
-  document.getElementById('planModal').classList.remove('active');
-  document.getElementById('planForm').reset();
-  document.getElementById('planEndDate').min = ''; // Clear end date minimum
+  const modal = document.getElementById('planModal');
+  if (modal) modal.classList.remove('active');
+  const form = document.getElementById('planForm');
+  if (form) form.reset();
+  const endDate = document.getElementById('planEndDate');
+  if (endDate) endDate.min = ''; // Clear end date minimum
   selectedCategory = null;
 }
 
@@ -2918,19 +3597,39 @@ async function deletePlanFromModal() {
 }
 
 async function executeDeletePlan(planId) {
+  const plan = plans.find(p => p.id === planId);
+  const needsSharedSync = !!(plan && (plan.type === 'adventure' || plan.type === 'misogi') && plan.type !== 'shared-adventure');
+
   try {
-    await deletePlan(planId);
+    // Ensure shared copies are removed for tagged people before deleting the owner plan.
+    if (needsSharedSync) {
+      const taggedFromPeople = Array.isArray(plan.people) ? plan.people.filter(Boolean) : [];
+      const taggedFromParticipants = Array.isArray(plan.participants)
+        ? plan.participants.map(p => p?.odId).filter(Boolean)
+        : [];
+      const taggedUsers = Array.from(new Set([...taggedFromPeople, ...taggedFromParticipants]));
+
+      if (taggedUsers.length > 0) {
+        const cleanupResult = await updatePlan(planId, { people: [], participants: [] });
+        if (!cleanupResult) {
+          throw new Error('Unable to remove shared copies before delete. Please try again.');
+        }
+      }
+    }
+
+    const deleted = await deletePlan(planId);
+    if (!deleted) throw new Error('Delete request failed');
     
     // Remove from local state
     plans = plans.filter(p => p.id !== planId);
     localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
     
     // Refresh UI
-    renderMisogis();
     renderHabits();
     renderMonthGrid();
     populateMemoryFilter();
-    
+    if (typeof refreshPlanView === 'function') refreshPlanView(); // Update stats and views
+
     // If month calendar is open, refresh it instead of closing
     if (currentCalendarMonth) {
       renderMonthCalendarGrid(currentCalendarMonth);
@@ -2940,10 +3639,13 @@ async function executeDeletePlan(planId) {
     showToast('Plan deleted');
   } catch (error) {
     console.error('Delete plan error:', error);
+    if (needsSharedSync) {
+      showError(error.message);
+      return;
+    }
     // Delete locally anyway
     plans = plans.filter(p => p.id !== planId);
     localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
-    renderMisogis();
     renderHabits();
     renderMonthGrid();
     
@@ -2984,68 +3686,70 @@ function closeYearModal() {
 // =====================================================
 
 function hideLoading() {
-  document.getElementById('loadingScreen').classList.add('hidden');
+  const el = document.getElementById('loadingScreen');
+  if (el) el.classList.add('hidden');
 }
 
 function showLanding() {
   hideLoading();
-  document.getElementById('landing').classList.remove('hidden');
-  document.getElementById('onboarding').classList.add('hidden');
-  document.getElementById('app').classList.add('hidden');
+  var el;
+  el = document.getElementById('landing'); if (el) el.classList.remove('hidden');
+  el = document.getElementById('onboarding'); if (el) el.classList.add('hidden');
+  el = document.getElementById('app'); if (el) el.classList.add('hidden');
 }
 
 function showOnboarding() {
   hideLoading();
-  document.getElementById('landing').classList.add('hidden');
-  document.getElementById('onboarding').classList.remove('hidden');
-  document.getElementById('app').classList.add('hidden');
-  const savedName = localStorage.getItem('lifestack_pending_name');
-  if (savedName) {
-    document.getElementById('name').value = savedName;
-    localStorage.removeItem('lifestack_pending_name');
+  var el;
+  el = document.getElementById('landing'); if (el) el.classList.add('hidden');
+  el = document.getElementById('onboarding'); if (el) el.classList.remove('hidden');
+  el = document.getElementById('app'); if (el) el.classList.add('hidden');
+  var nameEl = document.getElementById('name');
+  if (nameEl) {
+    const savedName = localStorage.getItem('lifestack_pending_name');
+    if (savedName) {
+      nameEl.value = savedName;
+      localStorage.removeItem('lifestack_pending_name');
+    }
   }
 }
 
 function showApp() {
   hideLoading();
-  document.getElementById('landing').classList.add('hidden');
-  document.getElementById('onboarding').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
+  var el;
+  el = document.getElementById('landing'); if (el) el.classList.add('hidden');
+  el = document.getElementById('onboarding'); if (el) el.classList.add('hidden');
+  el = document.getElementById('app'); if (el) el.classList.remove('hidden');
   
-  // Update avatar display (header icon)
-  updateAvatarDisplay();
+  try { updateAvatarDisplay(); } catch(e) { console.log('Avatar error:', e); }
   
-  // Start inactivity monitor for auto logout
   startInactivityMonitor();
-  
-  // Open Plan view (current year design) instead of Home
-  openCurrentYearDesign();
+  try { openCurrentYearDesign(); } catch(e) { 
+    console.error('openCurrentYearDesign error:', e);
+    alert('openCurrentYearDesign error: ' + e.message);
+  }
 }
 
 function switchView(view) {
-  // Update nav
   document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.toggle('active', item.dataset.view === view);
   });
   
-  // Hide all views
-  document.getElementById('dashboardView').classList.add('hidden');
-  document.getElementById('yearDesignView').classList.add('hidden');
-  document.getElementById('yearReviewView').classList.add('hidden');
-  document.getElementById('yearLockedView').classList.add('hidden');
-  document.getElementById('settingsView').classList.add('hidden');
-  document.getElementById('journalView')?.classList.add('hidden');
+  var ids = ['dashboardView', 'yearDesignView', 'yearReviewView', 'yearLockedView', 'settingsView', 'journalView'];
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
   
-  // Show requested view
   if (view === 'dashboard') {
-    document.getElementById('dashboardView').classList.remove('hidden');
-    renderDashboard();
+    var el = document.getElementById('dashboardView'); if (el) el.classList.remove('hidden');
+    try { renderDashboard(); } catch(e) { console.log('Dashboard error:', e); }
   } else if (view === 'settings') {
-    document.getElementById('settingsView').classList.remove('hidden');
-    renderSettings();
+    var el = document.getElementById('settingsView'); if (el) el.classList.remove('hidden');
+    try { renderSettings(); } catch(e) { console.log('Settings error:', e); }
   } else if (view === 'journal') {
-    document.getElementById('journalView').classList.remove('hidden');
-    renderJournalEntries();
+    var el = document.getElementById('journalView'); if (el) el.classList.remove('hidden');
+    try { renderJournalEntries(); } catch(e) { console.log('Journal error:', e); }
   }
 }
 
@@ -3074,12 +3778,12 @@ async function openYearView(ageYear, calendarYear) {
   currentViewYear = calendarYear;
   const mode = getYearViewMode(calendarYear);
   
-  // Hide all views first
-  document.getElementById('dashboardView').classList.add('hidden');
-  document.getElementById('yearDesignView').classList.add('hidden');
-  document.getElementById('yearReviewView').classList.add('hidden');
-  document.getElementById('yearLockedView').classList.add('hidden');
-  document.getElementById('settingsView').classList.add('hidden');
+  // Hide all views first (with null checks)
+  var ids = ['dashboardView', 'yearDesignView', 'yearReviewView', 'yearLockedView', 'settingsView', 'journalView'];
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
   
   // Update nav
   document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
@@ -3094,67 +3798,80 @@ async function openYearView(ageYear, calendarYear) {
 }
 
 function openCurrentYearDesign() {
+  if (!currentUser || !currentUser.birthdate) {
+    alert('DEBUG: No currentUser or birthdate. currentUser=' + JSON.stringify(currentUser ? {name: currentUser.name, birthdate: currentUser.birthdate} : null));
+    return;
+  }
+  
   const currentYear = new Date().getFullYear();
   const birthYear = new Date(currentUser.birthdate).getFullYear();
+  
+  if (isNaN(birthYear)) {
+    alert('DEBUG: invalid birthdate: ' + currentUser.birthdate);
+    return;
+  }
+  
   const age = currentYear - birthYear;
-  openYearView(age, currentYear);
+  openYearView(age, currentYear).catch(function(e) {
+    alert('openYearView error: ' + e.message + '\n' + e.stack);
+  });
 }
 
 async function showDesignView(year) {
-  document.getElementById('designYear').textContent = year;
-  document.getElementById('yearDesignView').classList.remove('hidden');
-  
-  // Update nav
-  document.querySelector('.nav-item[data-view="yearDesign"]')?.classList.add('active');
-  
-  // Fetch plans for this year
-  plans = await fetchPlans(year);
-  
-  // Load theme (from plans or localStorage)
-  loadYearTheme();
-  
-  renderMisogis();
-  renderHabits();
-  renderMonthGrid();
-  renderYearMemories(year);
+  try {
+    var el;
+    el = document.getElementById('designYear'); if (el) el.textContent = year;
+    el = document.getElementById('yearDesignView'); if (el) el.classList.remove('hidden');
+    
+    document.querySelector('.nav-item[data-view="yearDesign"]')?.classList.add('active');
+    
+    plans = await fetchPlans(year);
+    
+    try { loadYearTheme(); } catch(e) { alert('Theme error: ' + e.message); }
+    try { renderMisogis(); } catch(e) { alert('Misogi error: ' + e.message); }
+    try { renderHabits(); } catch(e) { alert('Habits error: ' + e.message); }
+    try { renderMonthGrid(); } catch(e) { alert('MonthGrid error: ' + e.message); }
+    try { renderYearMemories(year); } catch(e) { alert('Memories error: ' + e.message); }
+  } catch(e) {
+    alert('showDesignView error: ' + e.message);
+  }
 }
 
 async function showReviewView(year) {
-  document.getElementById('reviewYear').textContent = year;
-  document.getElementById('reviewYearBtn').textContent = year;
-  document.getElementById('yearReviewView').classList.remove('hidden');
+  var el;
+  el = document.getElementById('reviewYear'); if (el) el.textContent = year;
+  el = document.getElementById('reviewYearBtn'); if (el) el.textContent = year;
+  el = document.getElementById('yearReviewView'); if (el) el.classList.remove('hidden');
   
-  // Fetch plans for this year
   plans = await fetchPlans(year);
   
-  // Get memories for this year
-  const yearMemories = memories.filter(m => {
+  const yearMemories = ensureArray(memories).filter(m => {
     const memYear = new Date(m.occurredAt).getFullYear();
     return memYear === year;
   });
   
-  // Calculate stats
   const completedMisogis = plans.filter(p => p.type === 'misogi' && p.status === 'completed').length;
   const totalAdventures = plans.filter(p => p.type === 'adventure').length;
   const completedAdventures = plans.filter(p => p.type === 'adventure' && p.status === 'completed').length;
   const totalHabits = plans.filter(p => p.type === 'habit').length;
   const completedHabits = plans.filter(p => p.type === 'habit' && p.status === 'completed').length;
   
-  document.getElementById('reviewMisogiCount').textContent = completedMisogis;
-  document.getElementById('reviewAdventureCount').textContent = `${completedAdventures}/${totalAdventures || 6}`;
-  document.getElementById('reviewHabitCount').textContent = `${completedHabits}/${totalHabits || 4}`;
-  document.getElementById('reviewMemoryCount').textContent = yearMemories.length;
+  el = document.getElementById('reviewMisogiCount'); if (el) el.textContent = completedMisogis;
+  el = document.getElementById('reviewAdventureCount'); if (el) el.textContent = `${completedAdventures}/${totalAdventures || 6}`;
+  el = document.getElementById('reviewHabitCount'); if (el) el.textContent = `${completedHabits}/${totalHabits || 4}`;
+  el = document.getElementById('reviewMemoryCount'); if (el) el.textContent = yearMemories.length;
   
-  renderReviewContent(year);
+  try { renderReviewContent(year); } catch(e) { console.log('Review content error:', e); }
 }
 
 function showLockedView(year) {
+  var el;
   const currentYear = new Date().getFullYear();
-  document.getElementById('lockedYear').textContent = year;
-  document.getElementById('lockedYearMsg').textContent = year;
-  document.getElementById('unlockDate').textContent = `December ${year - 1}`;
-  document.getElementById('currentYearBtn').textContent = currentYear;
-  document.getElementById('yearLockedView').classList.remove('hidden');
+  el = document.getElementById('lockedYear'); if (el) el.textContent = year;
+  el = document.getElementById('lockedYearMsg'); if (el) el.textContent = year;
+  el = document.getElementById('unlockDate'); if (el) el.textContent = `December ${year - 1}`;
+  el = document.getElementById('currentYearBtn'); if (el) el.textContent = currentYear;
+  el = document.getElementById('yearLockedView'); if (el) el.classList.remove('hidden');
 }
 
 function goToCurrentYear() {
@@ -3166,52 +3883,136 @@ function goToCurrentYear() {
 // =====================================================
 
 async function loadUserData() {
-  const storedTokens = JSON.parse(localStorage.getItem('lifestack_tokens') || 'null');
-  const auth = JSON.parse(localStorage.getItem('lifestack_auth') || 'null');
-  
-  if (!storedTokens || !auth) { showLanding(); return; }
+  // Check if the app is already visible (instant launch from cache)
+  const appAlreadyVisible = !document.getElementById('app')?.classList.contains('hidden');
 
-  const savedUser = localStorage.getItem('lifestack_user');
-  if (savedUser) {
-    const cachedUser = JSON.parse(savedUser);
-    
-    // IMPORTANT: Verify cached user matches the logged-in Cognito user
-    if (cachedUser.email && auth.email && cachedUser.email.toLowerCase() !== auth.email.toLowerCase()) {
-      console.log('Cached user mismatch! Clearing cache. Cached:', cachedUser.email, 'Auth:', auth.email);
-      // Clear all user-specific cache - wrong user cached
-      localStorage.removeItem('lifestack_user');
-      localStorage.removeItem('lifestack_memories');
-      localStorage.removeItem('lifestack_people');
-      localStorage.removeItem('lifestack_friendships');
-      localStorage.removeItem('lifestack_plans');
-      // Clear year-specific plan caches
-      for (let year = 2020; year <= 2035; year++) {
-        localStorage.removeItem(`lifestack_plans_${year}`);
-      }
-      // Reset in-memory state
-      memories = [];
-      plans = [];
-      people = [];
-      friendships = { friends: [], pendingReceived: [], pendingSent: [] };
-      // Now fetch fresh data for the correct user
-      const tokens = await getValidTokens();
-      if (!tokens) { showLanding(); return; }
-      await fetchAndSetUserData(tokens);
-    } else {
-      // Cached user matches - use it
-      currentUser = cachedUser;
-      loadLocalMemories();
-      loadLocalPeople();
-      // Also load friendships
-      friendships = await fetchFriendships();
-      updateFriendBadge();
-      showApp();
+  try {
+    const storedTokens = JSON.parse(localStorage.getItem('lifestack_tokens') || 'null');
+    const auth = JSON.parse(localStorage.getItem('lifestack_auth') || 'null');
+    if (!storedTokens || !auth) {
+      if (!appAlreadyVisible) showLanding();
+      return;
     }
-  } else {
-    // No cached user - fetch from API
+
+    const savedUser = localStorage.getItem('lifestack_user');
+    if (savedUser) {
+      const cachedUser = JSON.parse(savedUser);
+      
+      // IMPORTANT: Verify cached user matches the logged-in Cognito user
+      if (cachedUser.email && auth.email && cachedUser.email.toLowerCase() !== auth.email.toLowerCase()) {
+        console.log('Cached user mismatch! Clearing cache. Cached:', cachedUser.email, 'Auth:', auth.email);
+        // Clear all user-specific cache - wrong user cached
+        localStorage.removeItem('lifestack_user');
+        localStorage.removeItem('lifestack_memories');
+        localStorage.removeItem('lifestack_people');
+        localStorage.removeItem('lifestack_friendships');
+        localStorage.removeItem('lifestack_plans');
+        // Clear year-specific plan caches
+        for (let year = 2020; year <= 2035; year++) {
+          localStorage.removeItem(`lifestack_plans_${year}`);
+        }
+        // Reset in-memory state
+        memories = [];
+        plans = [];
+        people = [];
+        friendships = { friends: [], pendingReceived: [], pendingSent: [] };
+        // Now fetch fresh data for the correct user
+        const tokens = await getValidTokens();
+        if (!tokens) { showLanding(); return; }
+        await fetchAndSetUserData(tokens);
+      } else {
+        // Cached user matches - use it for immediate display
+        currentUser = cachedUser;
+        loadLocalMemories();
+        loadLocalPeople();
+        // Load bucket list from cache
+        const cachedBucketList = localStorage.getItem('lifestack_bucketlist');
+        if (cachedBucketList) {
+          try {
+            bucketList = JSON.parse(cachedBucketList);
+          } catch(e) {
+            console.error('Error parsing cached bucket list:', e);
+            bucketList = [];
+          }
+        }
+        // Also load friendships
+        friendships = await fetchFriendships();
+        updateFriendBadge();
+        if (!appAlreadyVisible) showApp();
+
+        // Update banner stats with cached data
+        if (typeof refreshPlanView === 'function') refreshPlanView();
+
+        // Background refresh: silently sync latest data from server
+        silentSync();
+      }
+    } else {
+      // No cached user - fetch from API
+      const tokens = await getValidTokens();
+      if (!tokens) {
+        if (!appAlreadyVisible) showLanding();
+        return;
+      }
+      await fetchAndSetUserData(tokens);
+    }
+  } catch (error) {
+    console.error('loadUserData fatal error:', error);
+    alert('loadUserData error: ' + error.message);
+    if (!appAlreadyVisible) showLanding();
+  }
+}
+
+// Silent background sync — refreshes data without disrupting the UI
+async function silentSync() {
+  try {
     const tokens = await getValidTokens();
-    if (!tokens) { showLanding(); return; }
-    await fetchAndSetUserData(tokens);
+    if (!tokens?.idToken) return;
+
+    // Refresh user profile in background
+    const response = await fetch(`${CONFIG.API_URL}/users`, {
+      headers: { 'Authorization': `Bearer ${tokens.idToken}` }
+    });
+    if (response.ok) {
+      const userData = await response.json();
+      if (userData && userData.name) {
+        currentUser = userData;
+        localStorage.setItem('lifestack_user', JSON.stringify(userData));
+      }
+    }
+
+    // Refresh plans for current view year
+    const freshPlans = await fetchPlans(currentViewYear);
+    if (freshPlans) {
+      plans = freshPlans;
+      try { renderHabits(); } catch(e) {}
+      try { renderMonthGrid(); } catch(e) {}
+      try { renderYearMemories(currentViewYear); } catch(e) {}
+      try { renderDashboard(); } catch(e) {}
+    }
+
+    // Refresh memories
+    const freshMemories = await fetchMemories();
+    if (freshMemories) {
+      memories = freshMemories;
+      try { renderYearMemories(currentViewYear); } catch(e) {}
+    }
+
+    // Refresh bucket list
+    const freshBucketList = await fetchBucketList();
+    if (freshBucketList) {
+      bucketList = freshBucketList;
+    }
+
+    // Update banner stats after all data is loaded
+    try {
+      if (typeof refreshPlanView === 'function') refreshPlanView();
+    } catch(e) {
+      console.error('Error refreshing plan view:', e);
+    }
+
+    console.log('Silent background sync complete');
+  } catch (error) {
+    console.error('Silent sync error (non-blocking):', error);
   }
 }
 
@@ -3234,6 +4035,7 @@ async function fetchAndSetUserData(tokens) {
     else { throw new Error('Failed to fetch user'); }
   } catch (error) { 
     console.error('Fetch user error:', error);
+    alert('fetchAndSetUserData error: ' + error.message);
     showOnboarding(); 
   }
 }
@@ -3306,7 +4108,9 @@ function loadLocalPeople() {
 // ONBOARDING
 // =====================================================
 
-document.getElementById('onboardingForm').addEventListener('submit', async function(e) {
+const onboardingFormEl = document.getElementById('onboardingForm');
+if (onboardingFormEl) {
+onboardingFormEl.addEventListener('submit', async function(e) {
   e.preventDefault();
   const tokens = await getValidTokens();
   const auth = JSON.parse(localStorage.getItem('lifestack_auth') || 'null');
@@ -3340,6 +4144,7 @@ document.getElementById('onboardingForm').addEventListener('submit', async funct
     showToast('Welcome! (Saved locally)');
   }
 });
+} // end onboardingForm null check
 
 // =====================================================
 // PLAN HANDLING
@@ -3398,6 +4203,9 @@ async function handlePlanSubmit(event) {
   }
   
   // For shared adventures, only allow updating completion status and notes
+  // Get location value - use stored planLocationData if available
+  const locationValue = planLocationData.name || document.getElementById('planLocation')?.value?.trim() || '';
+
   const planData = isSharedAdventure ? {
     // Preserve original type so the Lambda knows how to handle it
     type: 'shared-adventure',
@@ -3409,7 +4217,8 @@ async function handlePlanSubmit(event) {
     targetMonth: existingPlan.targetMonth,
     startDate: existingPlan.startDate,
     endDate: existingPlan.endDate,
-    category: existingPlan.category
+    category: existingPlan.category,
+    location: existingPlan.location
   } : {
     type,
     title,
@@ -3420,14 +4229,17 @@ async function handlePlanSubmit(event) {
     endDate: endDate || null,
     targetQuarter: type === 'habit' ? parseInt(targetQuarter) : null,
     category: category || null,
+    location: locationValue ? planLocationData : null,
     people: selectedPeopleIds,
     participants: participants && participants.length > 0 ? participants : null,
     ownerName: currentUser?.name || 'Unknown'
   };
   
   const btn = document.getElementById('planSubmitBtn');
-  btn.disabled = true;
-  btn.textContent = planId ? 'Updating...' : 'Saving...';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = planId ? 'Updating...' : 'Saving...';
+  }
   
   let result;
   if (planId) {
@@ -3471,12 +4283,14 @@ async function handlePlanSubmit(event) {
   }
   
   closePlanModal();
-  renderMisogis();
   renderHabits();
   renderMonthGrid();
-  
-  btn.disabled = false;
-  btn.textContent = 'Save Plan';
+  if (typeof refreshPlanView === 'function') refreshPlanView(); // Refresh stats and views
+
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = 'Save Plan';
+  }
   selectedPeopleIds = [];
 }
 
@@ -3484,6 +4298,12 @@ async function togglePlanStatus(planId) {
   const plan = plans.find(p => p.id === planId);
   if (!plan) {
     console.error('togglePlanStatus: Plan not found:', planId);
+    return;
+  }
+
+  // Shared copies are owner-driven; recipients shouldn't desync status manually.
+  if (plan.type === 'shared-adventure') {
+    showToast('This shared adventure syncs from the owner');
     return;
   }
   
@@ -3508,17 +4328,19 @@ async function togglePlanStatus(planId) {
   
   // Cache to local storage
   localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
-  
-  renderMisogis();
+
   renderHabits();
   renderMonthGrid();
-  
+
+  // Refresh week view if available
+  if (typeof buildWeekView === 'function') buildWeekView();
+
   // Refresh month calendar if open
   if (currentCalendarMonth) {
     renderMonthCalendarGrid(currentCalendarMonth);
     renderMonthPlansList(currentCalendarMonth);
   }
-  
+
   showToast(newStatus === 'completed' ? '🎉 Completed!' : 'Marked as planned');
 }
 
@@ -3529,12 +4351,12 @@ async function togglePlanStatus(planId) {
 function populatePlanSelector() {
   const select = document.getElementById('memoryPlanId');
   if (!select) return;
-  
+
   select.innerHTML = '<option value="">-- No plan --</option>';
-  
+
   const today = new Date();
   today.setHours(23, 59, 59, 999); // End of today
-  
+
   const currentYearPlans = plans
     .filter(p => parseInt(p.year) === currentViewYear)
     // BUG FIX: Exclude future events - can't attach memory to something that hasn't happened
@@ -3549,7 +4371,7 @@ function populatePlanSelector() {
       const dateB = parseLocalDate(b.startDate) || new Date(0);
       return dateB - dateA; // Descending
     });
-  
+
   currentYearPlans.forEach(plan => {
     const option = document.createElement('option');
     option.value = plan.id;
@@ -3561,6 +4383,37 @@ function populatePlanSelector() {
   });
 }
 
+function handleMemoryPlanChange() {
+  const planId = document.getElementById('memoryPlanId').value;
+  const subActivityGroup = document.getElementById('memorySubActivityGroup');
+  const subActivitySelect = document.getElementById('memorySubActivity');
+
+  if (!planId || !subActivityGroup || !subActivitySelect) {
+    if (subActivityGroup) subActivityGroup.style.display = 'none';
+    return;
+  }
+
+  // Find the selected plan
+  const selectedPlan = plans.find(p => p.id === planId);
+
+  // Check if plan has sub-activities
+  if (selectedPlan && selectedPlan.subActivities && selectedPlan.subActivities.length > 0) {
+    // Populate sub-activity dropdown
+    subActivitySelect.innerHTML = '<option value="">-- Select activity --</option>';
+
+    selectedPlan.subActivities.forEach((activity, index) => {
+      const option = document.createElement('option');
+      option.value = index.toString();
+      option.textContent = `${activity.emoji || '•'} ${activity.name}`;
+      subActivitySelect.appendChild(option);
+    });
+
+    subActivityGroup.style.display = 'block';
+  } else {
+    subActivityGroup.style.display = 'none';
+  }
+}
+
 async function saveMemory() {
   const memoryId = document.getElementById('memoryId').value;
   const title = document.getElementById('memoryTitle').value;
@@ -3568,8 +4421,20 @@ async function saveMemory() {
   const text = document.getElementById('memoryText').value;
   const planId = document.getElementById('memoryPlanId').value;
   const tagsInput = document.getElementById('memoryTags').value;
-  
+
+  // Get selected sub-activity if any
+  let subActivity = null;
+  const subActivitySelect = document.getElementById('memorySubActivity');
+  if (subActivitySelect && subActivitySelect.value !== '' && planId) {
+    const selectedPlan = plans.find(p => p.id === planId);
+    if (selectedPlan && selectedPlan.subActivities) {
+      const index = parseInt(subActivitySelect.value);
+      subActivity = selectedPlan.subActivities[index];
+    }
+  }
+
   if (!title || !occurredAt) { showError('Please fill in title and date'); return; }
+  if (!currentUser || !currentUser.birthdate) { showError('User data not loaded. Please reload.'); return; }
 
   const birthYear = new Date(currentUser.birthdate).getFullYear();
   const memoryYear = new Date(occurredAt).getFullYear();
@@ -3585,13 +4450,14 @@ async function saveMemory() {
     uploadedPhotos = [...uploadedPhotos, ...newPhotos];
   }
 
-  const memoryData = { 
-    title, 
-    occurredAt, 
-    text, 
-    tags: tagsInput.split(',').map(t => t.trim()).filter(t => t), 
+  const memoryData = {
+    title,
+    occurredAt,
+    text,
+    tags: tagsInput.split(',').map(t => t.trim()).filter(t => t),
     year: String(year),  // Convert to string for DynamoDB GSI
     planId: planId || null,
+    subActivity: subActivity || null,  // ✅ Store selected sub-activity
     people: selectedPeopleIds,
     photos: uploadedPhotos,
     location: getLocationData()
@@ -3655,12 +4521,38 @@ async function saveMemory() {
   
   // Close modal and refresh UI
   closeMemoryModal();
-  
-  // Refresh all memory displays
-  renderDashboard();
-  renderYearMemories(currentViewYear);
-  renderMonthGrid();  // Refresh to show updated memory counts
-  
+
+  // iOS needs longer delay for modal animation to complete
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const delay = isIOS ? 800 : 300; // iOS: 800ms, others: 300ms
+
+  console.log('Platform:', isIOS ? 'iOS' : 'Other', 'Memory refresh delay:', delay + 'ms');
+
+  // Refresh with delay for mobile devices (prevents crash from rapid DOM updates)
+  setTimeout(() => {
+    try {
+      console.log('Starting memory view refresh...');
+      if (typeof renderDashboard === 'function') renderDashboard();
+    } catch (err) {
+      console.error('Error rendering dashboard:', err);
+    }
+
+    try {
+      if (typeof renderYearMemories === 'function' && typeof currentViewYear !== 'undefined') {
+        renderYearMemories(currentViewYear);
+      }
+    } catch (err) {
+      console.error('Error rendering year memories:', err);
+    }
+
+    try {
+      if (typeof renderMonthGrid === 'function') renderMonthGrid();
+    } catch (err) {
+      console.error('Error rendering month grid:', err);
+    }
+    console.log('Memory view refresh completed');
+  }, delay);
+
   // Clear state
   selectedPeopleIds = [];
   selectedPhotos = [];
@@ -3711,29 +4603,29 @@ async function deleteMemory() {
 }
 
 async function saveYearTheme() {
-  const theme = document.getElementById('yearTheme').value;
+  var el = document.getElementById('yearTheme');
+  if (!el) return;
+  const theme = el.value;
+  if (!theme || !theme.trim()) return;
   console.log('saveYearTheme called with:', theme);
   
-  // Save locally immediately for responsiveness
+  // Save locally immediately
   localStorage.setItem(`lifestack_theme_${currentViewYear}`, theme);
   
-  // Find existing theme plan for this year or create new one
-  let themePlan = plans.find(p => p.type === 'theme' && parseInt(p.year) === currentViewYear);
+  // Find existing theme plan - compare year as string since DynamoDB may store either
+  let themePlan = plans.find(p => p.type === 'theme' && String(p.year) === String(currentViewYear));
   console.log('Existing theme plan:', themePlan);
   
   const tokens = await getValidTokens();
   if (tokens?.idToken) {
     try {
       if (themePlan) {
-        // Update existing theme
         console.log('Updating existing theme plan:', themePlan.id);
         const updated = await updatePlan(themePlan.id, { title: theme });
-        console.log('Update result:', updated);
         if (updated) {
           themePlan.title = theme;
         }
       } else {
-        // Create new theme plan
         console.log('Creating new theme plan');
         const result = await createPlan({
           type: 'theme',
@@ -3741,37 +4633,43 @@ async function saveYearTheme() {
           year: currentViewYear,
           description: 'Year theme'
         });
-        console.log('Create result:', result);
         if (result) {
           plans.push(result);
-          themePlan = result;
         }
       }
       localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
-      showToast('Theme saved!');
+      showToast('✓ Theme saved!');
     } catch (error) {
       console.error('Save theme error:', error);
       showToast('Theme saved locally');
     }
   } else {
-    console.log('No valid tokens, saving locally only');
     showToast('Theme saved locally');
   }
 }
 
 function loadYearTheme() {
-  // First try to find theme from plans (synced from server)
+  var el = document.getElementById('yearTheme');
+  if (!el) return;
+
   const themePlan = plans.find(p => p.type === 'theme' && parseInt(p.year) === currentViewYear);
+  let themeText = '';
+
   if (themePlan) {
-    document.getElementById('yearTheme').value = themePlan.title || '';
-    // Also update localStorage
-    localStorage.setItem(`lifestack_theme_${currentViewYear}`, themePlan.title || '');
-    return;
+    themeText = themePlan.title || '';
+    el.value = themeText;
+    localStorage.setItem(`lifestack_theme_${currentViewYear}`, themeText);
+  } else {
+    const savedTheme = localStorage.getItem(`lifestack_theme_${currentViewYear}`);
+    themeText = savedTheme || '';
+    el.value = themeText;
   }
-  
-  // Fallback to localStorage
-  const savedTheme = localStorage.getItem(`lifestack_theme_${currentViewYear}`);
-  document.getElementById('yearTheme').value = savedTheme || '';
+
+  // Update banner display
+  const bannerEl = document.getElementById('yearBannerTheme');
+  if (bannerEl && themeText) {
+    bannerEl.textContent = '"' + themeText + '"';
+  }
 }
 
 // =====================================================
@@ -3779,12 +4677,15 @@ function loadYearTheme() {
 // =====================================================
 
 function renderDashboard() {
-  if (!currentUser) return;
+  if (!currentUser || !currentUser.birthdate) return;
   
   const birthDate = new Date(currentUser.birthdate);
+  if (isNaN(birthDate.getTime())) return;
+  
   const today = new Date();
   const age = Math.floor((today - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
-  const yearsLeft = currentUser.lifespanYears - age;
+  const lifespanYears = currentUser.lifespanYears || 80;
+  const yearsLeft = lifespanYears - age;
   const startOfYear = new Date(today.getFullYear(), 0, 1);
   const endOfYear = new Date(today.getFullYear() + 1, 0, 1);
   const yearProgress = ((today - startOfYear) / (endOfYear - startOfYear)) * 100;
@@ -3792,20 +4693,23 @@ function renderDashboard() {
   // Ensure memories is array for count
   const safeMemories = ensureArray(memories);
   
-  document.getElementById('currentYear').textContent = today.getFullYear();
-  document.getElementById('currentAge').textContent = age;
-  document.getElementById('lifespanDisplay').textContent = currentUser.lifespanYears;
-  document.getElementById('yearsLived').textContent = age;
-  document.getElementById('yearsLeft').textContent = Math.max(0, yearsLeft);
-  document.getElementById('memoriesCount').textContent = safeMemories.length;
-  document.getElementById('yearPercent').textContent = Math.round(yearProgress) + '%';
+  const el1 = document.getElementById('currentYear'); if (el1) el1.textContent = today.getFullYear();
+  const el2 = document.getElementById('currentAge'); if (el2) el2.textContent = age;
+  const el3 = document.getElementById('lifespanDisplay'); if (el3) el3.textContent = lifespanYears;
+  const el4 = document.getElementById('yearsLived'); if (el4) el4.textContent = age;
+  const el5 = document.getElementById('yearsLeft'); if (el5) el5.textContent = Math.max(0, yearsLeft);
+  const el6 = document.getElementById('memoriesCount'); if (el6) el6.textContent = safeMemories.length;
+  const el7 = document.getElementById('yearPercent'); if (el7) el7.textContent = Math.round(yearProgress) + '%';
   
   // Update avatar display (supports both initials and image)
   updateAvatarDisplay();
   
-  const circumference = 2 * Math.PI * 32;
-  const offset = circumference - (yearProgress / 100) * circumference;
-  document.getElementById('progressRing').style.strokeDashoffset = offset;
+  const progressRing = document.getElementById('progressRing');
+  if (progressRing) {
+    const circumference = 2 * Math.PI * 32;
+    const offset = circumference - (yearProgress / 100) * circumference;
+    progressRing.style.strokeDashoffset = offset;
+  }
   
   renderTimeline();
   renderMemories();
@@ -3813,17 +4717,21 @@ function renderDashboard() {
 
 function renderTimeline() {
   const grid = document.getElementById('timelineGrid');
+  if (!grid || !currentUser || !currentUser.birthdate) return;
   grid.innerHTML = '';
   
   const birthDate = new Date(currentUser.birthdate);
+  if (isNaN(birthDate.getTime())) return;
+  
   const today = new Date();
   const currentAge = Math.floor((today - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+  const lifespanYears = currentUser.lifespanYears || 80;
   
   // Ensure memories is an array before mapping
   const safeMemories = ensureArray(memories);
   const yearsWithMemories = new Set(safeMemories.map(m => m.year));
   
-  for (let year = 0; year < currentUser.lifespanYears; year++) {
+  for (let year = 0; year < lifespanYears; year++) {
     const div = document.createElement('div');
     div.className = 'timeline-year';
     
@@ -3903,18 +4811,30 @@ function renderMemories() {
 
 function renderMisogis() {
   const container = document.getElementById('misogiList');
-  const misogis = plans.filter(p => p.type === 'misogi');
-  
-  if (misogis.length === 0) {
-    container.innerHTML = `
-      <div class="misogi-empty" onclick="showAddPlanModal('misogi')">
-        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🏔️</div>
-        <div>Add your defining challenge for this year</div>
-        <div style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.7;">Something so hard you might fail, but attempting it will transform you</div>
-      </div>
-    `;
+  if (!container) return;
+
+  // Only render if we're in the Year Design view
+  const designView = document.getElementById('yearDesignView');
+  if (!designView || designView.classList.contains('hidden')) {
     return;
   }
+
+  // Safety check - make sure plans is loaded
+  if (!plans || !Array.isArray(plans)) {
+    return;
+  }
+
+  const misogis = plans.filter(p => p && p.type === 'misogi');
+
+  // Hide misogi section entirely if no misogis exist
+  if (misogis.length === 0) {
+    container.innerHTML = '';
+    container.style.display = 'none';
+    return;
+  }
+
+  // Show container if we have misogis
+  container.style.display = 'block';
   
   // Sort by soonest date first (completed at the end)
   misogis.sort((a, b) => {
@@ -4324,6 +5244,7 @@ let currentCalendarMonth = null;
 
 function renderMonthGrid() {
   const container = document.getElementById('monthGrid');
+  if (!container) return;
   const today = new Date();
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
@@ -4381,7 +5302,6 @@ function renderMonthGrid() {
            onclick="openMonthCalendar(${idx + 1}, '${name}')">
         <div class="calendar-month-header">
           <span class="calendar-month-name">${name.substring(0, 3).toUpperCase()}</span>
-          ${monthPlans.length > 0 ? `<span class="calendar-month-count">${monthPlans.length} plan${monthPlans.length > 1 ? 's' : ''}</span>` : ''}
         </div>
         ${renderMiniCalendar(idx, daysWithPlans, isCurrentMonth)}
         <div class="calendar-plan-bars">
@@ -4470,17 +5390,21 @@ function getDaysWithPlans(month, monthPlans) {
 }
 
 function openMonthCalendar(month, monthName) {
-  currentCalendarMonth = month;
-  document.getElementById('monthCalendarTitle').textContent = `${monthName} ${currentViewYear}`;
-  
-  renderMonthCalendarGrid(month);
-  renderMonthPlansList(month);
-  
-  document.getElementById('monthCalendarModal').classList.add('active');
+  // Legacy month modal is removed; route to inline Month tab instead.
+  currentCalendarMonth = null;
+  if (typeof curM !== 'undefined') curM = month - 1;
+
+  const monthTabBtn = document.querySelectorAll('.ptb')[1];
+  if (typeof swTab === 'function' && monthTabBtn) {
+    swTab('month', monthTabBtn);
+  } else if (typeof buildMG === 'function') {
+    buildMG();
+  }
 }
 
 function closeMonthCalendarModal() {
-  document.getElementById('monthCalendarModal').classList.remove('active');
+  const modal = document.getElementById('monthCalendarModal');
+  if (modal) modal.classList.remove('active');
   currentCalendarMonth = null;
 }
 
@@ -4612,6 +5536,7 @@ function renderMonthCalendarGrid(month) {
 
 function renderMonthPlansList(month) {
   const container = document.getElementById('monthPlansList');
+  if (!container) return;
   
   // Filter by actual startDate month, not just targetMonth
   // Include shared-adventure type!
@@ -4673,10 +5598,12 @@ function renderMonthPlansList(month) {
     const isCompleted = p.status === 'completed';
     const isShared = p.type === 'shared-adventure';
     
+    const checkboxClick = isShared ? '' : ` onclick="event.stopPropagation(); togglePlanStatus('${p.id}');"`;
+    const checkboxLabel = isShared ? '👤' : (isCompleted ? '✅' : '⬜');
     return `
       <div class="month-plan-card ${isCompleted ? 'completed' : ''} ${isShared ? 'from-friend' : ''}" onclick="selectAdventureForMemories('${p.id}'); closeMonthCalendarModal();">
-        <div class="month-plan-card-checkbox" onclick="event.stopPropagation(); togglePlanStatus('${p.id}');">
-          ${isCompleted ? '✅' : '⬜'}
+        <div class="month-plan-card-checkbox"${checkboxClick}>
+          ${checkboxLabel}
         </div>
         <div class="month-plan-card-color ${p.type}"></div>
         <div class="month-plan-card-content">
@@ -5114,7 +6041,8 @@ function lightboxNext() {
 
 // Keyboard navigation for lightbox
 document.addEventListener('keydown', (e) => {
-  if (document.getElementById('photoLightbox').classList.contains('hidden')) return;
+  const lightboxEl = document.getElementById('photoLightbox');
+  if (!lightboxEl || lightboxEl.classList.contains('hidden')) return;
   
   if (e.key === 'Escape') closeLightbox();
   if (e.key === 'ArrowLeft') lightboxPrev();
@@ -5154,6 +6082,266 @@ function handleSwipe() {
   }
 }
 
+// =====================================================
+// AI ADVENTURE PREP
+// =====================================================
+
+async function getAIPrepTips(planId) {
+  const tokens = await getValidTokens();
+  if (!tokens?.idToken) { showToast('Please log in'); return; }
+
+  showToast('🤖 Generating prep checklist...');
+
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/plans/${planId}/ai-prep`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokens.idToken}`
+      },
+      body: JSON.stringify({})
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const plan = plans.find(p => p.id === planId);
+      if (plan) {
+        plan.aiChecklist = data.checklist;
+        localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
+      }
+      showAIPrepChecklist(planId, data.checklist);
+      showToast(`✨ ${data.checklist.length} prep tasks generated!`);
+    } else {
+      const err = await response.json();
+      showToast('Error: ' + (err.error || 'Failed'));
+    }
+  } catch (error) {
+    console.error('AI prep error:', error);
+    showToast('Network error: ' + error.message);
+  }
+}
+
+function showAIPrepChecklist(planId, checklist) {
+  const plan = plans.find(p => p.id === planId);
+  const title = plan?.title || 'Adventure';
+
+  const timeGroups = [
+    { key: '6months', label: '6 Months Before', icon: '📅' },
+    { key: '3months', label: '3 Months Before', icon: '📅' },
+    { key: '1month',  label: '1 Month Before',  icon: '📋' },
+    { key: '1week',   label: '1 Week Before',   icon: '⏰' },
+    { key: '1day',    label: 'Day Before',       icon: '⚡' },
+    { key: 'day-of',  label: 'Day Of',           icon: '🎯' }
+  ];
+
+  const catIcons = {
+    documents:'📄', booking:'🏨', packing:'🧳', health:'💊',
+    transport:'🚗', research:'🔍', finance:'💳', gear:'🎒', other:'📌'
+  };
+
+  const done = checklist.filter(t => t.completed).length;
+  const pct = checklist.length > 0 ? Math.round((done / checklist.length) * 100) : 0;
+
+  let html = `<div style="padding:4px 0">`;
+  html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">`;
+  html += `<h3 style="margin:0;font-family:'Fraunces',serif;font-size:1.1rem">✨ Prep: ${title}</h3>`;
+  html += `<button style="background:none;border:none;font-size:.8rem;color:var(--sage-600);cursor:pointer" onclick="getAIPrepTips('${planId}')">🔄 Refresh</button></div>`;
+
+  // Progress
+  html += `<div style="background:var(--sand-100);border-radius:10px;height:8px;margin-bottom:8px;overflow:hidden">`;
+  html += `<div style="background:var(--sage-500);height:100%;width:${pct}%;border-radius:10px"></div></div>`;
+  html += `<p style="font-size:.78rem;color:var(--text-tertiary);margin-bottom:16px">${done}/${checklist.length} complete</p>`;
+
+  for (const group of timeGroups) {
+    const items = checklist.filter(t => t.leadTime === group.key);
+    if (items.length === 0) continue;
+
+    html += `<div style="margin-bottom:14px">`;
+    html += `<div style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--sage-600);margin-bottom:6px">${group.icon} ${group.label}</div>`;
+
+    items.forEach(item => {
+      const ck = item.completed;
+      const icon = catIcons[item.category] || '📌';
+      const pc = item.priority==='high'?'#d9534f':item.priority==='medium'?'#f0ad4e':'#5bc0de';
+
+      html += `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px;margin-bottom:4px;background:${ck?'var(--sand-50)':'white'};border:1px solid var(--sand-100);border-radius:10px;cursor:pointer;${ck?'opacity:.6':''}" onclick="togglePrepTask('${planId}','${item.id}')">`;
+      html += `<div style="font-size:1.1rem;margin-top:1px">${ck?'✅':'⬜'}</div>`;
+      html += `<div style="flex:1"><div style="font-weight:500;font-size:.85rem;${ck?'text-decoration:line-through':''}">${icon} ${item.title}</div>`;
+      html += `<div style="font-size:.75rem;color:var(--text-tertiary);margin-top:2px">${item.description}</div></div>`;
+      html += `<span style="font-size:.55rem;padding:2px 6px;border-radius:8px;background:${pc}20;color:${pc};font-weight:600">${item.priority}</span>`;
+      html += `</div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Reminders
+  html += `<div style="border-top:1px solid var(--sand-100);padding-top:14px;margin-top:8px">`;
+  html += `<div style="font-weight:600;font-size:.9rem;margin-bottom:6px">🔔 Reminders</div>`;
+  const prefs = plan?.reminderPrefs || {};
+  // Show saved AI-generated reminders if they're in array format
+  if (Array.isArray(prefs) && prefs.length > 0) {
+    prefs.forEach(r => {
+      html += `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:.85rem">
+        <span style="color:var(--sage-500)">✓</span> ${escapeHtml(r.label || r.key || 'Reminder')}
+      </div>`;
+    });
+  } else if (typeof prefs === 'object' && Object.keys(prefs).length > 0) {
+    // Legacy format: key-value pairs
+    const labels = {'6months':'6 months before','3months':'3 months before','1month':'1 month before','1week':'1 week before','1day':'Day before'};
+    Object.entries(prefs).forEach(([k, v]) => {
+      if (v) html += `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:.85rem"><span style="color:var(--sage-500)">✓</span> ${escapeHtml(labels[k] || k)}</div>`;
+    });
+  } else {
+    html += `<p style="font-size:.8rem;color:var(--text-tertiary)">No reminders set</p>`;
+  }
+  html += `</div></div>`;
+
+  // Display in plan modal
+  const modal = document.getElementById('planModal');
+  if (modal) {
+    const body = modal.querySelector('.modal-body') || modal.querySelector('.modal-content');
+    if (body) { body.innerHTML = html; modal.classList.add('active'); }
+  }
+}
+
+async function togglePrepTask(planId, taskId) {
+  const plan = plans.find(p => p.id === planId);
+  if (!plan?.aiChecklist) return;
+
+  const task = plan.aiChecklist.find(t => t.id === taskId);
+  if (!task) return;
+  task.completed = !task.completed;
+
+  showAIPrepChecklist(planId, plan.aiChecklist);
+
+  const tokens = await getValidTokens();
+  if (tokens?.idToken) {
+    try {
+      await fetch(`${CONFIG.API_URL}/plans/${planId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${tokens.idToken}` },
+        body: JSON.stringify({ aiChecklist: plan.aiChecklist })
+      });
+    } catch (e) { console.error('Save checklist error:', e); }
+  }
+  localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
+}
+
+async function savePrepReminders(planId) {
+  const plan = plans.find(p => p.id === planId);
+  if (!plan) return;
+
+  const reminderPrefs = {};
+  ['6months','3months','1month','1week','1day'].forEach(t => {
+    const cb = document.getElementById('remind_' + t);
+    if (cb) reminderPrefs[t] = cb.checked;
+  });
+
+  plan.reminderPrefs = reminderPrefs;
+
+  const tokens = await getValidTokens();
+  if (tokens?.idToken) {
+    try {
+      await fetch(`${CONFIG.API_URL}/plans/${planId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${tokens.idToken}` },
+        body: JSON.stringify({ reminderPrefs })
+      });
+    } catch (e) { console.error('Save reminders error:', e); }
+  }
+
+  localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
+  showToast('🔔 Reminders saved!');
+}
+// =====================================================
+// AI PLACE RECOMMENDATIONS
+// =====================================================
+
+async function getAIRecommendations(category, location) {
+  const tokens = await getValidTokens();
+  if (!tokens?.idToken) { showToast('Please log in'); return null; }
+
+  const titleInput = document.getElementById('pfActName');
+  const title = titleInput ? titleInput.value.trim() : '';
+
+  // Get location from parameter or pfState
+  const searchLocation = location ||
+                         (typeof pfState !== 'undefined' && pfState.locName) ||
+                         currentUser?.hometown?.name ||
+                         '';
+
+  if (!searchLocation) {
+    showToast('Enter a location first!');
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/ai-recommend`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokens.idToken}`
+      },
+      body: JSON.stringify({
+        category,
+        title,
+        location: searchLocation  // ← NOW SENDING LOCATION
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.message && data.recommendations.length === 0) {
+        showToast(data.message);
+        return null;
+      }
+      return data.recommendations;
+    } else {
+      const err = await response.json();
+      showToast('Error: ' + (err.error || 'Failed'));
+      return null;
+    }
+  } catch (error) {
+    console.error('AI recommend error:', error);
+    showToast('Network error');
+    return null;
+  }
+}
+
+function showAIRecommendations(recs, container) {
+  if (!recs || recs.length === 0 || !container) return;
+
+  const catBgs = {
+    food:'var(--amber-light)', adventure:'var(--teal-light)', travel:'var(--blue-light)',
+    roadtrip:'var(--blue-light)', culture:'var(--lavender-light)', date:'var(--coral-bg)',
+    health:'var(--teal-light)', birthday:'var(--pink-light)', hiking:'var(--sage-100)',
+    skiing:'var(--blue-light)'
+  };
+
+  container.innerHTML = recs.map(r => {
+    const bg = catBgs[r.category] || 'var(--sage-100)';
+    return `<div class="airc" onclick="pfSelRec(this)" data-name="${r.name}" data-desc="${r.description}">
+      <div class="airc-icon" style="background:${bg}">${r.emoji}</div>
+      <div class="airc-body">
+        <div class="airn">${r.name}</div>
+        <div class="aird">${r.description}</div>
+        <div class="airdist">${r.distance}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// When user taps a recommendation, fill in the activity name
+function pfSelRec(el) {
+  document.querySelectorAll('.airc').forEach(r => r.classList.remove('sel'));
+  el.classList.add('sel');
+  const name = el.getAttribute('data-name');
+  const desc = el.getAttribute('data-desc');
+  const nameInput = document.getElementById('pfActName');
+  if (nameInput && name) nameInput.value = name;
+  const notesInput = document.getElementById('pfNotes');
+  if (notesInput && desc && !notesInput.value) notesInput.value = desc;
+}
 // =====================================================
 // YEAR IN REVIEW
 // =====================================================
@@ -5592,7 +6780,7 @@ function renderSettings() {
   document.getElementById('settingsEmail').value = auth.email || currentUser?.email || '';
   document.getElementById('settingsBirthdate').value = currentUser?.birthdate ? new Date(currentUser.birthdate).toLocaleDateString() : '';
   document.getElementById('settingsLifespan').value = currentUser?.lifespanYears ? currentUser.lifespanYears + ' years' : '';
-  
+  const htEl = document.getElementById('settingsHometown'); if (htEl) htEl.value = currentUser?.hometown?.name || '';
   // Update avatar display
   updateAvatarDisplay();
   
@@ -5777,6 +6965,7 @@ function formatDateShort(dateStr) {
 
 function showToast(message) {
   const toast = document.getElementById('toast');
+  if (!toast) { console.log('Toast:', message); return; }
   toast.textContent = message;
   toast.classList.remove('error');
   toast.classList.add('show');
@@ -5785,6 +6974,7 @@ function showToast(message) {
 
 function showError(message) {
   const toast = document.getElementById('toast');
+  if (!toast) { console.error('Error:', message); return; }
   toast.textContent = message;
   toast.classList.add('error', 'show');
   setTimeout(() => toast.classList.remove('show'), 4000);
@@ -5928,11 +7118,14 @@ function renderSharesList() {
   
   if (!sentContainer || !receivedContainer) return;
   
+  const sentShares = ensureArray(shares.sent);
+  const receivedShares = ensureArray(shares.received);
+  
   // Render sent shares
-  if (shares.sent.length === 0) {
+  if (sentShares.length === 0) {
     sentContainer.innerHTML = '<p class="no-shares">No shares sent yet</p>';
   } else {
-    sentContainer.innerHTML = shares.sent.map(share => `
+    sentContainer.innerHTML = sentShares.map(share => `
       <div class="share-item ${share.status}">
         <div class="share-item-info">
           <span class="share-item-title">${escapeHtml(share.itemTitle || share.shareType)}</span>
@@ -5948,10 +7141,10 @@ function renderSharesList() {
   }
   
   // Render received shares
-  if (shares.received.length === 0) {
+  if (receivedShares.length === 0) {
     receivedContainer.innerHTML = '<p class="no-shares">No shares received yet</p>';
   } else {
-    receivedContainer.innerHTML = shares.received.map(share => `
+    receivedContainer.innerHTML = receivedShares.map(share => `
       <div class="share-item received ${share.status}">
         <div class="share-item-info">
           <span class="share-item-title">${escapeHtml(share.itemTitle || share.shareType)}</span>
@@ -6244,12 +7437,62 @@ async function loadNotificationPreferences() {
 function updateNotificationUI() {
   const emailToggle = document.getElementById('notifEmailToggle');
   const pushToggle = document.getElementById('notifPushToggle');
-  
+
   if (emailToggle) emailToggle.checked = notificationPreferences.email !== false;
   if (pushToggle) pushToggle.checked = notificationPreferences.push === true;
-  
+
   // Update push status
   updatePushNotificationStatus();
+}
+
+// Render notification list with upcoming reminders
+function renderNotificationList() {
+  const notifList = document.getElementById('notifList');
+  if (!notifList) return;
+
+  // Get upcoming adventures with reminders
+  const now = new Date(); // Define now here so it's accessible everywhere
+  const upcomingPlans = plans.filter(p => {
+    if (p.type === 'habit' || p.type === 'theme') return false;
+    if (p.status === 'completed') return false;
+    if (!p.reminderPrefs || (Array.isArray(p.reminderPrefs) && p.reminderPrefs.length === 0)) return false;
+    if (!p.startDate) return false;
+
+    const startDate = new Date(p.startDate);
+    // Show events in the next 30 days
+    const daysDiff = Math.ceil((startDate - now) / (1000 * 60 * 60 * 24));
+    return daysDiff >= 0 && daysDiff <= 30;
+  }).sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+  if (upcomingPlans.length === 0) {
+    notifList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);font-size:.9rem">No upcoming reminders</div>';
+    return;
+  }
+
+  const html = upcomingPlans.map(p => {
+    const startDate = new Date(p.startDate);
+    const daysDiff = Math.ceil((startDate - now) / (1000 * 60 * 60 * 24));
+    const dateStr = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const daysText = daysDiff === 0 ? 'Today' : daysDiff === 1 ? 'Tomorrow' : `${daysDiff} days`;
+
+    const reminders = Array.isArray(p.reminderPrefs) ? p.reminderPrefs : [];
+    const reminderText = reminders.length > 0
+      ? reminders.slice(0, 2).map(r => r.label || r.key).join(', ') + (reminders.length > 2 ? '...' : '')
+      : 'Reminders set';
+
+    return `
+      <div class="notif-item" onclick="if(typeof showEditPlanModal==='function')showEditPlanModal('${p.id}');closePanel('notif')">
+        <div class="notif-icon">${getCategoryIcon(p.category) || '📅'}</div>
+        <div class="notif-body">
+          <div class="notif-title">${escapeHtml(p.title)}</div>
+          <div class="notif-desc">${reminderText}</div>
+          <div class="notif-date">${dateStr} · ${daysText}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  notifList.innerHTML = html;
 }
 
 // Save notification preferences
@@ -6515,10 +7758,10 @@ function renderBucketList() {
   
   let html = '';
   
-  // Stats at top
-  const dreamCount = bucketList.filter(i => i.status === 'dream').length;
-  const plannedCount = bucketList.filter(i => i.status === 'planned').length;
-  const completedCount = bucketList.filter(i => i.status === 'completed').length;
+  // Stats at top (exclude temporary items)
+  const dreamCount = bucketList.filter(i => i.status === 'dream' && !i.temporary).length;
+  const plannedCount = bucketList.filter(i => i.status === 'planned' && !i.temporary).length;
+  const completedCount = bucketList.filter(i => i.status === 'completed' && !i.temporary).length;
   
   html += `
     <div class="bucket-list-stats">
@@ -6705,24 +7948,38 @@ async function processBucketListVoice(transcript) {
 }
 
 async function scheduleBucketItem(itemId) {
-  const item = bucketList.find(i => i.id === itemId);
+  var item = bucketList.find(function(i) { return i.id === itemId; });
   if (!item) return;
-  
+
   closeBucketListModal();
-  showAddPlanModal('adventure');
-  
-  setTimeout(() => {
-    document.getElementById('planTitle').value = item.title;
-    document.getElementById('planDescription').value = item.description || '';
-    
-    const categoryMap = {
-      travel: 'travel', adventure: 'hiking', skills: 'learning', experiences: 'other',
-      personal: 'other', health: 'running', creative: 'art', relationships: 'other', career: 'conference'
+
+  if (typeof startAdventureWizardWithData === 'function') {
+    // Map bucket category to adventure category
+    var catMap = {
+      travel: 'travel', adventure: 'adventure', skills: 'culture', experiences: 'culture',
+      personal: 'health', health: 'health', creative: 'culture'
     };
-    
-    document.getElementById('planCategory').value = categoryMap[item.category] || 'other';
-    document.getElementById('planForm').dataset.bucketItemId = itemId;
-  }, 100);
+
+    // Pre-fill data directly when starting wizard
+    startAdventureWizardWithData({
+      name: item.title,
+      notes: item.description || '',
+      category: catMap[item.category] || 'adventure',
+      location: item.location ? {
+        name: item.location,
+        lat: null,
+        lng: null,
+        placeId: ''
+      } : { name: '', lat: null, lng: null, placeId: '' },
+      _bucketItemId: itemId
+    });
+  } else {
+    showAddPlanModal('adventure');
+    setTimeout(function() {
+      var t = document.getElementById('planTitle');
+      if (t) t.value = item.title;
+    }, 100);
+  }
 }
 
 async function completeBucketItem(itemId) {
@@ -6736,6 +7993,7 @@ async function completeBucketItem(itemId) {
   const success = await saveBucketList(bucketList);
   if (success) {
     renderBucketList();
+    if (typeof refreshPlanView === 'function') refreshPlanView(); // Update stats
     showToast('🎉 Bucket list item completed!');
   } else {
     showError('Failed to save');
@@ -6750,6 +8008,7 @@ async function removeBucketItem(itemId) {
   const success = await saveBucketList(bucketList);
   if (success) {
     renderBucketList();
+    if (typeof refreshPlanView === 'function') refreshPlanView(); // Update stats
     showToast('Item removed');
   } else {
     showError('Failed to save');
@@ -6792,9 +8051,351 @@ function linkAdventureToBucketItem(adventureId, bucketItemId) {
 }
 
 function getBucketListStatsForYear(year) {
-  const completed = bucketList.filter(i => i.completedYear === year);
-  const planned = bucketList.filter(i => i.plannedYear === year);
+  const completed = bucketList.filter(i => i.completedYear === year && !i.temporary);
+  const planned = bucketList.filter(i => i.plannedYear === year && !i.temporary);
   return { completedCount: completed.length, plannedCount: planned.length, completedItems: completed, plannedItems: planned };
+}
+
+// =====================================================
+// ADD DREAM MODAL — Focused voice/text input
+// =====================================================
+
+let dreamRecognition = null;
+let isDreamRecording = false;
+let dreamSelectedItems = [];
+let dreamGenerationStartTime = null;
+
+function showAddDreamModal() {
+  // Reset to input phase
+  document.getElementById('dreamInputPhase').style.display = '';
+  document.getElementById('dreamResultsPhase').style.display = 'none';
+
+  // Reset UI
+  var transcript = document.getElementById('dreamTranscript');
+  if (transcript) { transcript.textContent = ''; transcript.classList.remove('visible'); }
+  var status = document.getElementById('dreamStatus');
+  if (status) { status.textContent = ''; status.className = 'dream-status'; }
+  var textInput = document.getElementById('dreamTextInput');
+  if (textInput) textInput.value = '';
+  var micLabel = document.getElementById('dreamMicLabel');
+  if (micLabel) micLabel.textContent = 'Tap to speak';
+  var hint = document.getElementById('dreamMicHint');
+  if (hint) hint.style.display = '';
+  var micBtn = document.getElementById('dreamMicBtn');
+  if (micBtn) { micBtn.classList.remove('recording'); micBtn.disabled = false; }
+
+  dreamSelectedItems = [];
+
+  document.getElementById('addDreamModal').classList.add('active');
+}
+
+function closeAddDreamModal() {
+  dreamStopRecording();
+  document.getElementById('addDreamModal').classList.remove('active');
+}
+
+// ===== VOICE =====
+
+function dreamInitRecognition() {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return false;
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  dreamRecognition = new SR();
+  dreamRecognition.continuous = true;
+  dreamRecognition.interimResults = true;
+  dreamRecognition.lang = 'en-US';
+
+  var fullText = '';
+
+  dreamRecognition.onstart = function() {
+    isDreamRecording = true;
+    fullText = '';
+    document.getElementById('dreamMicBtn').classList.add('recording');
+    document.getElementById('dreamMicLabel').textContent = 'Listening... Tap to stop';
+    document.getElementById('dreamStatus').textContent = '';
+    document.getElementById('dreamStatus').className = 'dream-status';
+  };
+
+  dreamRecognition.onresult = function(event) {
+    var interim = '';
+    for (var i = event.resultIndex; i < event.results.length; i++) {
+      var t = event.results[i][0].transcript;
+      if (event.results[i].isFinal) fullText += t + ' ';
+      else interim = t;
+    }
+    // Update the textarea with voice input
+    var textArea = document.getElementById('dreamTextInput');
+    if (textArea) textArea.value = fullText + interim;
+  };
+
+  dreamRecognition.onerror = function(event) {
+    dreamStopRecording();
+    var msg = 'Voice input error';
+    if (event.error === 'no-speech') msg = 'No speech detected. Try again.';
+    else if (event.error === 'not-allowed') msg = 'Microphone access denied. Use text input instead.';
+    document.getElementById('dreamStatus').textContent = msg;
+    document.getElementById('dreamStatus').className = 'dream-status error';
+  };
+
+  dreamRecognition.onend = function() {
+    // Just stop - don't auto-restart (let user control start/stop)
+    if (isDreamRecording) {
+      dreamStopRecording();
+    }
+  };
+
+  return true;
+}
+
+function dreamToggleRecording() {
+  if (!dreamRecognition) {
+    if (!dreamInitRecognition()) {
+      document.getElementById('dreamStatus').textContent = 'Voice not supported. Use text input.';
+      document.getElementById('dreamStatus').className = 'dream-status error';
+      return;
+    }
+  }
+
+  if (isDreamRecording) {
+    dreamStopRecording();
+    // Don't auto-process - let user choose which button to click
+  } else {
+    dreamStartRecording();
+  }
+}
+
+function dreamStartRecording() {
+  try {
+    var textArea = document.getElementById('dreamTextInput');
+    if (textArea) textArea.value = '';
+    dreamRecognition.start();
+  } catch(e) {
+    document.getElementById('dreamStatus').textContent = 'Could not start microphone.';
+    document.getElementById('dreamStatus').className = 'dream-status error';
+  }
+}
+
+function dreamStopRecording() {
+  isDreamRecording = false;
+  if (dreamRecognition) {
+    try { dreamRecognition.stop(); } catch(e) {}
+  }
+  var btn = document.getElementById('dreamMicBtn');
+  if (btn) btn.classList.remove('recording');
+  var label = document.getElementById('dreamMicLabel');
+  if (label) label.textContent = 'Tap to speak';
+}
+
+// ===== TWO ACTION BUTTONS =====
+
+async function dreamGenerateWithAI() {
+  var textArea = document.getElementById('dreamTextInput');
+  var text = textArea ? textArea.value.trim() : '';
+
+  if (!text || text.length < 5) {
+    var status = document.getElementById('dreamStatus');
+    status.textContent = 'Please enter or speak what you want to add first';
+    status.className = 'dream-status error';
+    return;
+  }
+
+  // Call the AI generation flow
+  dreamProcessVoice(text);
+}
+
+async function dreamAddDirectly() {
+  var textArea = document.getElementById('dreamTextInput');
+  var text = textArea ? textArea.value.trim() : '';
+
+  if (!text || text.length < 3) {
+    var status = document.getElementById('dreamStatus');
+    status.textContent = 'Please enter or speak what you want to add first';
+    status.className = 'dream-status error';
+    return;
+  }
+
+  var status = document.getElementById('dreamStatus');
+  status.textContent = '✨ Adding to your bucket list...';
+  status.className = 'dream-status thinking';
+
+  try {
+    var result = await processBucketListWithAI('add', text);
+
+    if (result && !result.error) {
+      // Successfully added
+      closeAddDreamModal();
+      if (typeof buildBucketView === 'function') buildBucketView();
+      if (typeof refreshPlanView === 'function') refreshPlanView();
+      showToast('✨ Added to your bucket list!');
+    } else {
+      status.textContent = result?.error || 'Failed to add. Try again.';
+      status.className = 'dream-status error';
+    }
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'dream-status error';
+  }
+}
+
+// ===== PROCESS WITH AI =====
+
+async function dreamProcessVoice(transcript) {
+  var status = document.getElementById('dreamStatus');
+  status.textContent = '🤖 AI is creating your bucket list...';
+  status.className = 'dream-status thinking';
+  var micBtn = document.getElementById('dreamMicBtn');
+  if (micBtn) micBtn.disabled = true;
+
+  // Track when this generation started to prevent showing old items on retry
+  dreamGenerationStartTime = Date.now();
+
+  try {
+    var result = await processBucketListWithAI('generate', transcript);
+
+    if (micBtn) micBtn.disabled = false;
+
+    if (result && !result.error) {
+      // AI returns the full updated bucket list
+      // We need to find the NEW items that were just added AFTER this generation started
+      var newItems = bucketList.filter(function(item) {
+        // Only show items created after this generation started
+        var created = new Date(item.createdAt);
+        return created.getTime() >= dreamGenerationStartTime;
+      });
+
+      if (newItems.length === 0) {
+        // Fallback: show last 5 items
+        newItems = bucketList.slice(-5);
+      }
+
+      dreamShowResults(newItems, result.message);
+    } else {
+      status.textContent = result?.error || 'AI processing failed. Try again or use text input.';
+      status.className = 'dream-status error';
+    }
+  } catch(e) {
+    if (micBtn) micBtn.disabled = false;
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'dream-status error';
+  }
+}
+
+// ===== SHOW AI RESULTS =====
+
+function dreamShowResults(items, message) {
+  document.getElementById('dreamInputPhase').style.display = 'none';
+  document.getElementById('dreamResultsPhase').style.display = '';
+
+  var subtitle = document.getElementById('dreamResultsSubtitle');
+  if (subtitle) subtitle.textContent = message || 'Select the dreams you want to keep';
+
+  // All selected by default
+  dreamSelectedItems = items.map(function(item) { return item.id; });
+
+  var catIcons = {
+    travel: '✈️', adventure: '🏔️', skills: '🎯', experiences: '🎭',
+    personal: '💫', health: '💪', creative: '🎨', other: '📌'
+  };
+
+  var html = items.map(function(item) {
+    var icon = catIcons[item.category] || '📌';
+    return '<div class="dream-result-item selected" onclick="dreamToggleItem(\'' + item.id + '\', this)" data-id="' + item.id + '">' +
+      '<span class="dream-result-emoji">' + icon + '</span>' +
+      '<div class="dream-result-body">' +
+        '<div class="dream-result-title">' + escapeHtml(item.title) + '</div>' +
+        (item.description ? '<div class="dream-result-desc">' + escapeHtml(item.description) + '</div>' : '') +
+        '<div class="dream-result-cat">' + (item.category || 'other') + (item.difficulty ? ' · ' + item.difficulty : '') + '</div>' +
+      '</div>' +
+      '<div class="dream-result-check">✓</div>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('dreamResultsList').innerHTML = html;
+
+  // Update button with count
+  updateDreamAddButton();
+}
+
+function dreamToggleItem(id, el) {
+  var idx = dreamSelectedItems.indexOf(id);
+  if (idx >= 0) {
+    dreamSelectedItems.splice(idx, 1);
+    el.classList.remove('selected');
+  } else {
+    dreamSelectedItems.push(id);
+    el.classList.add('selected');
+  }
+  // Update button count
+  updateDreamAddButton();
+}
+
+function updateDreamAddButton() {
+  var btn = document.getElementById('dreamAddSelectedBtn');
+  if (!btn) return;
+
+  var count = dreamSelectedItems.length;
+  btn.textContent = 'Add Selected (' + count + ')';
+  btn.disabled = count === 0;
+}
+
+function dreamBackToInput() {
+  document.getElementById('dreamInputPhase').style.display = '';
+  document.getElementById('dreamResultsPhase').style.display = 'none';
+  document.getElementById('dreamStatus').textContent = '';
+  document.getElementById('dreamStatus').className = 'dream-status';
+}
+
+async function dreamConfirmSelected() {
+  // Mark selected items as confirmed (remove temporary flag)
+  bucketList.forEach(function(item) {
+    if (dreamSelectedItems.indexOf(item.id) >= 0) {
+      delete item.temporary;  // Confirm this item
+    }
+  });
+
+  // Remove unselected temporary items
+  bucketList = bucketList.filter(function(item) {
+    return !item.temporary;  // Keep confirmed items and non-temporary items
+  });
+
+  await saveBucketList(bucketList);
+  closeAddDreamModal();
+
+  // Refresh bucket view
+  if (typeof buildBucketView === 'function') buildBucketView();
+  if (typeof refreshPlanView === 'function') refreshPlanView();
+
+  showToast('✨ ' + dreamSelectedItems.length + ' dream' + (dreamSelectedItems.length !== 1 ? 's' : '') + ' added!');
+}
+
+// ===== MANUAL TEXT ADD =====
+
+async function dreamAddManual() {
+  var titleInput = document.getElementById('dreamTextInput');
+  var catSelect = document.getElementById('dreamCategorySelect');
+  var title = titleInput.value.trim();
+  if (!title) { showToast('Enter a dream first'); return; }
+
+  var newItem = {
+    id: 'bucket_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+    title: title,
+    category: catSelect.value || 'other',
+    status: 'dream',
+    createdAt: new Date().toISOString(),
+    aiGenerated: false
+  };
+
+  bucketList.push(newItem);
+
+  var success = await saveBucketList(bucketList);
+  if (success) {
+    titleInput.value = '';
+    showToast('✨ Added: ' + title);
+    // Refresh views
+    if (typeof buildBucketView === 'function') buildBucketView();
+    if (typeof refreshPlanView === 'function') refreshPlanView();
+  } else {
+    showToast('Saved locally');
+  }
 }
 
 // =====================================================
@@ -7199,14 +8800,73 @@ function renderJournalEntries() {
 // =====================================================
 
 document.addEventListener('DOMContentLoaded', async function() {
-  const tokens = localStorage.getItem('lifestack_tokens');
-  if (tokens) {
-    await loadUserData();
-    await processPendingInvite();
-    checkForInviteCode();
-  } else {
-    showLanding();
-    checkForInviteCode();
+  try {
+    const tokens = localStorage.getItem('lifestack_tokens');
+    const savedUser = localStorage.getItem('lifestack_user');
+
+    if (tokens && savedUser) {
+      // INSTANT APP LAUNCH: Show app immediately from cache — no login flash
+      try {
+        currentUser = JSON.parse(savedUser);
+        loadLocalMemories();
+        loadLocalPeople();
+        
+        // Load cached plans for instant display
+        try {
+          const cachedPlans = localStorage.getItem('lifestack_plans_' + currentViewYear);
+          if (cachedPlans) {
+            plans = JSON.parse(cachedPlans);
+            console.log('Loaded', plans.length, 'plans from cache for year', currentViewYear);
+          }
+        } catch(e) { console.log('Plans cache parse error:', e); }
+        
+        const cachedJournals = localStorage.getItem('lifestack_journals');
+        if (cachedJournals) journalEntries = JSON.parse(cachedJournals);
+        const cachedFriendships = localStorage.getItem('lifestack_friendships');
+        if (cachedFriendships) friendships = JSON.parse(cachedFriendships);
+
+        // Load cached bucket list for banner stats
+        const cachedBucketList = localStorage.getItem('lifestack_bucketlist');
+        if (cachedBucketList) {
+          try {
+            bucketList = JSON.parse(cachedBucketList);
+            console.log('Loaded', bucketList.length, 'bucket items from cache');
+          } catch(e) { console.log('Bucket list cache parse error:', e); }
+        }
+
+        updateFriendBadge();
+        showApp();
+      } catch (cacheErr) {
+        console.error('Cache parse error, falling back to full load:', cacheErr);
+      }
+
+      // Background sync: refresh tokens & data silently
+      loadUserData().catch(err => console.error('Background loadUserData error:', err));
+      processPendingInvite().catch(err => console.error('Pending invite error:', err));
+      checkForInviteCode();
+    } else if (tokens && !savedUser) {
+      // Tokens exist but no cached user profile yet (e.g. first launch after verify)
+      await loadUserData();
+      await processPendingInvite();
+      checkForInviteCode();
+    } else {
+      showLanding();
+      checkForInviteCode();
+    }
+  } catch (error) {
+    console.error('Initialization error:', error);
+    // If we already showed the app from cache, don't flash the landing page
+    const appEl = document.getElementById('app');
+    if (appEl && !appEl.classList.contains('hidden')) {
+      hideLoading();
+    } else {
+      try { showLanding(); } catch(e) {
+        const loading = document.getElementById('loadingScreen');
+        if (loading) loading.classList.add('hidden');
+        const landing = document.getElementById('landing');
+        if (landing) landing.classList.remove('hidden');
+      }
+    }
   }
   
   // Click outside modal to close
