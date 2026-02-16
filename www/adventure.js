@@ -741,7 +741,7 @@ async function advSave() {
       } catch (storageError) {
         console.error('localStorage error (iOS quota exceeded?):', storageError);
       }
-      toast('🎉 Adventure created!');
+      toast('✅ Adventure saved! Switch tabs to see it.');
 
       if (advWizard.data._bucketItemId && typeof bucketList !== 'undefined') {
         var bItem = bucketList.find(function(b) { return b.id === advWizard.data._bucketItemId; });
@@ -760,21 +760,14 @@ async function advSave() {
       } catch (storageError) {
         console.error('localStorage error (iOS quota exceeded?):', storageError);
       }
-      toast('📋 Saved locally!');
+      toast('📋 Saved locally! Switch tabs to see it.');
     }
 
     closeAdvWizard();
 
-    // Refresh views - simple approach
-    if (typeof refreshPlanView === 'function') {
-      setTimeout(() => {
-        try {
-          refreshPlanView();
-        } catch (e) {
-          console.error('Refresh error:', e);
-        }
-      }, 500);
-    }
+    // Skip auto-refresh to prevent iOS crash
+    // User can manually refresh by switching tabs or pull-to-refresh
+    console.log('Adventure saved - switch tabs to refresh view');
   } catch(e) {
     console.error('Save error:', e);
     console.error('Error stack:', e.stack);
