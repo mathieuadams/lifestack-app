@@ -761,12 +761,17 @@ async function advSave() {
 
     closeAdvWizard();
 
-    // Silent refresh: show the saved adventure in calendar/views without a popup toast.
-    if (typeof refreshPlanView === 'function') {
+    // After save, always land on Plan > Month and show the current month.
+    if (typeof swView === 'function') swView('plan');
+    if (typeof curM !== 'undefined') curM = new Date().getMonth();
+
+    const monthTabBtn = document.querySelectorAll('.ptb')[1];
+    if (typeof swTab === 'function' && monthTabBtn) {
+      swTab('month', monthTabBtn);
+    } else if (typeof buildMG === 'function') {
+      buildMG();
+    } else if (typeof refreshPlanView === 'function') {
       refreshPlanView();
-    } else {
-      if (typeof renderMonthGrid === 'function') renderMonthGrid();
-      if (typeof renderDashboard === 'function') renderDashboard();
     }
   } catch(e) {
     console.error('Save error:', e);
