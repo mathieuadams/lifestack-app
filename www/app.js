@@ -572,6 +572,88 @@ async function deletePlan(planId) {
 }
 
 // =====================================================
+// REMINDER & SUB-ACTIVITY COMPLETION
+// =====================================================
+
+async function toggleReminderComplete(planId, reminderIndex) {
+  try {
+    const plan = plans.find(p => p.id === planId);
+    if (!plan || !plan.reminderPrefs || !plan.reminderPrefs[reminderIndex]) {
+      console.error('Reminder not found');
+      return;
+    }
+
+    // Toggle completed status
+    const reminder = plan.reminderPrefs[reminderIndex];
+    reminder.completed = !reminder.completed;
+
+    // Update plan in backend
+    const result = await updatePlan(planId, {
+      reminderPrefs: plan.reminderPrefs
+    });
+
+    if (result) {
+      // Update local cache
+      const planIndex = plans.findIndex(p => p.id === planId);
+      if (planIndex !== -1) {
+        plans[planIndex] = result;
+        localStorage.setItem(`lifestack_plans_${plan.year}`, JSON.stringify(plans));
+      }
+
+      // Re-render the edit modal if it's open
+      const modal = document.getElementById('editPlanModal');
+      if (modal && modal.classList.contains('active')) {
+        showEditPlanModal(planId);
+      }
+
+      showToast(reminder.completed ? '✅ Reminder completed!' : '↩️ Reminder reopened');
+    }
+  } catch (error) {
+    console.error('Error toggling reminder:', error);
+    showError('Failed to update reminder');
+  }
+}
+
+async function toggleSubActivityComplete(planId, activityIndex) {
+  try {
+    const plan = plans.find(p => p.id === planId);
+    if (!plan || !plan.subActivities || !plan.subActivities[activityIndex]) {
+      console.error('Sub-activity not found');
+      return;
+    }
+
+    // Toggle completed status
+    const activity = plan.subActivities[activityIndex];
+    activity.completed = !activity.completed;
+
+    // Update plan in backend
+    const result = await updatePlan(planId, {
+      subActivities: plan.subActivities
+    });
+
+    if (result) {
+      // Update local cache
+      const planIndex = plans.findIndex(p => p.id === planId);
+      if (planIndex !== -1) {
+        plans[planIndex] = result;
+        localStorage.setItem(`lifestack_plans_${plan.year}`, JSON.stringify(plans));
+      }
+
+      // Re-render the edit modal if it's open
+      const modal = document.getElementById('editPlanModal');
+      if (modal && modal.classList.contains('active')) {
+        showEditPlanModal(planId);
+      }
+
+      showToast(activity.completed ? '✅ Activity completed!' : '↩️ Activity reopened');
+    }
+  } catch (error) {
+    console.error('Error toggling sub-activity:', error);
+    showError('Failed to update activity');
+  }
+}
+
+// =====================================================
 // BUCKET LIST API CALLS
 // =====================================================
 
@@ -3168,28 +3250,42 @@ function showEditPlanModal(planId) {
     }
   }
 
-  // Load reminders
+  // Load reminders with checkboxes
   const remindersList = document.getElementById('planRemindersList');
   if (remindersList) {
     console.log('Loading reminders for plan:', plan.id, 'reminderPrefs:', plan.reminderPrefs);
     if (plan.reminderPrefs && plan.reminderPrefs.length > 0) {
-      remindersList.innerHTML = plan.reminderPrefs.map(r =>
-        `<div style="padding:6px 0;border-bottom:1px solid var(--sand-100)">${escapeHtml(r.label || r.name || 'Reminder')}</div>`
+      remindersList.innerHTML = plan.reminderPrefs.map((r, index) =>
+        `<div style="padding:6px 0;border-bottom:1px solid var(--sand-100);display:flex;align-items:center;gap:8px">
+          <input type="checkbox" ${r.completed ? 'checked' : ''}
+                 onchange="toggleReminderComplete('${plan.id}', ${index})"
+                 style="width:18px;height:18px;cursor:pointer">
+          <span style="${r.completed ? 'text-decoration:line-through;color:var(--text-tertiary)' : ''};flex:1">
+            ${escapeHtml(r.label || r.name || 'Reminder')}
+          </span>
+        </div>`
       ).join('');
     } else {
       remindersList.textContent = 'No reminders set';
     }
   }
 
-  // Load sub-activities
+  // Load sub-activities with checkboxes
   const subActivitiesList = document.getElementById('planSubActivitiesList');
   if (subActivitiesList) {
     console.log('Loading sub-activities for plan:', plan.id, 'subActivities:', plan.subActivities);
     if (plan.subActivities && plan.subActivities.length > 0) {
-      subActivitiesList.innerHTML = plan.subActivities.map(s =>
-        `<div style="padding:8px;background:var(--sage-50);border-radius:8px;margin-bottom:6px">
-          <div style="font-weight:600;color:var(--text-primary)">${s.emoji || '•'} ${escapeHtml(s.name)}</div>
-          ${s.description ? `<div style="font-size:.8rem;color:var(--text-tertiary);margin-top:2px">${escapeHtml(s.description)}</div>` : ''}
+      subActivitiesList.innerHTML = plan.subActivities.map((s, index) =>
+        `<div style="padding:8px;background:var(--sage-50);border-radius:8px;margin-bottom:6px;display:flex;align-items:start;gap:8px">
+          <input type="checkbox" ${s.completed ? 'checked' : ''}
+                 onchange="toggleSubActivityComplete('${plan.id}', ${index})"
+                 style="width:18px;height:18px;margin-top:2px;cursor:pointer;flex-shrink:0">
+          <div style="flex:1">
+            <div style="font-weight:600;color:var(--text-primary);${s.completed ? 'text-decoration:line-through;color:var(--text-tertiary)' : ''}">
+              ${s.emoji || '•'} ${escapeHtml(s.name)}
+            </div>
+            ${s.description ? `<div style="font-size:.8rem;color:var(--text-tertiary);margin-top:2px">${escapeHtml(s.description)}</div>` : ''}
+          </div>
         </div>`
       ).join('');
     } else {

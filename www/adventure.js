@@ -294,7 +294,8 @@ async function loadAIReminders() {
       const reminders = recs.slice(0, 5).map((r, i) => ({
         key: 'ai_' + i,
         label: (r.emoji || '🔔') + ' ' + (r.name || r.title || r.description || 'Reminder'),
-        checked: true
+        checked: true,
+        completed: false  // ✅ Track completion status
       }));
       if (reminders.length > 0) {
         d._aiReminders = reminders;
@@ -344,7 +345,8 @@ function collectSmartReminders() {
       reminders.push({
         key: cb.getAttribute('data-reminder-key') || '',
         label: cb.getAttribute('data-reminder-label') || '',
-        checked: true
+        checked: true,
+        completed: false  // ✅ New reminders start uncompleted
       });
     }
   });
@@ -653,7 +655,12 @@ function advToggleIdea(idx, el) {
     el.classList.remove('sel');
     el.querySelector('.adv-idea-check').textContent = '+';
   } else {
-    advWizard.data.subActivities.push({ name: idea.name, description: idea.description, emoji: idea.emoji });
+    advWizard.data.subActivities.push({
+      name: idea.name,
+      description: idea.description,
+      emoji: idea.emoji,
+      completed: false  // ✅ Track completion status
+    });
     el.classList.add('sel');
     el.querySelector('.adv-idea-check').textContent = '✓';
   }
@@ -759,30 +766,30 @@ async function advSave() {
 
     closeAdvWizard();
 
-    // iOS needs longer delay for modal animation to complete
+    // iOS: Skip automatic refresh to prevent crash
+    // User can pull-to-refresh or switch tabs to see new adventure
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const delay = isIOS ? 800 : 300; // iOS: 800ms, others: 300ms
 
-    console.log('Platform:', isIOS ? 'iOS' : 'Other', 'Delay:', delay + 'ms');
-
-    // Refresh views with delay for mobile devices
-    // Immediate refresh can crash on mobile due to DOM manipulation
-    setTimeout(() => {
-      try {
-        console.log('Starting view refresh after save...');
-        if (typeof refreshPlanView === 'function') {
-          refreshPlanView();
-        } else {
-          if (typeof buildMG === 'function') buildMG();
-          if (typeof buildYV === 'function') buildYV();
+    if (isIOS) {
+      console.log('iOS detected - skipping auto-refresh to prevent crash');
+      // Show message that save was successful
+      toast('✅ Adventure saved! Switch tabs to see it.');
+    } else {
+      // Non-iOS: refresh after delay
+      console.log('Non-iOS platform - refreshing views');
+      setTimeout(() => {
+        try {
+          if (typeof refreshPlanView === 'function') {
+            refreshPlanView();
+          } else {
+            if (typeof buildMG === 'function') buildMG();
+            if (typeof buildYV === 'function') buildYV();
+          }
+        } catch (refreshError) {
+          console.error('Error refreshing views:', refreshError);
         }
-        console.log('View refresh completed successfully');
-      } catch (refreshError) {
-        console.error('Error refreshing views after save:', refreshError);
-        console.error('Stack:', refreshError.stack);
-        // Don't show error to user - the save was successful
-      }
-    }, delay);
+      }, 300);
+    }
   } catch(e) {
     console.error('Save error:', e);
     console.error('Error stack:', e.stack);
