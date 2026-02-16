@@ -868,24 +868,35 @@ function initCalendarDrag(){
 
 // ===== PLAN VIEW REFRESH =====
 function refreshPlanView(){
-  if(typeof plans!=='undefined'&&Array.isArray(plans)){
-    const adventures=plans.filter(p=>p.type==='adventure').length;
-    const misogis=plans.filter(p=>p.type==='misogi').length;
-    const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.length:0;
-    
-    const el=document.getElementById('statAdventures');if(el)el.textContent=adventures;
-    const mel=document.getElementById('statMisogi');if(mel)mel.textContent=misogis;
-    const bel=document.getElementById('statBucket');if(bel)bel.textContent=bucketCount;
-  }
-  buildWeekView();buildMG();buildYV();
+  try{
+    if(typeof plans!=='undefined'&&Array.isArray(plans)){
+      const adventures=plans.filter(p=>p.type==='adventure').length;
+      const misogis=plans.filter(p=>p.type==='misogi').length;
+      const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.length:0;
+
+      const el=document.getElementById('statAdventures');if(el)el.textContent=adventures;
+      const mel=document.getElementById('statMisogi');if(mel)mel.textContent=misogis;
+      const bel=document.getElementById('statBucket');if(bel)bel.textContent=bucketCount;
+    }
+  }catch(e){console.error('Error updating stats:',e)}
+
+  try{buildWeekView()}catch(e){console.error('Error building week view:',e)}
+  try{buildMG()}catch(e){console.error('Error building month grid:',e)}
+  try{buildYV()}catch(e){console.error('Error building year view:',e)}
+
   // Update profile
-  if(typeof currentUser!=='undefined'&&currentUser){
-    const pn=document.getElementById('profileName');if(pn)pn.textContent=currentUser.name||'User';
-  }
+  try{
+    if(typeof currentUser!=='undefined'&&currentUser){
+      const pn=document.getElementById('profileName');if(pn)pn.textContent=currentUser.name||'User';
+    }
+  }catch(e){console.error('Error updating profile:',e)}
+
   // Update year theme
-  if(typeof yearData!=='undefined'&&yearData){
-    const th=document.getElementById('yearBannerTheme');if(th&&yearData.theme)th.textContent='"'+yearData.theme+'"';
-  }
+  try{
+    if(typeof yearData!=='undefined'&&yearData){
+      const th=document.getElementById('yearBannerTheme');if(th&&yearData.theme)th.textContent='"'+yearData.theme+'"';
+    }
+  }catch(e){console.error('Error updating theme:',e)}
 }
 
 // ===== INIT =====

@@ -3151,9 +3151,10 @@ function showEditPlanModal(planId) {
   // Load reminders
   const remindersList = document.getElementById('planRemindersList');
   if (remindersList) {
+    console.log('Loading reminders for plan:', plan.id, 'reminderPrefs:', plan.reminderPrefs);
     if (plan.reminderPrefs && plan.reminderPrefs.length > 0) {
       remindersList.innerHTML = plan.reminderPrefs.map(r =>
-        `<div style="padding:6px 0;border-bottom:1px solid var(--sand-100)">${r.emoji || '📌'} ${escapeHtml(r.name)} <span style="color:var(--text-tertiary);font-size:.8em">${r.timing || ''}</span></div>`
+        `<div style="padding:6px 0;border-bottom:1px solid var(--sand-100)">${escapeHtml(r.label || r.name || 'Reminder')}</div>`
       ).join('');
     } else {
       remindersList.textContent = 'No reminders set';
@@ -3163,6 +3164,7 @@ function showEditPlanModal(planId) {
   // Load sub-activities
   const subActivitiesList = document.getElementById('planSubActivitiesList');
   if (subActivitiesList) {
+    console.log('Loading sub-activities for plan:', plan.id, 'subActivities:', plan.subActivities);
     if (plan.subActivities && plan.subActivities.length > 0) {
       subActivitiesList.innerHTML = plan.subActivities.map(s =>
         `<div style="padding:8px;background:var(--sage-50);border-radius:8px;margin-bottom:6px">

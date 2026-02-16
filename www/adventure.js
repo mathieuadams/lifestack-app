@@ -678,6 +678,16 @@ async function advSave() {
   const month = d.startDate ? (new Date(d.startDate + 'T00:00:00').getMonth() + 1) : null;
   const yr = typeof currentViewYear !== 'undefined' ? currentViewYear : new Date().getFullYear();
 
+  const reminders = collectSmartReminders();
+  const subActivities = d.subActivities.length > 0 ? d.subActivities : null;
+
+  console.log('Adventure save data:', {
+    reminders: reminders,
+    subActivities: subActivities,
+    reminderCount: reminders.length,
+    subActivityCount: d.subActivities.length
+  });
+
   const planData = {
     type: 'adventure',
     title: d.name,
@@ -691,8 +701,8 @@ async function advSave() {
     participants: buildAdvParticipants(),
     ownerName: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.name : 'Unknown',
     location: d.location.name ? d.location : null,
-    subActivities: d.subActivities.length > 0 ? d.subActivities : null, 
-    reminderPrefs: collectSmartReminders()
+    subActivities: subActivities,
+    reminderPrefs: reminders
   };
 
   // Save via app.js createPlan
@@ -735,11 +745,21 @@ async function advSave() {
     }
 
     closeAdvWizard();
-    // Refresh views
-    if (typeof refreshPlanView === 'function') refreshPlanView();
-    else { if (typeof buildMG === 'function') buildMG(); if (typeof buildYV === 'function') buildYV(); }
+    // Refresh views with error handling
+    try {
+      if (typeof refreshPlanView === 'function') {
+        refreshPlanView();
+      } else {
+        if (typeof buildMG === 'function') buildMG();
+        if (typeof buildYV === 'function') buildYV();
+      }
+    } catch (refreshError) {
+      console.error('Error refreshing views after save:', refreshError);
+      // Don't show error to user - the save was successful
+    }
   } catch(e) {
     console.error('Save error:', e);
+    console.error('Error stack:', e.stack);
     toast('Error saving: ' + e.message);
     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Adventure'; }
   }
