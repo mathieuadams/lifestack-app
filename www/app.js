@@ -3770,10 +3770,23 @@ async function loadUserData() {
         currentUser = cachedUser;
         loadLocalMemories();
         loadLocalPeople();
+        // Load bucket list from cache
+        const cachedBucketList = localStorage.getItem('lifestack_bucketlist');
+        if (cachedBucketList) {
+          try {
+            bucketList = JSON.parse(cachedBucketList);
+          } catch(e) {
+            console.error('Error parsing cached bucket list:', e);
+            bucketList = [];
+          }
+        }
         // Also load friendships
         friendships = await fetchFriendships();
         updateFriendBadge();
         if (!appAlreadyVisible) showApp();
+
+        // Update banner stats with cached data
+        if (typeof refreshPlanView === 'function') refreshPlanView();
 
         // Background refresh: silently sync latest data from server
         silentSync();
@@ -3828,6 +3841,19 @@ async function silentSync() {
     if (freshMemories) {
       memories = freshMemories;
       try { renderYearMemories(currentViewYear); } catch(e) {}
+    }
+
+    // Refresh bucket list
+    const freshBucketList = await fetchBucketList();
+    if (freshBucketList) {
+      bucketList = freshBucketList;
+    }
+
+    // Update banner stats after all data is loaded
+    try {
+      if (typeof refreshPlanView === 'function') refreshPlanView();
+    } catch(e) {
+      console.error('Error refreshing plan view:', e);
     }
 
     console.log('Silent background sync complete');
