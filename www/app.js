@@ -5345,17 +5345,21 @@ function getDaysWithPlans(month, monthPlans) {
 }
 
 function openMonthCalendar(month, monthName) {
-  currentCalendarMonth = month;
-  document.getElementById('monthCalendarTitle').textContent = `${monthName} ${currentViewYear}`;
-  
-  renderMonthCalendarGrid(month);
-  renderMonthPlansList(month);
-  
-  document.getElementById('monthCalendarModal').classList.add('active');
+  // Legacy month modal is removed; route to inline Month tab instead.
+  currentCalendarMonth = null;
+  if (typeof curM !== 'undefined') curM = month - 1;
+
+  const monthTabBtn = document.querySelectorAll('.ptb')[1];
+  if (typeof swTab === 'function' && monthTabBtn) {
+    swTab('month', monthTabBtn);
+  } else if (typeof buildMG === 'function') {
+    buildMG();
+  }
 }
 
 function closeMonthCalendarModal() {
-  document.getElementById('monthCalendarModal').classList.remove('active');
+  const modal = document.getElementById('monthCalendarModal');
+  if (modal) modal.classList.remove('active');
   currentCalendarMonth = null;
 }
 
