@@ -633,7 +633,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
         <div class="form-group">
           <label>Location</label>
           <div class="location-input-wrapper">
-            <input type="text" id="memoryLocation" placeholder="Search for a place..." autocomplete="off">
+            <input type="text" id="memoryLocation" placeholder="Search for a place..." autocomplete="off" onfocus="scrollMemoryFieldIntoView(this)">
             <div id="locationAutocomplete"></div>
             <input type="hidden" id="memoryLat"><input type="hidden" id="memoryLng"><input type="hidden" id="memoryPlaceId">
             <button type="button" id="locationBtn" onclick="captureLocation()" title="Get location">📍</button>

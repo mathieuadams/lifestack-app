@@ -822,8 +822,9 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .airdist{font-size:.7rem;color:var(--text-tertiary);margin-top:2px}
 
 /* Location autocomplete dropdown (shared - memory + adventure) */
-#locationAutocomplete{position:absolute;top:100%;left:0;right:0;z-index:100;display:none;background:white;border:1.5px solid var(--sand-200);border-radius:var(--radius-md);max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.1)}
+#locationAutocomplete{position:absolute;top:100%;left:0;right:0;z-index:1000;display:none;background:white;border:1.5px solid var(--sand-200);border-radius:var(--radius-md);max-height:180px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.15);margin-top:4px}
 #locationAutocomplete.active{display:block}
+@media(max-height:600px){#locationAutocomplete{max-height:120px}}
 .location-autocomplete-item{display:flex;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--sand-50)}
 .location-autocomplete-item:last-child{border-bottom:none}
 .location-autocomplete-item:hover,.location-autocomplete-item.selected{background:var(--sand-50)}

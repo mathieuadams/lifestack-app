@@ -1704,6 +1704,19 @@ function scrollFormIntoView(element) {
   }, 300);
 }
 
+// Helper to scroll memory form fields into view (for location autocomplete)
+function scrollMemoryFieldIntoView(element) {
+  setTimeout(() => {
+    // Scroll the input and its dropdown container into view
+    const wrapper = element.closest('.form-group');
+    if (wrapper) {
+      wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 350);
+}
+
 // =====================================================
 // AUTO LOGOUT AFTER INACTIVITY
 // =====================================================
@@ -4281,12 +4294,28 @@ async function saveMemory() {
   
   // Close modal and refresh UI
   closeMemoryModal();
-  
-  // Refresh all memory displays
-  renderDashboard();
-  renderYearMemories(currentViewYear);
-  renderMonthGrid();  // Refresh to show updated memory counts
-  
+
+  // Refresh all memory displays (with error handling to prevent crashes)
+  try {
+    if (typeof renderDashboard === 'function') renderDashboard();
+  } catch (err) {
+    console.error('Error rendering dashboard:', err);
+  }
+
+  try {
+    if (typeof renderYearMemories === 'function' && typeof currentViewYear !== 'undefined') {
+      renderYearMemories(currentViewYear);
+    }
+  } catch (err) {
+    console.error('Error rendering year memories:', err);
+  }
+
+  try {
+    if (typeof renderMonthGrid === 'function') renderMonthGrid();
+  } catch (err) {
+    console.error('Error rendering month grid:', err);
+  }
+
   // Clear state
   selectedPeopleIds = [];
   selectedPhotos = [];
