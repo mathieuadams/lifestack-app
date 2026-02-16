@@ -793,12 +793,14 @@ async function advSave() {
 
     // iOS: Skip automatic refresh to prevent crash
     // User can pull-to-refresh or switch tabs to see new adventure
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    // isIOS already declared at top of function
 
     if (isIOS) {
       console.log('iOS detected - skipping auto-refresh to prevent crash');
+      if (isIOS) alert('DEBUG 8: Skipping refresh on iOS');
       // Show message that save was successful
       toast('✅ Adventure saved! Switch tabs to see it.');
+      if (isIOS) alert('DEBUG 9: Done! Switch tabs to see adventure');
     } else {
       // Non-iOS: refresh after delay
       console.log('Non-iOS platform - refreshing views');
