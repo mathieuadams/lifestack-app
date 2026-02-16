@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Memory Book Prototype</title>
+  <link rel="stylesheet" href="memory-book-prototype.css">
+</head>
+<body>
+  <main class="prototype-shell">
+    <section class="prototype-left">
+      <h1>Shared Memory Book</h1>
+      <p class="subtitle">Front-end look-and-feel prototype (local only)</p>
+
+      <div class="page-manager">
+        <div class="page-row">
+          <select id="pagePicker"></select>
+          <button type="button" onclick="memoryBook.addPage()">+ Page</button>
+          <button type="button" onclick="memoryBook.deletePage()">Delete</button>
+        </div>
+        <div class="page-row">
+          <button type="button" onclick="memoryBook.previewCurrentPage()">Preview</button>
+          <button type="button" id="finalizePageBtn" onclick="memoryBook.toggleFinalize()">Finalize page</button>
+        </div>
+      </div>
+
+      <div id="pageStrip" class="page-strip"></div>
+
+      <div class="template-manager">
+        <div class="page-row">
+          <select id="layoutTemplate">
+            <option value="free">Layout: free form</option>
+            <option value="grid">Layout: grid 3x3</option>
+            <option value="zigzag">Layout: zig zag</option>
+            <option value="story">Layout: text - picture - line</option>
+          </select>
+          <button type="button" onclick="memoryBook.applyTemplate()">Apply</button>
+        </div>
+      </div>
+
+      <label class="field">
+        <span>Page title</span>
+        <input id="memoryTitle" type="text" placeholder="Sunset at the lake">
+      </label>
+
+      <label class="field">
+        <span>Date</span>
+        <input id="memoryDate" type="date">
+      </label>
+
+      <label class="field">
+        <span>Description</span>
+        <textarea id="memoryText" rows="4" placeholder="Tell the story..."></textarea>
+      </label>
+
+      <label class="field">
+        <span>Location (for map sticker)</span>
+        <input id="memoryLocation" type="text" placeholder="Yosemite National Park or 37.743,-119.533">
+      </label>
+
+      <label class="field">
+        <span>Add photos</span>
+        <input id="photoInput" type="file" multiple accept="image/*">
+      </label>
+
+      <div id="photoPreview" class="photo-preview"></div>
+
+      <div class="cover-panel">
+        <div class="cover-head">
+          <span>Album cover</span>
+          <small>Tap thumbnail to set main, drag image to recenter</small>
+        </div>
+        <div class="cover-controls">
+          <select id="coverColorSelect">
+            <option value="sand">Sand</option>
+            <option value="sage">Sage</option>
+            <option value="blush">Blush</option>
+            <option value="mist">Mist</option>
+          </select>
+          <button type="button" onclick="memoryBook.recenterCover()">Recenter</button>
+        </div>
+        <div id="coverPreview" class="cover-preview cover-sand">
+          <div class="cover-title">Main photo</div>
+          <div class="cover-photo-holder" id="coverPhotoHolder">No main photo yet</div>
+        </div>
+        <div class="cover-sliders">
+          <label>X <input id="coverX" type="range" min="0" max="100" value="50"></label>
+          <label>Y <input id="coverY" type="range" min="0" max="100" value="50"></label>
+          <label>Zoom <input id="coverZoom" type="range" min="40" max="260" value="100"></label>
+        </div>
+        <div id="coverHint" class="cover-hint"></div>
+      </div>
+
+      <label class="field">
+        <span>Current user (prototype)</span>
+        <select id="activeUser">
+          <option value="you">You (owner)</option>
+          <option value="alex">Alex</option>
+          <option value="maya">Maya</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Page permissions</span>
+        <select id="pagePermission">
+          <option value="owner">Owner-arranged page (only owner can move)</option>
+          <option value="collab">Shared editing (anyone can move)</option>
+        </select>
+      </label>
+
+      <div class="contributors">
+        <span>Contributors:</span>
+        <span class="chip">You</span>
+        <span class="chip">Alex</span>
+        <span class="chip">Maya</span>
+      </div>
+    </section>
+
+    <section class="prototype-right">
+      <div class="toolbar" id="toolbar">
+        <button type="button" onclick="memoryBook.addLooseNote()">+ Note</button>
+        <button type="button" onclick="memoryBook.addFromDescription()">Use description</button>
+        <button type="button" onclick="memoryBook.importPhotos()">Layer photos</button>
+
+        <select id="ribbonTypeSelect">
+          <option value="strip">Ribbon: strip</option>
+          <option value="short">Ribbon: short</option>
+          <option value="torn">Ribbon: torn</option>
+          <option value="cross">Ribbon: cross hatch</option>
+        </select>
+        <select id="ribbonColorSelect">
+          <option value="amber">Ribbon color: amber</option>
+          <option value="sky">Ribbon color: sky</option>
+          <option value="rose">Ribbon color: rose</option>
+          <option value="sage">Ribbon color: sage</option>
+          <option value="smoke">Ribbon color: smoke</option>
+          <option value="violet">Ribbon color: violet</option>
+        </select>
+        <button type="button" onclick="memoryBook.addRibbon()">Add ribbon</button>
+
+        <select id="stickerTypeSelect">
+          <option value="map">Sticker: map</option>
+          <option value="cut">Sticker: cut quote</option>
+          <option value="ticket">Sticker: ticket</option>
+          <option value="label">Sticker: label</option>
+          <option value="postcard">Sticker: postcard</option>
+          <option value="star">Sticker: star burst</option>
+        </select>
+        <select id="stickerColorSelect">
+          <option value="warm">Sticker color: warm</option>
+          <option value="sage">Sticker color: sage</option>
+          <option value="blush">Sticker color: blush</option>
+          <option value="mist">Sticker color: mist</option>
+          <option value="ink">Sticker color: ink</option>
+        </select>
+        <button type="button" onclick="memoryBook.addStickerFromSelection()">Add sticker</button>
+
+        <select id="stampTypeSelect">
+          <option value="KEEP">Stamp: KEEP</option>
+          <option value="WILD">Stamp: WILD</option>
+          <option value="WEEKEND">Stamp: WEEKEND</option>
+          <option value="MEMORY">Stamp: MEMORY</option>
+          <option value="SHARED">Stamp: SHARED</option>
+          <option value="ARCHIVE">Stamp: ARCHIVE</option>
+          <option value="BEST DAY">Stamp: BEST DAY</option>
+        </select>
+        <button type="button" onclick="memoryBook.addStampFromSelection()">Add stamp</button>
+
+        <button type="button" id="voiceBtn" onclick="memoryBook.toggleVoice()">Voice note</button>
+
+        <select id="canvasThemeSelect" onchange="memoryBook.setCanvasTheme(this.value)">
+          <option value="warm">Background: warm</option>
+          <option value="sage">Background: sage</option>
+          <option value="blush">Background: blush</option>
+          <option value="mist">Background: mist</option>
+        </select>
+
+        <button type="button" onclick="memoryBook.shuffle()">Shuffle</button>
+        <button type="button" class="danger" onclick="memoryBook.clear()">Clear</button>
+      </div>
+
+      <div id="voiceStatus" class="voice-status"></div>
+
+      <div id="layerInspector" class="layer-inspector">
+        <strong>Selected layer</strong>
+        <div id="inspectorEmpty">Select a layer to edit color, style, text and transform.</div>
+        <div id="inspectorFields" class="hidden">
+          <label>Rotate
+            <div class="inspector-rotate-row">
+              <button type="button" onclick="memoryBook.rotateSelected(-5)">-5 deg</button>
+              <button type="button" onclick="memoryBook.rotateSelected(5)">+5 deg</button>
+            </div>
+          </label>
+          <label>Scale <input id="inspectorScale" type="range" min="55" max="190" value="100"></label>
+          <label>Color <select id="inspectorColor"></select></label>
+          <label>Style <select id="inspectorVariant"></select></label>
+          <label>Text <input id="inspectorText" type="text" placeholder="Edit text"></label>
+        </div>
+      </div>
+
+      <div id="memoryBookCanvas" class="canvas"></div>
+      <p class="tip">Drag, overlap, rotate in fixed +/-5 deg steps, and stack. Organic by design.</p>
+    </section>
+  </main>
+
+  <div id="pagePreviewModal" class="preview-modal hidden">
+    <div class="preview-dialog">
+      <div class="preview-head">
+        <h3 id="previewTitle">Page preview</h3>
+        <button type="button" onclick="memoryBook.closePreview()">X</button>
+      </div>
+      <div id="pagePreviewCanvas" class="canvas preview-canvas"></div>
+      <div class="preview-actions">
+        <button type="button" onclick="memoryBook.toggleFinalize()">Finalize / Unfinalize</button>
+        <button type="button" onclick="memoryBook.closePreview()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="memory-book-prototype.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,852 @@
+.fieldbook-view-shell {
+  padding-bottom: 16px;
+}
+
+.fieldbook-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.fieldbook-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.fieldbook-shelf-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-content: start;
+}
+
+.fieldbook-card {
+  border: 1px solid var(--sand-200);
+  border-radius: 12px;
+  background: var(--white);
+  overflow: hidden;
+  box-shadow: 0 3px 10px rgba(35, 31, 20, 0.08);
+  cursor: pointer;
+}
+
+.fieldbook-card-cover {
+  position: relative;
+  width: 100%;
+  padding-top: 100%;
+  background: var(--sand-100);
+  overflow: hidden;
+}
+
+.fieldbook-card-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fieldbook-card-cover-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-size: 0.74rem;
+}
+
+.fieldbook-card-meta {
+  padding: 8px;
+}
+
+.fieldbook-card-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fieldbook-card-date {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+}
+
+.fieldbook-card-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.fieldbook-card-actions button {
+  flex: 1;
+  border: 1px solid var(--sand-200);
+  border-radius: 8px;
+  background: var(--sand-50);
+  font-size: 0.66rem;
+  padding: 4px 2px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.fieldbook-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.88rem;
+  border: 1px dashed var(--sand-300);
+  border-radius: 12px;
+  padding: 24px 12px;
+  background: var(--sand-50);
+}
+
+.fieldbook-editor-modal,
+.fieldbook-viewer-modal {
+  max-width: 520px;
+  width: min(520px, 96vw);
+}
+
+.fieldbook-editor-body {
+  max-height: min(78vh, 760px);
+  overflow-y: auto;
+  padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+}
+
+#fieldbookLocationAutocomplete {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1100;
+  display: none;
+  background: white;
+  border: 1.5px solid var(--sand-200);
+  border-radius: var(--radius-md);
+  max-height: 180px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+}
+
+#fieldbookLocationAutocomplete.active {
+  display: block;
+}
+
+.fieldbook-photo-add-row input[type="file"] {
+  width: 100%;
+}
+
+.fieldbook-photo-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.fieldbook-photo-thumb {
+  width: 58px;
+  height: 58px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+  background: var(--sand-100);
+}
+
+.fieldbook-photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fieldbook-photo-thumb.selected {
+  border-color: var(--sage-500);
+}
+
+.fieldbook-photo-thumb button {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(20, 20, 20, 0.76);
+  color: white;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.fieldbook-cover-preview {
+  position: relative;
+  width: 100%;
+  max-width: 270px;
+  aspect-ratio: 1 / 1;
+  border: 1px dashed var(--sand-300);
+  border-radius: 12px;
+  background: var(--sand-50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+  overflow: hidden;
+}
+
+.fieldbook-cover-preview.has-image {
+  cursor: grab;
+}
+
+.fieldbook-cover-preview.has-image:active {
+  cursor: grabbing;
+}
+
+.fieldbook-cover-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.fieldbook-cover-controls {
+  margin-top: 8px;
+}
+
+.fieldbook-cover-controls label {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+
+.fieldbook-cover-controls input {
+  width: 100%;
+}
+
+.fieldbook-template-preview {
+  border: 1px solid var(--sand-200);
+  border-radius: 10px;
+  background: var(--sand-50);
+  padding: 8px;
+  margin-top: 8px;
+}
+
+.fieldbook-template-grid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.fieldbook-template-grid .cell,
+.fieldbook-template-zigzag .cell,
+.fieldbook-template-story .cell,
+.fieldbook-template-free .cell {
+  border-radius: 8px;
+  background: var(--sand-100);
+  min-height: 62px;
+  border: 1px solid var(--sand-200);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fieldbook-template-grid .cell img,
+.fieldbook-template-zigzag .cell img,
+.fieldbook-template-story .cell img,
+.fieldbook-template-free .cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fieldbook-template-zigzag {
+  display: grid;
+  gap: 6px;
+}
+
+.fieldbook-template-zigzag .row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.fieldbook-template-zigzag .row.right .cell:first-child {
+  order: 2;
+}
+
+.fieldbook-template-zigzag .row.right .cell:last-child {
+  order: 1;
+}
+
+.fieldbook-template-story {
+  display: grid;
+  gap: 6px;
+}
+
+.fieldbook-template-story .story-line {
+  height: 1px;
+  background: var(--sage-300);
+}
+
+.fieldbook-template-free {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fieldbook-template-free .cell {
+  width: calc(50% - 3px);
+  min-height: 70px;
+}
+
+.fieldbook-people-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 24px;
+}
+
+.fieldbook-person-chip {
+  border-radius: 999px;
+  border: 1px solid var(--sand-200);
+  background: var(--sand-50);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  padding: 4px 8px;
+}
+
+.fieldbook-person-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--sand-100);
+  font-size: 0.86rem;
+}
+
+.fieldbook-person-item:last-child {
+  border-bottom: none;
+}
+
+.fieldbook-person-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fieldbook-person-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--sand-100);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.fieldbook-view-page {
+  border: 1px solid var(--sand-200);
+  border-radius: 12px;
+  background: var(--sand-50);
+  padding: 10px;
+}
+
+.fieldbook-view-cover {
+  width: min(300px, 100%);
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 0 auto 10px;
+  border: 1px solid var(--sand-200);
+  background: var(--sand-100);
+}
+
+.fieldbook-view-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fieldbook-view-text {
+  margin-top: 8px;
+  font-size: 0.86rem;
+  line-height: 1.42;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+.fieldbook-view-meta {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fieldbook-view-meta .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  border: 1px solid var(--sand-200);
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: var(--white);
+}
+
+@media (max-width: 420px) {
+  .fieldbook-shelf-grid {
+    gap: 8px;
+  }
+
+  .fieldbook-card-meta {
+    padding: 6px;
+  }
+
+  .fieldbook-card-title {
+    font-size: 0.71rem;
+  }
+}
+
+.fieldbook-page-manager {
+  border: 1px solid var(--sand-200);
+  border-radius: 10px;
+  background: var(--sand-50);
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.fieldbook-page-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.fieldbook-page-row:last-child {
+  margin-bottom: 0;
+}
+
+.fieldbook-page-row > * {
+  flex: 1;
+}
+
+.fieldbook-page-row select,
+.fieldbook-page-row button {
+  border: 1px solid var(--sand-200);
+  border-radius: 8px;
+  padding: 7px 8px;
+  font-size: 0.74rem;
+  background: white;
+}
+
+.fieldbook-page-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin-bottom: 8px;
+  padding-bottom: 2px;
+}
+
+.fieldbook-page-pill {
+  border: 1px solid var(--sand-200);
+  border-radius: 999px;
+  background: white;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  padding: 4px 10px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.fieldbook-page-pill.active {
+  border-color: var(--sage-500);
+  background: var(--sage-50);
+  color: var(--sage-700);
+}
+
+.fieldbook-page-pill.finalized {
+  border-style: dashed;
+}
+
+.fieldbook-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.fieldbook-toolbar button,
+.fieldbook-toolbar select {
+  border: 1px solid var(--sand-200);
+  border-radius: 999px;
+  background: white;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  padding: 5px 10px;
+}
+
+.fieldbook-toolbar button.danger {
+  color: var(--coral);
+}
+
+.fieldbook-inspector {
+  border: 1px solid var(--sand-200);
+  border-radius: 10px;
+  background: var(--sand-50);
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.fieldbook-inspector strong {
+  display: block;
+  font-size: 0.78rem;
+  margin-bottom: 4px;
+}
+
+#fieldbookInspectorEmpty {
+  font-size: 0.74rem;
+  color: var(--text-tertiary);
+}
+
+#fieldbookInspectorFields {
+  display: grid;
+  gap: 6px;
+}
+
+#fieldbookInspectorFields label {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+}
+
+#fieldbookInspectorFields input,
+#fieldbookInspectorFields select,
+#fieldbookInspectorFields button {
+  margin-top: 2px;
+  width: 100%;
+  border: 1px solid var(--sand-200);
+  border-radius: 8px;
+  padding: 6px 7px;
+  background: white;
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+}
+
+.fieldbook-rotate-row {
+  display: flex;
+  gap: 6px;
+}
+
+.fieldbook-canvas {
+  position: relative;
+  width: 100%;
+  min-height: 420px;
+  height: clamp(420px, 50vh, 560px);
+  border: 1px solid var(--sand-200);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(120, 96, 64, 0.08) 1px, transparent 0) 0 0 / 16px 16px,
+    linear-gradient(180deg, #f5efe2 0%, #efe4d3 100%);
+}
+
+.fieldbook-preview-canvas {
+  min-height: 440px;
+  height: min(70vh, 640px);
+}
+
+.fieldbook-canvas.finalized::after {
+  content: "Finalized page";
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  font-size: 0.72rem;
+  color: #6e5a44;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px dashed #9b8364;
+  border-radius: 999px;
+  padding: 3px 8px;
+  z-index: 99;
+}
+
+.fieldbook-layer {
+  position: absolute;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+  transform-origin: center center;
+}
+
+.fieldbook-layer.selected {
+  outline: 2px solid rgba(96, 74, 45, 0.32);
+  outline-offset: 1px;
+}
+
+.fieldbook-layer:active {
+  cursor: grabbing;
+}
+
+.fieldbook-layer-photo {
+  width: 122px;
+  height: 122px;
+  padding: 8px 8px 22px;
+  border-radius: 5px;
+  background: #fefbf6;
+  border: 1px solid #d8ccbb;
+  box-shadow: 0 8px 14px rgba(52, 36, 16, 0.16);
+}
+
+.fieldbook-layer-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.fieldbook-layer-photo.main-photo {
+  box-shadow: 0 10px 18px rgba(52, 36, 16, 0.2), 0 0 0 2px rgba(128, 92, 45, 0.28);
+}
+
+.fieldbook-layer-map {
+  width: 210px;
+  height: 130px;
+  padding: 7px;
+  border-radius: 7px;
+  background: #f6f0e5;
+  border: 1px solid #c9bca7;
+  box-shadow: 0 8px 14px rgba(52, 36, 16, 0.16);
+}
+
+.fieldbook-layer-map img {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.fieldbook-map-label {
+  position: absolute;
+  left: 9px;
+  bottom: 8px;
+  font-size: 0.64rem;
+  color: #3e352a;
+  background: rgba(248, 243, 232, 0.88);
+  padding: 2px 6px;
+  border-radius: 999px;
+  max-width: 86%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fieldbook-layer-note {
+  width: 160px;
+  min-height: 92px;
+  padding: 10px 10px 14px;
+  border-radius: 6px;
+  border: 1px solid #d6c49f;
+  box-shadow: 0 7px 13px rgba(55, 41, 24, 0.16);
+  color: #4a3b25;
+}
+
+.fieldbook-paper-1 { background: #fbf3de; }
+.fieldbook-paper-2 { background: #f7eed2; }
+.fieldbook-paper-3 { background: #f8ead8; }
+.fieldbook-paper-4 { background: #e7f0e3; }
+.fieldbook-paper-5 { background: #efe6f7; }
+
+.fieldbook-note-text {
+  outline: none;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.fieldbook-layer-tape {
+  width: 132px;
+  height: 24px;
+  border-radius: 3px;
+  border: 1px solid rgba(107, 87, 62, 0.2);
+  box-shadow: 0 4px 8px rgba(52, 36, 16, 0.1);
+}
+
+.fieldbook-tape-color-amber { background: rgba(242, 207, 132, 0.45); }
+.fieldbook-tape-color-sky { background: rgba(208, 235, 255, 0.4); }
+.fieldbook-tape-color-rose { background: rgba(255, 197, 212, 0.38); }
+.fieldbook-tape-color-sage { background: rgba(206, 235, 197, 0.4); }
+.fieldbook-tape-color-smoke { background: rgba(226, 226, 226, 0.45); }
+.fieldbook-tape-color-violet { background: rgba(219, 197, 255, 0.4); }
+.fieldbook-tape-variant-short { width: 94px !important; }
+.fieldbook-tape-variant-torn {
+  clip-path: polygon(2% 8%, 10% 0%, 22% 6%, 32% 0%, 45% 6%, 54% 1%, 65% 6%, 78% 1%, 88% 7%, 98% 0%, 99% 88%, 89% 100%, 78% 92%, 67% 100%, 56% 93%, 44% 100%, 31% 92%, 21% 100%, 12% 94%, 0% 100%);
+}
+.fieldbook-tape-variant-cross {
+  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.2) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.2) 75%, transparent 75%, transparent);
+  background-size: 8px 8px;
+}
+
+.fieldbook-layer-sticker {
+  width: 138px;
+  min-height: 72px;
+  padding: 10px;
+  color: #4f4030;
+  font-size: 0.72rem;
+  line-height: 1.25;
+  border: 1px dashed #c6b79f;
+  background: #f8eedc;
+  box-shadow: 0 5px 11px rgba(50, 37, 22, 0.15);
+}
+
+.fieldbook-sticker-color-warm { background: #f8eedc; }
+.fieldbook-sticker-color-sage { background: #e8f1e4; }
+.fieldbook-sticker-color-blush { background: #f5e4e8; }
+.fieldbook-sticker-color-mist { background: #e4ecf5; }
+.fieldbook-sticker-color-ink { background: #ece8dd; color: #30281e; }
+.fieldbook-sticker-type-cut { clip-path: polygon(4% 2%, 98% 0%, 95% 24%, 100% 60%, 92% 98%, 3% 94%, 0% 62%, 5% 26%); }
+.fieldbook-sticker-type-ticket { border-style: solid; border-radius: 9px; position: relative; }
+.fieldbook-sticker-type-ticket::before,
+.fieldbook-sticker-type-ticket::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.fieldbook-sticker-type-ticket::before { left: -7px; }
+.fieldbook-sticker-type-ticket::after { right: -7px; }
+.fieldbook-sticker-type-label {
+  border-style: solid;
+  border-radius: 999px;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+.fieldbook-sticker-type-postcard {
+  border-style: solid;
+  border-radius: 4px;
+  min-height: 92px;
+  padding-top: 18px;
+  position: relative;
+}
+.fieldbook-sticker-type-postcard::before {
+  content: "POST";
+  position: absolute;
+  right: 8px;
+  top: 5px;
+  font-size: 0.55rem;
+  opacity: 0.75;
+}
+.fieldbook-sticker-type-star {
+  border-style: solid;
+  clip-path: polygon(50% 0%, 63% 34%, 98% 35%, 70% 57%, 79% 91%, 50% 72%, 21% 91%, 30% 57%, 2% 35%, 37% 34%);
+  min-height: 108px;
+  width: 108px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.fieldbook-layer-stamp {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 2px dashed rgba(83, 52, 52, 0.45);
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.65), rgba(234, 185, 157, 0.9));
+  color: #6e3930;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.66rem;
+  font-weight: 600;
+  line-height: 1.1;
+  box-shadow: 0 5px 9px rgba(52, 36, 16, 0.14);
+}
+
+.fieldbook-stamp-color-rust {
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.64), rgba(234, 185, 157, 0.9));
+  color: #6e3930;
+}
+.fieldbook-stamp-color-forest {
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.64), rgba(176, 206, 171, 0.92));
+  color: #35533a;
+}
+.fieldbook-stamp-color-ink {
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.6), rgba(178, 187, 204, 0.92));
+  color: #26333f;
+}
+
+.fieldbook-layer-actions {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.fieldbook-layer:hover .fieldbook-layer-actions,
+.fieldbook-layer.selected .fieldbook-layer-actions {
+  opacity: 1;
+}
+
+.fieldbook-layer-actions button {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  font-size: 9px;
+  line-height: 18px;
+  background: rgba(53, 40, 24, 0.74);
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+}
+
+.fieldbook-layer-author {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-size: 0.6rem;
+  line-height: 1.35;
+  color: #fff;
+  background: rgba(66, 53, 37, 0.7);
+}
+
+.fieldbook-empty-canvas {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.82rem;
+  padding: 20px;
+}

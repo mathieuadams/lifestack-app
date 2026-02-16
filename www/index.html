@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="fieldbook.css">
 </head>
 <body>
 <script>
@@ -305,6 +306,9 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
     <div id="memoriesView" class="v"><div class="vp">
       <div id="onThisDayContainer"></div>
       <div class="sl">Memories</div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+        <button class="btn btn-secondary" style="padding:8px 12px;font-size:.8rem;" onclick="swView('fieldbook')">Fieldbook (beta)</button>
+      </div>
       <div class="mem-yearly-tabs" style="margin-bottom:16px">
         <button class="mem-yearly-tab active" onclick="switchMemView('timeline',this)">📅 Timeline</button>
         <button class="mem-yearly-tab" onclick="switchMemView('yearly',this)">🗓️ Yearly</button>
@@ -313,6 +317,20 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
       <div id="memTimelineView"><div class="mmt" id="memoriesTimeline"></div></div>
       <div id="memYearlyView" style="display:none"><div class="mem-year-grid" id="memYearGrid"></div></div>
       <div id="memMapView" style="display:none"><div class="mem-map-container" id="memMapContainer"></div><div class="mem-map-list" id="memMapList"></div></div>
+    </div></div>
+
+
+
+    <!-- ===== FIELDBOOK VIEW ===== -->
+    <div id="fieldbookView" class="v"><div class="vp fieldbook-view-shell">
+      <div class="fieldbook-header-row">
+        <div>
+          <div class="sl">Fieldbook</div>
+          <div class="fieldbook-subtitle">Shared memory pages, newest first</div>
+        </div>
+        <button class="btn btn-primary" onclick="openFieldbookEditor()">+ New</button>
+      </div>
+      <div id="fieldbookShelf" class="fieldbook-shelf-grid"></div>
     </div></div>
 
   </div><!-- end .mc -->
@@ -330,6 +348,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
     <button class="ni active" onclick="swView('plan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nl">Plan</span></button>
     <button class="ni" onclick="swView('habits')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nl">Habits</span></button>
     <button class="ni" onclick="swView('memories')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span class="nl">Memories</span></button>
+    <button class="ni" onclick="swView('fieldbook')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 12h8"/><path d="M8 17h5"/></svg><span class="nl">Fieldbook</span></button>
   </nav>
 
   <!-- ===== SLIDE-UP PANELS ===== -->
@@ -655,6 +674,186 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
   </div></div>
 </div>
 
+
+
+<!-- Fieldbook Editor Modal -->
+<div id="fieldbookEditorModal" class="modal-overlay">
+  <div class="modal"><div class="modal-content fieldbook-editor-modal">
+    <button class="modal-close" onclick="closeFieldbookEditor()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-header"><h2 id="fieldbookEditorTitle">Create Fieldbook Memory</h2></div>
+    <div class="modal-body fieldbook-editor-body">
+      <input type="hidden" id="fieldbookMemoryId" value="">
+      <div class="form-group"><label for="fieldbookTitle">Title</label><input type="text" id="fieldbookTitle" placeholder="Weekend in Tahoe"></div>
+      <div class="form-group"><label for="fieldbookDate">Date</label><input type="date" id="fieldbookDate"></div>
+
+      <div class="form-group">
+        <label>Location</label>
+        <div class="location-input-wrapper">
+          <input type="text" id="fieldbookLocation" placeholder="Search for a place..." autocomplete="off">
+          <div id="fieldbookLocationAutocomplete"></div>
+          <input type="hidden" id="fieldbookLat"><input type="hidden" id="fieldbookLng"><input type="hidden" id="fieldbookPlaceId">
+          <button type="button" id="fieldbookLocationClearBtn" onclick="clearFieldbookLocation()" style="display:none;">x</button>
+        </div>
+        <div id="fieldbookLocationStatus"></div>
+      </div>
+
+      <div class="form-group"><label for="fieldbookText">Description</label><textarea id="fieldbookText" placeholder="Tell the story..."></textarea></div>
+
+      <div class="form-group">
+        <label>Photos</label>
+        <div class="fieldbook-photo-add-row">
+          <input type="file" id="fieldbookPhotoInput" multiple accept="image/*">
+        </div>
+        <div id="fieldbookPhotoThumbs" class="fieldbook-photo-thumbs"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Cover (square)</label>
+        <div class="fieldbook-cover-preview" id="fieldbookCoverPreview">Choose a photo</div>
+        <div class="fieldbook-cover-controls">
+          <label>X <input id="fieldbookCoverX" type="range" min="0" max="100" value="50"></label>
+          <label>Y <input id="fieldbookCoverY" type="range" min="0" max="100" value="50"></label>
+          <label>Zoom <input id="fieldbookCoverZoom" type="range" min="40" max="260" value="100"></label>
+        </div>
+      </div>
+
+      <div class="fieldbook-page-manager">
+        <div class="fieldbook-page-row">
+          <select id="fieldbookPagePicker"></select>
+          <button type="button" onclick="fieldbookAddPage()">+ Page</button>
+          <button type="button" onclick="fieldbookDeletePage()">Delete</button>
+        </div>
+        <div class="fieldbook-page-row">
+          <button type="button" onclick="fieldbookPreviewPage()">Preview</button>
+          <button type="button" id="fieldbookFinalizeBtn" onclick="fieldbookToggleFinalize()">Finalize page</button>
+        </div>
+      </div>
+
+      <div id="fieldbookPageStrip" class="fieldbook-page-strip"></div>
+
+      <div class="fieldbook-toolbar">
+        <button type="button" onclick="fieldbookAddNote()">+ Note</button>
+        <button type="button" onclick="fieldbookAddFromDescription()">Use description</button>
+        <button type="button" onclick="fieldbookImportPhotos()">Layer photos</button>
+        <select id="fieldbookRibbonType">
+          <option value="strip">Ribbon: strip</option>
+          <option value="short">Ribbon: short</option>
+          <option value="torn">Ribbon: torn</option>
+          <option value="cross">Ribbon: cross hatch</option>
+        </select>
+        <select id="fieldbookRibbonColor">
+          <option value="amber">Ribbon color: amber</option>
+          <option value="sky">Ribbon color: sky</option>
+          <option value="rose">Ribbon color: rose</option>
+          <option value="sage">Ribbon color: sage</option>
+          <option value="smoke">Ribbon color: smoke</option>
+          <option value="violet">Ribbon color: violet</option>
+        </select>
+        <button type="button" onclick="fieldbookAddRibbon()">Add ribbon</button>
+        <select id="fieldbookStickerType">
+          <option value="map">Sticker: map</option>
+          <option value="cut">Sticker: cut quote</option>
+          <option value="ticket">Sticker: ticket</option>
+          <option value="label">Sticker: label</option>
+          <option value="postcard">Sticker: postcard</option>
+          <option value="star">Sticker: star burst</option>
+        </select>
+        <select id="fieldbookStickerColor">
+          <option value="warm">Sticker color: warm</option>
+          <option value="sage">Sticker color: sage</option>
+          <option value="blush">Sticker color: blush</option>
+          <option value="mist">Sticker color: mist</option>
+          <option value="ink">Sticker color: ink</option>
+        </select>
+        <button type="button" onclick="fieldbookAddSticker()">Add sticker</button>
+        <select id="fieldbookStampType">
+          <option value="KEEP">Stamp: KEEP</option>
+          <option value="WILD">Stamp: WILD</option>
+          <option value="WEEKEND">Stamp: WEEKEND</option>
+          <option value="MEMORY">Stamp: MEMORY</option>
+          <option value="SHARED">Stamp: SHARED</option>
+          <option value="ARCHIVE">Stamp: ARCHIVE</option>
+        </select>
+        <button type="button" onclick="fieldbookAddStamp()">Add stamp</button>
+        <select id="fieldbookTemplate">
+          <option value="free">Layout: free form</option>
+          <option value="grid">Layout: grid 3x3</option>
+          <option value="zigzag">Layout: zig zag</option>
+          <option value="story">Layout: text - picture - line</option>
+        </select>
+        <button type="button" onclick="fieldbookApplyTemplate()">Apply layout</button>
+        <button type="button" onclick="fieldbookShuffle()">Shuffle</button>
+        <button type="button" class="danger" onclick="fieldbookClearLayers()">Clear layers</button>
+      </div>
+
+      <div class="fieldbook-inspector">
+        <strong>Selected layer</strong>
+        <div id="fieldbookInspectorEmpty">Select a layer to edit color, style, text and transform.</div>
+        <div id="fieldbookInspectorFields" class="hidden">
+          <label>Rotate
+            <div class="fieldbook-rotate-row">
+              <button type="button" onclick="fieldbookRotateSelected(-5)">-5 deg</button>
+              <button type="button" onclick="fieldbookRotateSelected(5)">+5 deg</button>
+            </div>
+          </label>
+          <label>Scale <input id="fieldbookInspectorScale" type="range" min="55" max="190" value="100"></label>
+          <label>Color <select id="fieldbookInspectorColor"></select></label>
+          <label>Style <select id="fieldbookInspectorVariant"></select></label>
+          <label>Text <input id="fieldbookInspectorText" type="text" placeholder="Edit text"></label>
+        </div>
+      </div>
+
+      <div id="fieldbookCanvas" class="fieldbook-canvas"></div>
+
+      <div class="form-group">
+        <label>Share with people</label>
+        <div id="fieldbookPeopleGrid" class="fieldbook-people-grid"></div>
+        <button type="button" class="btn btn-secondary" style="width:100%;margin-top:8px;" onclick="openFieldbookPeoplePicker()">Select people</button>
+      </div>
+
+      <button type="button" class="btn btn-primary" style="width:100%;" id="fieldbookSaveBtn" onclick="saveFieldbookMemory()">Save and Finalize</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- Fieldbook People Picker -->
+<div id="fieldbookPeopleModal" class="modal-overlay">
+  <div class="modal"><div class="modal-content">
+    <button class="modal-close" onclick="closeFieldbookPeoplePicker()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-header"><h2>Select People</h2><p>Share this memory with them</p></div>
+    <div class="modal-body">
+      <div id="fieldbookPeopleList"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:.5rem;" onclick="confirmFieldbookPeople()">Done</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- Fieldbook Finalized Viewer -->
+<div id="fieldbookViewerModal" class="modal-overlay">
+  <div class="modal"><div class="modal-content fieldbook-viewer-modal">
+    <button class="modal-close" onclick="closeFieldbookViewer()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-header"><h2 id="fieldbookViewerTitle">Fieldbook Page</h2><p id="fieldbookViewerDate"></p></div>
+    <div class="modal-body">
+      <div id="fieldbookViewerContent"></div>
+    </div>
+  </div></div>
+</div>
+
+<!-- Fieldbook Page Preview -->
+<div id="fieldbookPreviewModal" class="modal-overlay">
+  <div class="modal"><div class="modal-content fieldbook-viewer-modal">
+    <button class="modal-close" onclick="closeFieldbookPreview()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-header"><h2 id="fieldbookPreviewTitle">Page preview</h2></div>
+    <div class="modal-body">
+      <div id="fieldbookPreviewCanvas" class="fieldbook-canvas fieldbook-preview-canvas"></div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="fieldbookToggleFinalize()">Finalize / Unfinalize</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="closeFieldbookPreview()">Close</button>
+      </div>
+    </div>
+  </div></div>
+</div>
+
 <!-- Year Modal -->
 <div id="yearModal" class="modal-overlay"><div class="modal"><div class="modal-content">
   <button class="modal-close" onclick="closeYearModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
@@ -949,6 +1148,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 <div id="toast" class="toast"></div>
 <script src="ui.js"></script>
 <script src="app.js"></script>
+<script src="fieldbook.js"></script>
 <script src="adventure.js"></script>
 <link rel="stylesheet" href="adventure.css">
 </body>

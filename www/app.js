@@ -478,6 +478,7 @@ async function syncAllData() {
     renderMonthGrid();
     renderYearMemories(currentViewYear);
     renderDashboard();
+    if (typeof renderFieldbookShelf === 'function') renderFieldbookShelf();
     
     // Refresh month calendar modal if open
     if (currentCalendarMonth) {
@@ -4637,6 +4638,11 @@ async function saveMemory() {
     } catch (err) {
       console.error('Error rendering month grid:', err);
     }
+    try {
+      if (typeof renderFieldbookShelf === 'function') renderFieldbookShelf();
+    } catch (err) {
+      console.error('Error rendering fieldbook shelf:', err);
+    }
     console.log('Memory view refresh completed');
   }, delay);
 
@@ -4671,6 +4677,7 @@ async function deleteMemory() {
     renderDashboard();
     renderYearMemories(currentViewYear);
     renderMonthGrid();
+    if (typeof renderFieldbookShelf === 'function') renderFieldbookShelf();
     
     showToast('Memory deleted');
   } catch (error) {
@@ -4684,6 +4691,7 @@ async function deleteMemory() {
     renderDashboard();
     renderYearMemories(currentViewYear);
     renderMonthGrid();
+    if (typeof renderFieldbookShelf === 'function') renderFieldbookShelf();
     
     showToast('Memory deleted locally');
   }

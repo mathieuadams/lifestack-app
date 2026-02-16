@@ -13,15 +13,19 @@ function swView(v){
   if(typeof hideLegacyYearDataViews==='function')hideLegacyYearDataViews();
   document.querySelectorAll('.v').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
-  const map={plan:'planView',habits:'habitsView',memories:'memoriesView'};
-  const idx={plan:0,habits:1,memories:2};
+  const map={plan:'planView',habits:'habitsView',memories:'memoriesView',fieldbook:'fieldbookView'};
+  const idx={plan:0,habits:1,memories:2,fieldbook:3};
+  if(!map[v]||!document.getElementById(map[v]))v='plan';
   document.getElementById(map[v]).classList.add('active');
   document.querySelectorAll('.ni')[idx[v]].classList.add('active');
   document.querySelector('.mc').scrollTop=0;
   closeFab();
+  const fabBtn=document.getElementById('fabBtn');
+  if(fabBtn)fabBtn.style.display=(v==='fieldbook')?'none':'flex';
   if(v==='memories') renderMemoriesView();
   if(v==='habits') renderHabitsView();
   if(v==='plan') refreshPlanView();
+  if(v==='fieldbook'&&typeof renderFieldbookShelf==='function')renderFieldbookShelf();
 }
 function swTab(t,b){
   document.querySelectorAll('.ptb').forEach(x=>x.classList.remove('active'));
