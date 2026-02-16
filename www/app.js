@@ -214,12 +214,27 @@ async function apiForgotPassword(email) {
       body: JSON.stringify({ email })
     });
     console.log('apiForgotPassword: Response status:', response.status);
-    const data = await response.json();
-    console.log('apiForgotPassword: Response data:', data);
+    console.log('apiForgotPassword: Response ok:', response.ok);
+
+    // Try to parse response
+    let data;
+    try {
+      const text = await response.text();
+      console.log('apiForgotPassword: Raw response:', text);
+      data = text ? JSON.parse(text) : {};
+    } catch (parseError) {
+      console.error('apiForgotPassword: JSON parse error:', parseError);
+      throw new Error('Invalid response from server');
+    }
+
+    console.log('apiForgotPassword: Parsed data:', data);
     if (!response.ok) throw new Error(data.error || 'Failed to send reset code');
     return data;
   } catch (error) {
     console.error('apiForgotPassword: Error:', error);
+    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+      throw new Error('Network error. Check your connection or CORS settings.');
+    }
     throw error;
   }
 }
@@ -233,12 +248,27 @@ async function apiResetPassword(email, code, newPassword) {
       body: JSON.stringify({ email, code, newPassword })
     });
     console.log('apiResetPassword: Response status:', response.status);
-    const data = await response.json();
-    console.log('apiResetPassword: Response data:', data);
+    console.log('apiResetPassword: Response ok:', response.ok);
+
+    // Try to parse response
+    let data;
+    try {
+      const text = await response.text();
+      console.log('apiResetPassword: Raw response:', text);
+      data = text ? JSON.parse(text) : {};
+    } catch (parseError) {
+      console.error('apiResetPassword: JSON parse error:', parseError);
+      throw new Error('Invalid response from server');
+    }
+
+    console.log('apiResetPassword: Parsed data:', data);
     if (!response.ok) throw new Error(data.error || 'Failed to reset password');
     return data;
   } catch (error) {
     console.error('apiResetPassword: Error:', error);
+    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+      throw new Error('Network error. Check your connection or CORS settings.');
+    }
     throw error;
   }
 }
