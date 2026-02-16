@@ -252,7 +252,7 @@
     const photo = currentCoverPhoto();
     if (!photo || !photo.url) {
       holder.classList.remove("has-image");
-      holder.textContent = "Choose a photo";
+      holder.innerHTML = "Choose a photo";
       return;
     }
 
@@ -265,6 +265,13 @@
     img.style.transform = "scale(" + (state.cover.zoom / 100).toFixed(2) + ")";
     img.style.transformOrigin = "center center";
     holder.appendChild(img);
+
+    if (window.innerWidth <= 768) {
+      const hint = document.createElement("div");
+      hint.style.cssText = "position:absolute;bottom:4px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.9);border-radius:999px;padding:4px 8px;font-size:0.65rem;color:var(--text-tertiary);pointer-events:none";
+      hint.textContent = "Drag to pan, pinch to zoom";
+      holder.appendChild(hint);
+    }
 
     const xSlider = byId("fieldbookCoverX");
     const ySlider = byId("fieldbookCoverY");
@@ -655,18 +662,27 @@
       return;
     }
 
+    if (layer.type === "note") {
+      const body = document.createElement("div");
+      body.className = "fieldbook-layer-note fieldbook-paper-" + (layer.paper || "1");
+      const text = document.createElement("div");
+      text.className = "fieldbook-note-text";
+      text.contentEditable = interactive && canEditCurrentPage() ? "true" : "false";
+      text.textContent = layer.text || "";
+      text.addEventListener("pointerdown", function (event) { event.stopPropagation(); });
+      text.addEventListener("touchstart", function (event) { event.stopPropagation(); }, { passive: true });
+      text.addEventListener("input", function () {
+        layer.text = text.textContent || "";
+        if (state.selectedLayerId === layer.id) syncInspector();
+      });
+      body.appendChild(text);
+      wrapper.appendChild(body);
+      return;
+    }
+
     const body = document.createElement("div");
-    body.className = "fieldbook-layer-note fieldbook-paper-" + (layer.paper || "1");
-    const text = document.createElement("div");
-    text.className = "fieldbook-note-text";
-    text.contentEditable = interactive && canEditCurrentPage() ? "true" : "false";
-    text.textContent = layer.text || "";
-    text.addEventListener("pointerdown", function (event) { event.stopPropagation(); });
-    text.addEventListener("input", function () {
-      layer.text = text.textContent || "";
-      if (state.selectedLayerId === layer.id) syncInspector();
-    });
-    body.appendChild(text);
+    body.className = "fieldbook-layer-unknown";
+    body.textContent = "Unknown layer type";
     wrapper.appendChild(body);
   }
 
@@ -683,9 +699,12 @@
       "<button data-act='delete'>X</button>";
 
     actions.addEventListener("pointerdown", function (event) { event.stopPropagation(); });
+    actions.addEventListener("touchstart", function (event) { event.stopPropagation(); }, { passive: true });
     actions.addEventListener("click", function (event) {
       const btn = event.target.closest("button");
       if (!btn || !canEditCurrentPage()) return;
+      event.preventDefault();
+      event.stopPropagation();
       const action = btn.dataset.act;
       if (action === "left") layer.rotate -= ROTATE_STEP;
       if (action === "right") layer.rotate += ROTATE_STEP;
@@ -730,6 +749,7 @@
       if (interactive) {
         createActions(layer, wrapper);
         wrapper.addEventListener("pointerdown", startDrag);
+        wrapper.addEventListener("touchstart", startDrag, { passive: false });
         wrapper.addEventListener("click", function (event) {
           event.stopPropagation();
           state.selectedLayerId = layer.id;
@@ -738,6 +758,13 @@
       }
       target.appendChild(wrapper);
     });
+
+    if (interactive && layers.length > 0) {
+      const hint = document.createElement("div");
+      hint.className = "fieldbook-mobile-hint";
+      hint.textContent = "Drag to move, pinch to zoom";
+      target.appendChild(hint);
+    }
   }
 
   function renderEditorCanvas() {
@@ -747,31 +774,67 @@
     syncInspector();
   }
 
+  function getEventCoords(event) {
+    if (event.touches && event.touches.length > 0) {
+      return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    }
+    return { x: event.clientX, y: event.clientY };
+  }
+
   function startDrag(event) {
     if (!canEditCurrentPage()) return;
     const layer = findLayer(event.currentTarget.dataset.id);
     if (!layer) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
     bringToFront(layer);
     state.selectedLayerId = layer.id;
     const rect = byId("fieldbookCanvas").getBoundingClientRect();
+    const coords = getEventCoords(event);
+
     state.drag = {
       id: layer.id,
-      offsetX: event.clientX - rect.left - layer.x,
-      offsetY: event.clientY - rect.top - layer.y
+      offsetX: coords.x - rect.left - layer.x,
+      offsetY: coords.y - rect.top - layer.y,
+      initialDistance: null,
+      initialScale: layer.scale || 1
     };
-    window.addEventListener("pointermove", onDragMove);
+
+    window.addEventListener("pointermove", onDragMove, { passive: false });
     window.addEventListener("pointerup", endDrag);
+    window.addEventListener("touchmove", onDragMove, { passive: false });
+    window.addEventListener("touchend", endDrag);
     renderEditorCanvas();
   }
 
   function onDragMove(event) {
     if (!state.drag) return;
+    event.preventDefault();
+
     const layer = findLayer(state.drag.id);
     if (!layer) return;
     const canvas = byId("fieldbookCanvas");
     const rect = canvas.getBoundingClientRect();
-    layer.x = clamp(event.clientX - rect.left - state.drag.offsetX, -120, rect.width - 20);
-    layer.y = clamp(event.clientY - rect.top - state.drag.offsetY, -120, rect.height - 20);
+
+    if (event.touches && event.touches.length === 2) {
+      const dx = event.touches[1].clientX - event.touches[0].clientX;
+      const dy = event.touches[1].clientY - event.touches[0].clientY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (state.drag.initialDistance === null) {
+        state.drag.initialDistance = distance;
+      } else {
+        const scale = distance / state.drag.initialDistance;
+        layer.scale = clamp(state.drag.initialScale * scale, 0.55, 1.9);
+      }
+    } else {
+      const coords = getEventCoords(event);
+      layer.x = clamp(coords.x - rect.left - state.drag.offsetX, -120, rect.width - 20);
+      layer.y = clamp(coords.y - rect.top - state.drag.offsetY, -120, rect.height - 20);
+    }
+
     renderCanvas(canvas, activePage(), true);
     syncInspector();
   }
@@ -780,6 +843,8 @@
     state.drag = null;
     window.removeEventListener("pointermove", onDragMove);
     window.removeEventListener("pointerup", endDrag);
+    window.removeEventListener("touchmove", onDragMove);
+    window.removeEventListener("touchend", endDrag);
   }
   function fillSelect(select, options, value) {
     if (!select) return;
@@ -1717,17 +1782,44 @@
   function startCoverDrag(event) {
     if (!currentCoverPhoto()) return;
     event.preventDefault();
-    state.coverDrag = { x: event.clientX, y: event.clientY, ox: state.cover.x, oy: state.cover.y };
-    window.addEventListener("pointermove", onCoverDragMove);
+    const coords = getEventCoords(event);
+    state.coverDrag = {
+      x: coords.x,
+      y: coords.y,
+      ox: state.cover.x,
+      oy: state.cover.y,
+      initialDistance: null,
+      initialZoom: state.cover.zoom
+    };
+    window.addEventListener("pointermove", onCoverDragMove, { passive: false });
     window.addEventListener("pointerup", endCoverDrag);
+    window.addEventListener("touchmove", onCoverDragMove, { passive: false });
+    window.addEventListener("touchend", endCoverDrag);
   }
 
   function onCoverDragMove(event) {
     if (!state.coverDrag) return;
-    const dx = event.clientX - state.coverDrag.x;
-    const dy = event.clientY - state.coverDrag.y;
-    state.cover.x = clamp(state.coverDrag.ox - dx * 0.24, 0, 100);
-    state.cover.y = clamp(state.coverDrag.oy - dy * 0.24, 0, 100);
+    event.preventDefault();
+
+    if (event.touches && event.touches.length === 2) {
+      const dx = event.touches[1].clientX - event.touches[0].clientX;
+      const dy = event.touches[1].clientY - event.touches[0].clientY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (state.coverDrag.initialDistance === null) {
+        state.coverDrag.initialDistance = distance;
+      } else {
+        const scale = distance / state.coverDrag.initialDistance;
+        state.cover.zoom = clamp(state.coverDrag.initialZoom * scale, 40, 260);
+      }
+    } else {
+      const coords = getEventCoords(event);
+      const dx = coords.x - state.coverDrag.x;
+      const dy = coords.y - state.coverDrag.y;
+      state.cover.x = clamp(state.coverDrag.ox - dx * 0.24, 0, 100);
+      state.cover.y = clamp(state.coverDrag.oy - dy * 0.24, 0, 100);
+    }
+
     renderCoverPreview();
   }
 
@@ -1735,6 +1827,8 @@
     state.coverDrag = null;
     window.removeEventListener("pointermove", onCoverDragMove);
     window.removeEventListener("pointerup", endCoverDrag);
+    window.removeEventListener("touchmove", onCoverDragMove);
+    window.removeEventListener("touchend", endCoverDrag);
   }
 
   function bindEvents() {
@@ -1764,6 +1858,12 @@
           renderEditorCanvas();
         }
       });
+      canvas.addEventListener("touchstart", function (event) {
+        if (event.target === canvas) {
+          state.selectedLayerId = "";
+          renderEditorCanvas();
+        }
+      }, { passive: true });
     }
 
     const scale = byId("fieldbookInspectorScale");
@@ -1832,7 +1932,10 @@
     }
 
     const cover = byId("fieldbookCoverPreview");
-    if (cover) cover.addEventListener("pointerdown", startCoverDrag);
+    if (cover) {
+      cover.addEventListener("pointerdown", startCoverDrag);
+      cover.addEventListener("touchstart", startCoverDrag, { passive: false });
+    }
 
     const locInput = byId("fieldbookLocation");
     if (locInput) {

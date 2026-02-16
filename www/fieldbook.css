@@ -116,7 +116,30 @@
 .fieldbook-editor-body {
   max-height: min(78vh, 760px);
   overflow-y: auto;
+  overflow-x: hidden;
   padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .fieldbook-editor-modal,
+  .fieldbook-viewer-modal {
+    max-width: 100vw;
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  .fieldbook-editor-body {
+    max-height: calc(100vh - 80px);
+    height: auto;
+  }
+
+  .modal-content {
+    max-height: 100vh;
+    height: 100vh;
+    border-radius: 0;
+  }
 }
 
 #fieldbookLocationAutocomplete {
@@ -199,6 +222,9 @@
   color: var(--text-tertiary);
   font-size: 0.8rem;
   overflow: hidden;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .fieldbook-cover-preview.has-image {
@@ -229,6 +255,13 @@
 
 .fieldbook-cover-controls input {
   width: 100%;
+}
+
+@media (max-width: 768px) {
+  .fieldbook-cover-controls label:has(#fieldbookCoverX),
+  .fieldbook-cover-controls label:has(#fieldbookCoverY) {
+    display: none;
+  }
 }
 
 .fieldbook-template-preview {
@@ -405,6 +438,31 @@
   background: var(--white);
 }
 
+@media (max-width: 768px) {
+  .fieldbook-toolbar {
+    flex-direction: column;
+  }
+
+  .fieldbook-toolbar button,
+  .fieldbook-toolbar select {
+    width: 100%;
+  }
+
+  .fieldbook-inspector {
+    position: sticky;
+    bottom: 0;
+    background: var(--sand-50);
+    z-index: 10;
+  }
+
+  .fieldbook-page-manager {
+    position: sticky;
+    top: 0;
+    background: var(--sand-50);
+    z-index: 10;
+  }
+}
+
 @media (max-width: 420px) {
   .fieldbook-shelf-grid {
     gap: 8px;
@@ -416,6 +474,23 @@
 
   .fieldbook-card-title {
     font-size: 0.71rem;
+  }
+
+  .fieldbook-layer-photo {
+    width: 100px;
+    height: 100px;
+    padding: 6px 6px 18px;
+  }
+
+  .fieldbook-layer-note {
+    width: 140px;
+    min-height: 80px;
+    padding: 8px 8px 12px;
+  }
+
+  .fieldbook-layer-map {
+    width: 180px;
+    height: 110px;
   }
 }
 
@@ -559,6 +634,16 @@
   background:
     radial-gradient(circle at 1px 1px, rgba(120, 96, 64, 0.08) 1px, transparent 0) 0 0 / 16px 16px,
     linear-gradient(180deg, #f5efe2 0%, #efe4d3 100%);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+@media (max-width: 768px) {
+  .fieldbook-canvas {
+    min-height: 320px;
+    height: clamp(320px, 40vh, 420px);
+  }
 }
 
 .fieldbook-preview-canvas {
@@ -585,13 +670,16 @@
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none;
   cursor: grab;
   transform-origin: center center;
+  will-change: transform;
 }
 
 .fieldbook-layer.selected {
   outline: 2px solid rgba(96, 74, 45, 0.32);
   outline-offset: 1px;
+  z-index: 9999;
 }
 
 .fieldbook-layer:active {
@@ -661,6 +749,9 @@
   border: 1px solid #d6c49f;
   box-shadow: 0 7px 13px rgba(55, 41, 24, 0.16);
   color: #4a3b25;
+  display: block;
+  position: relative;
+  box-sizing: border-box;
 }
 
 .fieldbook-paper-1 { background: #fbf3de; }
@@ -675,6 +766,12 @@
   line-height: 1.3;
   white-space: pre-wrap;
   word-break: break-word;
+  min-height: 1.3em;
+}
+
+.fieldbook-note-text:empty:before {
+  content: "Tap to edit...";
+  color: rgba(74, 59, 37, 0.4);
 }
 
 .fieldbook-layer-tape {
@@ -825,6 +922,20 @@
   color: #fff;
   cursor: pointer;
   padding: 0;
+  touch-action: manipulation;
+}
+
+@media (max-width: 768px) {
+  .fieldbook-layer-actions button {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+    line-height: 24px;
+  }
+
+  .fieldbook-layer-actions {
+    gap: 6px;
+  }
 }
 
 .fieldbook-layer-author {
@@ -849,4 +960,26 @@
   color: var(--text-tertiary);
   font-size: 0.82rem;
   padding: 20px;
+}
+
+.fieldbook-mobile-hint {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--sand-300);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  pointer-events: none;
+  z-index: 100;
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .fieldbook-mobile-hint {
+    display: block;
+  }
 }
