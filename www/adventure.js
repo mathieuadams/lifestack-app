@@ -116,8 +116,8 @@ function renderAdvStep1() {
           value="${escapeHtmlUI(advWizard.data.location.name)}"
           autocomplete="off">
         <button class="adv-loc-gps" onclick="advGetGPS()" title="Use my location">📍</button>
+        <div class="adv-loc-dropdown" id="advLocDropdown"></div>
       </div>
-      <div class="adv-loc-dropdown" id="advLocDropdown"></div>
       <div class="adv-loc-status" id="advLocStatus"></div>
 
       <label class="adv-label" style="margin-top:20px">Dates</label>
@@ -764,6 +764,13 @@ async function advSave() {
     }
 
     closeAdvWizard();
+
+    // Ensure month calendar modal is closed
+    if (typeof currentCalendarMonth !== 'undefined') {
+      currentCalendarMonth = null;
+      const modal = document.getElementById('monthCalendarModal');
+      if (modal) modal.classList.remove('active');
+    }
 
     // Skip auto-refresh to prevent iOS crash
     // User can manually refresh by switching tabs or pull-to-refresh
