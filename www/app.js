@@ -5261,6 +5261,8 @@ function markHabitComplete() {
 // Calendar color palette for adventures
 const adventureColors = ['adventure-1', 'adventure-2', 'adventure-3', 'adventure-4'];
 let currentCalendarMonth = null;
+// iOS can fire a ghost click when the create panel closes after Save.
+window.__suppressMonthOpenUntil = window.__suppressMonthOpenUntil || 0;
 
 function renderMonthGrid() {
   const container = document.getElementById('monthGrid');
@@ -5410,6 +5412,10 @@ function getDaysWithPlans(month, monthPlans) {
 }
 
 function openMonthCalendar(month, monthName) {
+  if (Date.now() < (window.__suppressMonthOpenUntil || 0)) {
+    return;
+  }
+
   // Legacy month modal is removed; route to inline Month tab instead.
   currentCalendarMonth = null;
   if (typeof curM !== 'undefined') curM = month - 1;

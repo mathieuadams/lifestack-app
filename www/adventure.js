@@ -666,6 +666,38 @@ function advToggleIdea(idx, el) {
 
 // ===== SAVE ADVENTURE =====
 
+function normalizeAfterAdventureSave() {
+  // Ensure keyboard/input focus is released before switching tabs (iOS viewport stability).
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
+
+  // Prevent click-through on month cards right after the wizard closes.
+  window.__suppressMonthOpenUntil = Date.now() + 900;
+
+  // Make sure legacy hidden containers cannot leak below the main shell.
+  ['dashboardView', 'yearDesignView', 'yearReviewView', 'yearLockedView', 'settingsView', 'journalView'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('hidden');
+    el.style.display = 'none';
+  });
+
+  // If a stale month modal exists in DOM, keep it closed.
+  if (typeof closeMonthCalendarModal === 'function') {
+    try { closeMonthCalendarModal(); } catch (e) {}
+  }
+
+  // Force one layout pass with the current viewport height (iOS WebView can keep old keyboard height).
+  const appShell = document.querySelector('.app-shell');
+  const vv = window.visualViewport;
+  const h = vv && vv.height ? Math.round(vv.height) : window.innerHeight;
+  if (appShell && h > 0) {
+    appShell.style.height = `${h}px`;
+    setTimeout(() => { appShell.style.height = ''; }, 350);
+  }
+}
+
 async function advSave() {
   saveAdvStepData();
   const d = advWizard.data;
@@ -760,6 +792,7 @@ async function advSave() {
     }
 
     closeAdvWizard();
+    normalizeAfterAdventureSave();
 
     // After save, always land on Plan > Month and show the current month.
     if (typeof swView === 'function') swView('plan');
@@ -773,6 +806,12 @@ async function advSave() {
     } else if (typeof refreshPlanView === 'function') {
       refreshPlanView();
     }
+
+    // Second pass after tab switch (iOS rendering quirk after panel close).
+    setTimeout(() => {
+      normalizeAfterAdventureSave();
+      if (typeof buildMG === 'function') buildMG();
+    }, 120);
   } catch(e) {
     console.error('Save error:', e);
     console.error('Error stack:', e.stack);

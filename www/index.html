@@ -458,7 +458,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 <!-- ===== HIDDEN DATA CONTAINERS (app.js reads/writes these) ===== -->
 
 <!-- Dashboard data -->
-<div id="dashboardView" class="hidden">
+<div id="dashboardView" class="hidden" style="display:none">
   <div class="progress-year" id="currentYear">2026</div>
   <span id="currentAge">30</span><span id="lifespanDisplay">80</span>
   <svg class="progress-ring" width="0" height="0"><circle id="progressRing" cx="0" cy="0" r="0"/></svg>
@@ -468,7 +468,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 </div>
 
 <!-- Year Design data -->
-<div id="yearDesignView" class="hidden">
+<div id="yearDesignView" class="hidden" style="display:none">
   <span id="designYear">2026</span>
   <input type="hidden" id="yearTheme" onchange="saveYearTheme()">
   <div id="misogiList"></div><div id="habitsGrid"></div><div id="monthGrid"></div>
@@ -480,18 +480,18 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 </div>
 
 <!-- Year Review data -->
-<div id="yearReviewView" class="hidden">
+<div id="yearReviewView" class="hidden" style="display:none">
   <span id="reviewYear"></span><span id="reviewMisogiCount"></span><span id="reviewAdventureCount"></span>
   <span id="reviewHabitCount"></span><span id="reviewMemoryCount"></span><div id="reviewContent"></div><span id="reviewYearBtn"></span>
 </div>
 
 <!-- Year Locked data -->
-<div id="yearLockedView" class="hidden">
+<div id="yearLockedView" class="hidden" style="display:none">
   <span id="lockedYear"></span><span id="lockedYearMsg"></span><span id="unlockDate"></span><span id="currentYearBtn"></span>
 </div>
 
 <!-- Settings data -->
-<div id="settingsView" class="hidden">
+<div id="settingsView" class="hidden" style="display:none">
   <span id="settingsName"></span><span id="settingsEmail"></span><span id="settingsBirthdate"></span><span id="settingsLifespan"></span>
   <span id="settingsAvatarInitials"></span><img id="settingsAvatarImage" src="" style="display:none">
   <input type="checkbox" id="notifEmailToggle" style="display:none" checked>
@@ -502,7 +502,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 </div>
 
 <!-- Journal data -->
-<div id="journalView" class="hidden"><div id="journalEntries"></div></div>
+<div id="journalView" class="hidden" style="display:none"><div id="journalEntries"></div></div>
 
 </div><!-- end #app -->
 <!-- ============================================================
