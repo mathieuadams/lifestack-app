@@ -920,3 +920,59 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .notif-title{font-weight:600;font-size:.9rem;color:var(--text-primary);margin-bottom:4px}
 .notif-desc{font-size:.8rem;color:var(--text-secondary);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .notif-date{font-size:.75rem;color:var(--sage-600);font-weight:500}
+
+/* ===== LOCATION AUTOCOMPLETE DROPDOWN ===== */
+.adv-loc-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid var(--sand-200);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-elevated);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 1000;
+  display: none;
+  margin-top: 4px;
+}
+
+.adv-loc-item {
+  padding: 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--sand-100);
+  transition: var(--transition);
+}
+
+.adv-loc-item:last-child {
+  border-bottom: none;
+}
+
+.adv-loc-item:hover {
+  background: var(--sage-50);
+}
+
+.adv-loc-item:active {
+  background: var(--sage-100);
+}
+
+.adv-loc-name {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.adv-loc-loading, .adv-loc-empty {
+  padding: 12px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.9rem;
+}
+
+/* Mobile keyboard handling */
+@media (max-height: 600px) {
+  .adv-loc-dropdown {
+    max-height: 160px;
+  }
+}
