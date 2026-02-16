@@ -700,6 +700,15 @@ function normalizeAfterAdventureSave() {
     appShell.style.height = `${h}px`;
     setTimeout(() => { appShell.style.height = ''; }, 350);
   }
+
+  // iOS can retain a visual viewport offset after closing inputs/panels.
+  try {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    const mainScroll = document.querySelector('.mc');
+    if (mainScroll) mainScroll.scrollTop = 0;
+  } catch (e) {}
 }
 
 async function advSave() {

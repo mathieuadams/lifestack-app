@@ -70,7 +70,7 @@ export const handler = async (event) => {
       return { statusCode: 404, headers, body: JSON.stringify({ error: 'Plan not found' }) };
     }
 
-    const existingPeople = existingPlan.people || [];
+    const existingTaggedUsers = extractTaggedUserIds(existingPlan);
     const planType = existingPlan.type;
     const ownerName = existingPlan.ownerName || 'Someone';
 
@@ -142,13 +142,21 @@ export const handler = async (event) => {
 
     // Handle shared records for adventures/misogi
     if (planType === 'adventure' || planType === 'misogi') {
-      const newPeople = body.people || existingPeople;
+      // Rebuild tagged users from both people[] and participants[].
+      const hasPeopleUpdate = body.people !== undefined;
+      const hasParticipantsUpdate = body.participants !== undefined;
+      const newTaggedUsers = (hasPeopleUpdate || hasParticipantsUpdate)
+        ? extractTaggedUserIds({
+            people: hasPeopleUpdate ? body.people : existingPlan.people,
+            participants: hasParticipantsUpdate ? body.participants : existingPlan.participants
+          })
+        : existingTaggedUsers;
 
       // Find newly added people
-      const addedPeople = newPeople.filter(p => !existingPeople.includes(p) && p !== userId);
+      const addedPeople = newTaggedUsers.filter(p => !existingTaggedUsers.includes(p) && p !== userId);
 
       // Find removed people
-      const removedPeople = existingPeople.filter(p => !newPeople.includes(p) && p !== userId);
+      const removedPeople = existingTaggedUsers.filter(p => !newTaggedUsers.includes(p) && p !== userId);
 
       console.log('Added people:', addedPeople);
       console.log('Removed people:', removedPeople);
@@ -164,8 +172,8 @@ export const handler = async (event) => {
       }
 
       // Update existing shared records with new plan data (for people who weren't added/removed)
-      const unchangedPeople = newPeople.filter(
-        p => existingPeople.includes(p) && p !== userId
+      const unchangedPeople = newTaggedUsers.filter(
+        p => existingTaggedUsers.includes(p) && p !== userId
       );
 
       for (const taggedUserId of unchangedPeople) {
@@ -184,6 +192,20 @@ export const handler = async (event) => {
     return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
   }
 };
+
+function extractTaggedUserIds(planLike) {
+  const fromPeople = Array.isArray(planLike?.people)
+    ? planLike.people.filter(Boolean)
+    : [];
+
+  const fromParticipants = Array.isArray(planLike?.participants)
+    ? planLike.participants
+        .map(p => p?.odId || p?.id || p?.userId || p?.sub || null)
+        .filter(Boolean)
+    : [];
+
+  return Array.from(new Set([...fromPeople, ...fromParticipants]));
+}
 
 // =====================================================
 // CREATE SHARED RECORD AND NOTIFY
