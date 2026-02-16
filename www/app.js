@@ -2000,7 +2000,27 @@ function showMemoryModal(memoryToEdit = null) {
     
     // Set plan link after populating
     populatePlanSelector();
-    if (planSelector) planSelector.value = memoryToEdit.planId || '';
+    if (planSelector) {
+      planSelector.value = memoryToEdit.planId || '';
+      // Trigger plan change to show sub-activities if plan has them
+      handleMemoryPlanChange();
+
+      // Set selected sub-activity if editing and memory has one
+      if (memoryToEdit.subActivity) {
+        const selectedPlan = plans.find(p => p.id === memoryToEdit.planId);
+        if (selectedPlan && selectedPlan.subActivities) {
+          const subActivityIndex = selectedPlan.subActivities.findIndex(
+            sa => sa.name === memoryToEdit.subActivity.name
+          );
+          if (subActivityIndex !== -1) {
+            const subActivitySelect = document.getElementById('memorySubActivity');
+            if (subActivitySelect) {
+              subActivitySelect.value = subActivityIndex.toString();
+            }
+          }
+        }
+      }
+    }
   } else {
     // Create mode
     document.getElementById('memoryModalTitle').textContent = 'Capture a Memory';
@@ -4195,12 +4215,12 @@ async function togglePlanStatus(planId) {
 function populatePlanSelector() {
   const select = document.getElementById('memoryPlanId');
   if (!select) return;
-  
+
   select.innerHTML = '<option value="">-- No plan --</option>';
-  
+
   const today = new Date();
   today.setHours(23, 59, 59, 999); // End of today
-  
+
   const currentYearPlans = plans
     .filter(p => parseInt(p.year) === currentViewYear)
     // BUG FIX: Exclude future events - can't attach memory to something that hasn't happened
@@ -4215,7 +4235,7 @@ function populatePlanSelector() {
       const dateB = parseLocalDate(b.startDate) || new Date(0);
       return dateB - dateA; // Descending
     });
-  
+
   currentYearPlans.forEach(plan => {
     const option = document.createElement('option');
     option.value = plan.id;
@@ -4227,6 +4247,37 @@ function populatePlanSelector() {
   });
 }
 
+function handleMemoryPlanChange() {
+  const planId = document.getElementById('memoryPlanId').value;
+  const subActivityGroup = document.getElementById('memorySubActivityGroup');
+  const subActivitySelect = document.getElementById('memorySubActivity');
+
+  if (!planId || !subActivityGroup || !subActivitySelect) {
+    if (subActivityGroup) subActivityGroup.style.display = 'none';
+    return;
+  }
+
+  // Find the selected plan
+  const selectedPlan = plans.find(p => p.id === planId);
+
+  // Check if plan has sub-activities
+  if (selectedPlan && selectedPlan.subActivities && selectedPlan.subActivities.length > 0) {
+    // Populate sub-activity dropdown
+    subActivitySelect.innerHTML = '<option value="">-- Select activity --</option>';
+
+    selectedPlan.subActivities.forEach((activity, index) => {
+      const option = document.createElement('option');
+      option.value = index.toString();
+      option.textContent = `${activity.emoji || '•'} ${activity.name}`;
+      subActivitySelect.appendChild(option);
+    });
+
+    subActivityGroup.style.display = 'block';
+  } else {
+    subActivityGroup.style.display = 'none';
+  }
+}
+
 async function saveMemory() {
   const memoryId = document.getElementById('memoryId').value;
   const title = document.getElementById('memoryTitle').value;
@@ -4234,7 +4285,18 @@ async function saveMemory() {
   const text = document.getElementById('memoryText').value;
   const planId = document.getElementById('memoryPlanId').value;
   const tagsInput = document.getElementById('memoryTags').value;
-  
+
+  // Get selected sub-activity if any
+  let subActivity = null;
+  const subActivitySelect = document.getElementById('memorySubActivity');
+  if (subActivitySelect && subActivitySelect.value !== '' && planId) {
+    const selectedPlan = plans.find(p => p.id === planId);
+    if (selectedPlan && selectedPlan.subActivities) {
+      const index = parseInt(subActivitySelect.value);
+      subActivity = selectedPlan.subActivities[index];
+    }
+  }
+
   if (!title || !occurredAt) { showError('Please fill in title and date'); return; }
   if (!currentUser || !currentUser.birthdate) { showError('User data not loaded. Please reload.'); return; }
 
@@ -4252,13 +4314,14 @@ async function saveMemory() {
     uploadedPhotos = [...uploadedPhotos, ...newPhotos];
   }
 
-  const memoryData = { 
-    title, 
-    occurredAt, 
-    text, 
-    tags: tagsInput.split(',').map(t => t.trim()).filter(t => t), 
+  const memoryData = {
+    title,
+    occurredAt,
+    text,
+    tags: tagsInput.split(',').map(t => t.trim()).filter(t => t),
     year: String(year),  // Convert to string for DynamoDB GSI
     planId: planId || null,
+    subActivity: subActivity || null,  // ✅ Store selected sub-activity
     people: selectedPeopleIds,
     photos: uploadedPhotos,
     location: getLocationData()
@@ -4323,26 +4386,36 @@ async function saveMemory() {
   // Close modal and refresh UI
   closeMemoryModal();
 
-  // Refresh all memory displays (with error handling to prevent crashes)
-  try {
-    if (typeof renderDashboard === 'function') renderDashboard();
-  } catch (err) {
-    console.error('Error rendering dashboard:', err);
-  }
+  // iOS needs longer delay for modal animation to complete
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const delay = isIOS ? 800 : 300; // iOS: 800ms, others: 300ms
 
-  try {
-    if (typeof renderYearMemories === 'function' && typeof currentViewYear !== 'undefined') {
-      renderYearMemories(currentViewYear);
+  console.log('Platform:', isIOS ? 'iOS' : 'Other', 'Memory refresh delay:', delay + 'ms');
+
+  // Refresh with delay for mobile devices (prevents crash from rapid DOM updates)
+  setTimeout(() => {
+    try {
+      console.log('Starting memory view refresh...');
+      if (typeof renderDashboard === 'function') renderDashboard();
+    } catch (err) {
+      console.error('Error rendering dashboard:', err);
     }
-  } catch (err) {
-    console.error('Error rendering year memories:', err);
-  }
 
-  try {
-    if (typeof renderMonthGrid === 'function') renderMonthGrid();
-  } catch (err) {
-    console.error('Error rendering month grid:', err);
-  }
+    try {
+      if (typeof renderYearMemories === 'function' && typeof currentViewYear !== 'undefined') {
+        renderYearMemories(currentViewYear);
+      }
+    } catch (err) {
+      console.error('Error rendering year memories:', err);
+    }
+
+    try {
+      if (typeof renderMonthGrid === 'function') renderMonthGrid();
+    } catch (err) {
+      console.error('Error rendering month grid:', err);
+    }
+    console.log('Memory view refresh completed');
+  }, delay);
 
   // Clear state
   selectedPeopleIds = [];

@@ -639,7 +639,13 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
           <label>Who was there?</label>
           <div id="memoryPeopleGrid"><div class="add-person-chip" onclick="showPeopleSelector('memory')">+ Add people</div></div>
         </div>
-        <div class="form-group"><label for="memoryPlanId">Link to Plan</label><select id="memoryPlanId"><option value="">-- No plan --</option></select></div>
+        <div class="form-group"><label for="memoryPlanId">Link to Plan</label><select id="memoryPlanId" onchange="handleMemoryPlanChange()"><option value="">-- No plan --</option></select></div>
+        <div class="form-group" id="memorySubActivityGroup" style="display:none;">
+          <label for="memorySubActivity">What did you do?</label>
+          <select id="memorySubActivity">
+            <option value="">-- Select activity --</option>
+          </select>
+        </div>
         <div class="form-group"><label for="memoryTags">Tags</label><input type="text" id="memoryTags" placeholder="family, travel"></div>
         <button type="button" class="btn btn-primary" style="width:100%;" onclick="saveMemory()" id="saveMemoryBtn">Save Memory</button>
         <button type="button" class="btn btn-danger" style="width:100%;margin-top:.5rem;display:none;" onclick="deleteMemory()" id="deleteMemoryBtn">Delete Memory</button>

@@ -668,6 +668,14 @@ async function advSave() {
   if (!d.name && d.location.name) d.name = 'Trip to ' + d.location.name;
   if (!d.name) { toast('Please add an adventure name'); advWizard.step = 2; renderAdvWizard(); return; }
 
+  // Prevent double-saves (mobile double-tap issue)
+  const saveBtn = document.querySelector('.adv-save-btn');
+  if (saveBtn && saveBtn.disabled) {
+    console.log('Save already in progress, ignoring duplicate request');
+    return;
+  }
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+
   // Build description with location
   const descParts = [];
   if (d.location.name) descParts.push(d.location.name);
@@ -705,10 +713,6 @@ async function advSave() {
     reminderPrefs: reminders
   };
 
-  // Save via app.js createPlan
-  const saveBtn = document.querySelector('.adv-save-btn');
-  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
-
   if (advWizard.data._bucketItemId && typeof bucketList !== 'undefined') {
       const bItem = bucketList.find(b => b.id === advWizard.data._bucketItemId);
       if (bItem) {
@@ -725,7 +729,12 @@ async function advSave() {
 
     if (result) {
       plans.push(result);
-      localStorage.setItem(`lifestack_plans_${yr}`, JSON.stringify(plans));
+      try {
+        localStorage.setItem(`lifestack_plans_${yr}`, JSON.stringify(plans));
+      } catch (storageError) {
+        console.error('localStorage error (iOS quota exceeded?):', storageError);
+        // Try to continue anyway - data is saved to backend
+      }
       toast('🎉 Adventure created!');
 
       if (advWizard.data._bucketItemId && typeof bucketList !== 'undefined') {
@@ -740,23 +749,40 @@ async function advSave() {
       // Local fallback
       const localPlan = { id: 'plan_' + Date.now(), ...planData, status: 'planned', createdAt: new Date().toISOString() };
       plans.push(localPlan);
-      localStorage.setItem(`lifestack_plans_${yr}`, JSON.stringify(plans));
+      try {
+        localStorage.setItem(`lifestack_plans_${yr}`, JSON.stringify(plans));
+      } catch (storageError) {
+        console.error('localStorage error (iOS quota exceeded?):', storageError);
+      }
       toast('📋 Saved locally!');
     }
 
     closeAdvWizard();
-    // Refresh views with error handling
-    try {
-      if (typeof refreshPlanView === 'function') {
-        refreshPlanView();
-      } else {
-        if (typeof buildMG === 'function') buildMG();
-        if (typeof buildYV === 'function') buildYV();
+
+    // iOS needs longer delay for modal animation to complete
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const delay = isIOS ? 800 : 300; // iOS: 800ms, others: 300ms
+
+    console.log('Platform:', isIOS ? 'iOS' : 'Other', 'Delay:', delay + 'ms');
+
+    // Refresh views with delay for mobile devices
+    // Immediate refresh can crash on mobile due to DOM manipulation
+    setTimeout(() => {
+      try {
+        console.log('Starting view refresh after save...');
+        if (typeof refreshPlanView === 'function') {
+          refreshPlanView();
+        } else {
+          if (typeof buildMG === 'function') buildMG();
+          if (typeof buildYV === 'function') buildYV();
+        }
+        console.log('View refresh completed successfully');
+      } catch (refreshError) {
+        console.error('Error refreshing views after save:', refreshError);
+        console.error('Stack:', refreshError.stack);
+        // Don't show error to user - the save was successful
       }
-    } catch (refreshError) {
-      console.error('Error refreshing views after save:', refreshError);
-      // Don't show error to user - the save was successful
-    }
+    }, delay);
   } catch(e) {
     console.error('Save error:', e);
     console.error('Error stack:', e.stack);
