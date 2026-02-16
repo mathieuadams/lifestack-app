@@ -154,8 +154,6 @@ function renderAdvStep2() {
       <div class="adv-cats" id="advCats">
           ${buildAdvCatPills()}
       </div>
-        </div>
-      </div>
     </div>
   `;
 }
@@ -741,7 +739,6 @@ async function advSave() {
       } catch (storageError) {
         console.error('localStorage error (iOS quota exceeded?):', storageError);
       }
-      toast('✅ Adventure saved! Switch tabs to see it.');
 
       if (advWizard.data._bucketItemId && typeof bucketList !== 'undefined') {
         var bItem = bucketList.find(function(b) { return b.id === advWizard.data._bucketItemId; });
@@ -760,7 +757,6 @@ async function advSave() {
       } catch (storageError) {
         console.error('localStorage error (iOS quota exceeded?):', storageError);
       }
-      toast('📋 Saved locally! Switch tabs to see it.');
     }
 
     closeAdvWizard();
@@ -771,10 +767,13 @@ async function advSave() {
       const modal = document.getElementById('monthCalendarModal');
       if (modal) modal.classList.remove('active');
     }
-
-    // Skip auto-refresh to prevent iOS crash
-    // User can manually refresh by switching tabs or pull-to-refresh
-    console.log('Adventure saved - switch tabs to refresh view');
+    // Silent refresh: show the saved adventure in calendar/views without a popup toast.
+    if (typeof refreshPlanView === 'function') {
+      refreshPlanView();
+    } else {
+      if (typeof renderMonthGrid === 'function') renderMonthGrid();
+      if (typeof renderDashboard === 'function') renderDashboard();
+    }
   } catch(e) {
     console.error('Save error:', e);
     console.error('Error stack:', e.stack);
@@ -807,3 +806,4 @@ function escapeHtmlUI(str) {
   if (typeof str !== 'string') return '';
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
