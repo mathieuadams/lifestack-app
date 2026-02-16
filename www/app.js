@@ -383,6 +383,46 @@ async function fetchPlans(year) {
   }
 }
 
+async function syncSharedPlansForYear(year) {
+  const tokens = await getValidTokens();
+  if (!tokens?.idToken) return null;
+
+  try {
+    const response = await fetch(`${CONFIG.API_URL}/plans/sync-shared`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokens.idToken}`
+      },
+      body: JSON.stringify({
+        dryRun: false,
+        year: parseInt(year),
+        activeOnly: true,
+        cleanupOrphans: true
+      })
+    });
+
+    if (response.ok) {
+      const result = await response.json().catch(() => ({}));
+      console.log('Shared sync result:', result);
+      return result;
+    }
+
+    // Keep manual sync usable even if backend route is not deployed yet.
+    if (response.status === 404 || response.status === 403) {
+      console.warn('Shared sync route unavailable:', response.status);
+      return null;
+    }
+
+    const errorText = await response.text().catch(() => '');
+    console.warn('Shared sync failed:', response.status, errorText);
+    return null;
+  } catch (error) {
+    console.warn('Shared sync request error:', error);
+    return null;
+  }
+}
+
 // Sync all data from server
 async function syncAllData() {
   const syncBtn = document.getElementById('syncBtn');
@@ -398,6 +438,9 @@ async function syncAllData() {
     const tokens = JSON.parse(localStorage.getItem('lifestack_tokens') || 'null');
     console.log('Has tokens:', !!tokens?.idToken);
     
+    // First, reconcile shared copies so fetched plan data is already consistent.
+    await syncSharedPlansForYear(currentViewYear);
+
     // Fetch all data in parallel
     const [plansData, memoriesData, peopleData, sharesData, friendshipsData, journalsData] = await Promise.all([
       fetchPlans(currentViewYear),
