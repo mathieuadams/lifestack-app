@@ -871,18 +871,31 @@ function refreshPlanView(){
   try{
     if(typeof plans!=='undefined'&&Array.isArray(plans)){
       const adventures=plans.filter(p=>p.type==='adventure').length;
+      const sharedAdventures=plans.filter(p=>p.type==='shared-adventure').length;
       const misogis=plans.filter(p=>p.type==='misogi').length;
       const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.length:0;
 
       const el=document.getElementById('statAdventures');if(el)el.textContent=adventures;
+      const sel=document.getElementById('statSharedAdventures');if(sel)sel.textContent=sharedAdventures;
       const mel=document.getElementById('statMisogi');if(mel)mel.textContent=misogis;
       const bel=document.getElementById('statBucket');if(bel)bel.textContent=bucketCount;
     }
   }catch(e){console.error('Error updating stats:',e)}
 
-  try{buildWeekView()}catch(e){console.error('Error building week view:',e)}
-  try{buildMG()}catch(e){console.error('Error building month grid:',e)}
-  try{buildYV()}catch(e){console.error('Error building year view:',e)}
+  const weekActive=document.getElementById('st-week')?.classList.contains('active');
+  const monthActive=document.getElementById('st-month')?.classList.contains('active');
+  const yearActive=document.getElementById('st-year')?.classList.contains('active');
+
+  if(weekActive||monthActive||yearActive){
+    if(weekActive){try{buildWeekView()}catch(e){console.error('Error building week view:',e)}}
+    if(monthActive){try{buildMG()}catch(e){console.error('Error building month grid:',e)}}
+    if(yearActive){try{buildYV()}catch(e){console.error('Error building year view:',e)}}
+  }else{
+    // Fallback for initialization paths where tab state is not ready yet.
+    try{buildWeekView()}catch(e){console.error('Error building week view:',e)}
+    try{buildMG()}catch(e){console.error('Error building month grid:',e)}
+    try{buildYV()}catch(e){console.error('Error building year view:',e)}
+  }
 
   // Update profile
   try{

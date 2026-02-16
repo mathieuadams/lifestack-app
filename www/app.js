@@ -3582,7 +3582,26 @@ async function deletePlanFromModal() {
 
 async function executeDeletePlan(planId) {
   try {
-    await deletePlan(planId);
+    const plan = plans.find(p => p.id === planId);
+
+    // Ensure shared copies are removed for tagged people before deleting the owner plan.
+    if (plan && (plan.type === 'adventure' || plan.type === 'misogi') && plan.type !== 'shared-adventure') {
+      const taggedFromPeople = Array.isArray(plan.people) ? plan.people.filter(Boolean) : [];
+      const taggedFromParticipants = Array.isArray(plan.participants)
+        ? plan.participants.map(p => p?.odId).filter(Boolean)
+        : [];
+      const taggedUsers = Array.from(new Set([...taggedFromPeople, ...taggedFromParticipants]));
+
+      if (taggedUsers.length > 0) {
+        const cleanupResult = await updatePlan(planId, { people: [], participants: [] });
+        if (!cleanupResult) {
+          throw new Error('Unable to remove shared copies before delete. Please try again.');
+        }
+      }
+    }
+
+    const deleted = await deletePlan(planId);
+    if (!deleted) throw new Error('Delete request failed');
     
     // Remove from local state
     plans = plans.filter(p => p.id !== planId);
@@ -3603,6 +3622,10 @@ async function executeDeletePlan(planId) {
     showToast('Plan deleted');
   } catch (error) {
     console.error('Delete plan error:', error);
+    if (error?.message && error.message.includes('remove shared copies')) {
+      showError(error.message);
+      return;
+    }
     // Delete locally anyway
     plans = plans.filter(p => p.id !== planId);
     localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
@@ -5256,7 +5279,6 @@ function renderMonthGrid() {
            onclick="openMonthCalendar(${idx + 1}, '${name}')">
         <div class="calendar-month-header">
           <span class="calendar-month-name">${name.substring(0, 3).toUpperCase()}</span>
-          ${monthPlans.length > 0 ? `<span class="calendar-month-count">${monthPlans.length} plan${monthPlans.length > 1 ? 's' : ''}</span>` : ''}
         </div>
         ${renderMiniCalendar(idx, daysWithPlans, isCurrentMonth)}
         <div class="calendar-plan-bars">

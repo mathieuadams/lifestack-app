@@ -761,12 +761,6 @@ async function advSave() {
 
     closeAdvWizard();
 
-    // Ensure month calendar modal is closed
-    if (typeof currentCalendarMonth !== 'undefined') {
-      currentCalendarMonth = null;
-      const modal = document.getElementById('monthCalendarModal');
-      if (modal) modal.classList.remove('active');
-    }
     // Silent refresh: show the saved adventure in calendar/views without a popup toast.
     if (typeof refreshPlanView === 'function') {
       refreshPlanView();
