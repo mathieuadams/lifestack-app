@@ -38,7 +38,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 *{touch-action:manipulation}
 
 /* HEADER */
-.app-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;padding-top:calc(10px + min(env(safe-area-inset-top,0px), 18px));background:var(--white);border-bottom:1px solid var(--sand-200);z-index:50;flex-shrink:0}
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;padding-top:calc(12px + env(safe-area-inset-top,0px));background:var(--white);border-bottom:1px solid var(--sand-200);z-index:50;flex-shrink:0}
 .hb{display:flex;align-items:center;gap:10px}
 .hl{width:32px;height:32px;background:linear-gradient(135deg,var(--sage-500),var(--sage-600));border-radius:9px;display:flex;align-items:center;justify-content:center;color:white;font-size:14px}
 .ht{font-family:'Fraunces',serif;font-weight:500;font-size:1.2rem;color:var(--sage-700);letter-spacing:-0.02em}
