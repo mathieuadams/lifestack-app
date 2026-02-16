@@ -4772,8 +4772,17 @@ function renderMemories() {
 function renderMisogis() {
   const container = document.getElementById('misogiList');
   if (!container) return;
-  const misogis = plans.filter(p => p.type === 'misogi');
-  
+
+  // Safety check - make sure plans is loaded
+  if (!plans || !Array.isArray(plans)) {
+    console.warn('Plans not loaded yet, skipping renderMisogis');
+    return;
+  }
+
+  const misogis = plans.filter(p => p && p.type === 'misogi');
+
+  console.log(`renderMisogis: Found ${misogis.length} misogi plans out of ${plans.length} total plans`);
+
   if (misogis.length === 0) {
     container.innerHTML = `
       <div class="misogi-empty" onclick="showAddPlanModal('misogi')">
