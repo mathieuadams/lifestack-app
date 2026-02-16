@@ -10,6 +10,7 @@ const catBgs={travel:'var(--cat-travel-bg)',food:'var(--cat-food-bg)',adventure:
 
 // ===== UI CORE =====
 function swView(v){
+  if(typeof hideLegacyYearDataViews==='function')hideLegacyYearDataViews();
   document.querySelectorAll('.v').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
   const map={plan:'planView',habits:'habitsView',memories:'memoriesView'};

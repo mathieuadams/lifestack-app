@@ -3710,6 +3710,20 @@ function hideLoading() {
   if (el) el.classList.add('hidden');
 }
 
+function hideLegacyYearDataViews() {
+  const legacyIds = ['dashboardView', 'yearDesignView', 'yearReviewView', 'yearLockedView', 'settingsView', 'journalView'];
+  legacyIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('hidden');
+    el.style.display = 'none';
+  });
+}
+
+function hasModernAppShell() {
+  return !!document.querySelector('.app-shell') && !!document.getElementById('planView');
+}
+
 function showLanding() {
   hideLoading();
   var el;
@@ -3744,9 +3758,19 @@ function showApp() {
   try { updateAvatarDisplay(); } catch(e) { console.log('Avatar error:', e); }
   
   startInactivityMonitor();
-  try { openCurrentYearDesign(); } catch(e) { 
-    console.error('openCurrentYearDesign error:', e);
-    alert('openCurrentYearDesign error: ' + e.message);
+  if (hasModernAppShell()) {
+    // Prevent legacy full-page year containers from rendering under the modern shell.
+    hideLegacyYearDataViews();
+    try {
+      if (typeof refreshPlanView === 'function') refreshPlanView();
+    } catch (e) {
+      console.error('refreshPlanView error:', e);
+    }
+  } else {
+    try { openCurrentYearDesign(); } catch(e) {
+      console.error('openCurrentYearDesign error:', e);
+      alert('openCurrentYearDesign error: ' + e.message);
+    }
   }
 }
 

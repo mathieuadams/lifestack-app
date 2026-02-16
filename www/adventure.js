@@ -676,12 +676,16 @@ function normalizeAfterAdventureSave() {
   window.__suppressMonthOpenUntil = Date.now() + 900;
 
   // Make sure legacy hidden containers cannot leak below the main shell.
-  ['dashboardView', 'yearDesignView', 'yearReviewView', 'yearLockedView', 'settingsView', 'journalView'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add('hidden');
-    el.style.display = 'none';
-  });
+  if (typeof hideLegacyYearDataViews === 'function') {
+    hideLegacyYearDataViews();
+  } else {
+    ['dashboardView', 'yearDesignView', 'yearReviewView', 'yearLockedView', 'settingsView', 'journalView'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.add('hidden');
+      el.style.display = 'none';
+    });
+  }
 
   // If a stale month modal exists in DOM, keep it closed.
   if (typeof closeMonthCalendarModal === 'function') {
