@@ -431,7 +431,6 @@ async function syncAllData() {
     if (journalsData) journalEntries = journalsData;
     
     // Re-render everything
-    renderMisogis();
     renderHabits();
     renderMonthGrid();
     renderYearMemories(currentViewYear);
@@ -3590,7 +3589,6 @@ async function executeDeletePlan(planId) {
     localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
     
     // Refresh UI
-    renderMisogis();
     renderHabits();
     renderMonthGrid();
     populateMemoryFilter();
@@ -3608,7 +3606,6 @@ async function executeDeletePlan(planId) {
     // Delete locally anyway
     plans = plans.filter(p => p.id !== planId);
     localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
-    renderMisogis();
     renderHabits();
     renderMonthGrid();
     
@@ -3947,7 +3944,6 @@ async function silentSync() {
     const freshPlans = await fetchPlans(currentViewYear);
     if (freshPlans) {
       plans = freshPlans;
-      try { renderMisogis(); } catch(e) {}
       try { renderHabits(); } catch(e) {}
       try { renderMonthGrid(); } catch(e) {}
       try { renderYearMemories(currentViewYear); } catch(e) {}
@@ -4247,7 +4243,6 @@ async function handlePlanSubmit(event) {
   }
   
   closePlanModal();
-  renderMisogis();
   renderHabits();
   renderMonthGrid();
   if (typeof refreshPlanView === 'function') refreshPlanView(); // Refresh stats and views
@@ -4287,8 +4282,7 @@ async function togglePlanStatus(planId) {
   
   // Cache to local storage
   localStorage.setItem(`lifestack_plans_${currentViewYear}`, JSON.stringify(plans));
-  
-  renderMisogis();
+
   renderHabits();
   renderMonthGrid();
 
@@ -4773,26 +4767,28 @@ function renderMisogis() {
   const container = document.getElementById('misogiList');
   if (!container) return;
 
+  // Only render if we're in the Year Design view
+  const designView = document.getElementById('yearDesignView');
+  if (!designView || designView.classList.contains('hidden')) {
+    return;
+  }
+
   // Safety check - make sure plans is loaded
   if (!plans || !Array.isArray(plans)) {
-    console.warn('Plans not loaded yet, skipping renderMisogis');
     return;
   }
 
   const misogis = plans.filter(p => p && p.type === 'misogi');
 
-  console.log(`renderMisogis: Found ${misogis.length} misogi plans out of ${plans.length} total plans`);
-
+  // Hide misogi section entirely if no misogis exist
   if (misogis.length === 0) {
-    container.innerHTML = `
-      <div class="misogi-empty" onclick="showAddPlanModal('misogi')">
-        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🏔️</div>
-        <div>Add your defining challenge for this year</div>
-        <div style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.7;">Something so hard you might fail, but attempting it will transform you</div>
-      </div>
-    `;
+    container.innerHTML = '';
+    container.style.display = 'none';
     return;
   }
+
+  // Show container if we have misogis
+  container.style.display = 'block';
   
   // Sort by soonest date first (completed at the end)
   misogis.sort((a, b) => {
