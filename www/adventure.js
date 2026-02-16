@@ -729,42 +729,67 @@ async function advSave() {
     }
 
   try {
+    // DEBUG: Alert-based tracking for iOS crash
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) alert('DEBUG 1: Starting save');
+
     let result = null;
-    if (typeof createPlan === 'function') {
-      result = await createPlan(planData);
+
+    try {
+      if (typeof createPlan === 'function') {
+        if (isIOS) alert('DEBUG 2: Calling API...');
+        result = await createPlan(planData);
+        if (isIOS) alert('DEBUG 3: API done');
+      }
+    } catch (createError) {
+      console.error('createPlan failed:', createError);
+      if (isIOS) alert('DEBUG ERROR: API failed - ' + createError.message);
+      result = null; // Fall back to local save
     }
 
     if (result) {
+      if (isIOS) alert('DEBUG 4: Saving to storage');
       plans.push(result);
       try {
         localStorage.setItem(`lifestack_plans_${yr}`, JSON.stringify(plans));
       } catch (storageError) {
-        console.error('localStorage error (iOS quota exceeded?):', storageError);
-        // Try to continue anyway - data is saved to backend
+        console.error('localStorage error:', storageError);
+        if (isIOS) alert('DEBUG ERROR: Storage full');
       }
+
+      if (isIOS) alert('DEBUG 5: Showing toast');
       toast('🎉 Adventure created!');
 
       if (advWizard.data._bucketItemId && typeof bucketList !== 'undefined') {
-      var bItem = bucketList.find(function(b) { return b.id === advWizard.data._bucketItemId; });
-      if (bItem) {
-        bItem.status = 'planned';
-        bItem.plannedYear = yr;
-        if (typeof saveBucketList === 'function') saveBucketList(bucketList);
+        var bItem = bucketList.find(function(b) { return b.id === advWizard.data._bucketItemId; });
+        if (bItem) {
+          bItem.status = 'planned';
+          bItem.plannedYear = yr;
+          if (typeof saveBucketList === 'function') saveBucketList(bucketList);
+        }
       }
-    }
     } else {
       // Local fallback
+      if (isIOS) alert('DEBUG 4: Local save fallback');
       const localPlan = { id: 'plan_' + Date.now(), ...planData, status: 'planned', createdAt: new Date().toISOString() };
       plans.push(localPlan);
       try {
         localStorage.setItem(`lifestack_plans_${yr}`, JSON.stringify(plans));
       } catch (storageError) {
-        console.error('localStorage error (iOS quota exceeded?):', storageError);
+        console.error('localStorage error:', storageError);
+        if (isIOS) alert('DEBUG ERROR: Storage full');
       }
       toast('📋 Saved locally!');
     }
 
-    closeAdvWizard();
+    if (isIOS) alert('DEBUG 6: Closing wizard');
+    try {
+      closeAdvWizard();
+      if (isIOS) alert('DEBUG 7: Wizard closed');
+    } catch (closeError) {
+      console.error('Error closing wizard:', closeError);
+      if (isIOS) alert('DEBUG ERROR: Close failed - ' + closeError.message);
+    }
 
     // iOS: Skip automatic refresh to prevent crash
     // User can pull-to-refresh or switch tabs to see new adventure
