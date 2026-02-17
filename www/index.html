@@ -731,64 +731,25 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 
       <div id="fieldbookPageStrip" class="fieldbook-page-strip"></div>
 
+      <div class="form-group">
+        <label for="fieldbookTemplate">Template</label>
+        <select id="fieldbookTemplate">
+          <option value="freeform">Freeform (drag anywhere)</option>
+          <option value="grid">3×3 Grid (9 slots)</option>
+          <option value="zigzag">Zigzag pattern</option>
+        </select>
+        <button type="button" onclick="fieldbookApplyTemplate()" style="width:100%;margin-top:8px;">Apply Template</button>
+      </div>
+
       <div class="fieldbook-toolbar">
         <button type="button" onclick="fieldbookAddNote()">+ Note</button>
-        <button type="button" onclick="fieldbookAddFromDescription()">Use description</button>
-        <button type="button" onclick="fieldbookImportPhotos()">Layer photos</button>
-        <select id="fieldbookRibbonType">
-          <option value="strip">Ribbon: strip</option>
-          <option value="short">Ribbon: short</option>
-          <option value="torn">Ribbon: torn</option>
-          <option value="cross">Ribbon: cross hatch</option>
-        </select>
-        <select id="fieldbookRibbonColor">
-          <option value="amber">Ribbon color: amber</option>
-          <option value="sky">Ribbon color: sky</option>
-          <option value="rose">Ribbon color: rose</option>
-          <option value="sage">Ribbon color: sage</option>
-          <option value="smoke">Ribbon color: smoke</option>
-          <option value="violet">Ribbon color: violet</option>
-        </select>
-        <button type="button" onclick="fieldbookAddRibbon()">Add ribbon</button>
-        <select id="fieldbookStickerType">
-          <option value="map">Sticker: map</option>
-          <option value="cut">Sticker: cut quote</option>
-          <option value="ticket">Sticker: ticket</option>
-          <option value="label">Sticker: label</option>
-          <option value="postcard">Sticker: postcard</option>
-          <option value="star">Sticker: star burst</option>
-        </select>
-        <select id="fieldbookStickerColor">
-          <option value="warm">Sticker color: warm</option>
-          <option value="sage">Sticker color: sage</option>
-          <option value="blush">Sticker color: blush</option>
-          <option value="mist">Sticker color: mist</option>
-          <option value="ink">Sticker color: ink</option>
-        </select>
-        <button type="button" onclick="fieldbookAddSticker()">Add sticker</button>
-        <select id="fieldbookStampType">
-          <option value="KEEP">Stamp: KEEP</option>
-          <option value="WILD">Stamp: WILD</option>
-          <option value="WEEKEND">Stamp: WEEKEND</option>
-          <option value="MEMORY">Stamp: MEMORY</option>
-          <option value="SHARED">Stamp: SHARED</option>
-          <option value="ARCHIVE">Stamp: ARCHIVE</option>
-        </select>
-        <button type="button" onclick="fieldbookAddStamp()">Add stamp</button>
-        <select id="fieldbookTemplate">
-          <option value="free">Layout: free form</option>
-          <option value="grid">Layout: grid 3x3</option>
-          <option value="zigzag">Layout: zig zag</option>
-          <option value="story">Layout: text - picture - line</option>
-        </select>
-        <button type="button" onclick="fieldbookApplyTemplate()">Apply layout</button>
-        <button type="button" onclick="fieldbookShuffle()">Shuffle</button>
-        <button type="button" class="danger" onclick="fieldbookClearLayers()">Clear layers</button>
+        <button type="button" onclick="fieldbookImportPhotos()">+ Photos</button>
+        <button type="button" id="fieldbookAddMapBtn" onclick="fieldbookAddMap()">+ Map</button>
       </div>
 
       <div class="fieldbook-inspector">
         <strong>Selected layer</strong>
-        <div id="fieldbookInspectorEmpty">Select a layer to edit color, style, text and transform.</div>
+        <div id="fieldbookInspectorEmpty">Select a layer to edit.</div>
         <div id="fieldbookInspectorFields" class="hidden">
           <label>Rotate
             <div class="fieldbook-rotate-row">
@@ -797,8 +758,6 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
             </div>
           </label>
           <label>Scale <input id="fieldbookInspectorScale" type="range" min="55" max="190" value="100"></label>
-          <label>Color <select id="fieldbookInspectorColor"></select></label>
-          <label>Style <select id="fieldbookInspectorVariant"></select></label>
           <label>Text <input id="fieldbookInspectorText" type="text" placeholder="Edit text"></label>
         </div>
       </div>

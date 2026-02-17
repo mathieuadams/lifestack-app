@@ -1,62 +1,13 @@
 (function () {
   const META_KEY = "lifestack_fieldbook_meta";
+  const MAX_ITEMS_PER_PAGE = 9;
   const ROTATE_STEP = 5;
 
-  const PAPER_OPTIONS = [
-    { value: "1", label: "Paper sand" },
-    { value: "2", label: "Paper cream" },
-    { value: "3", label: "Paper peach" },
-    { value: "4", label: "Paper moss" },
-    { value: "5", label: "Paper violet" }
+  const TEMPLATES = [
+    { value: "freeform", label: "Freeform (drag anywhere)" },
+    { value: "grid", label: "3×3 Grid (9 slots)" },
+    { value: "zigzag", label: "Zigzag pattern" }
   ];
-
-  const RIBBON_VARIANTS = [
-    { value: "strip", label: "Strip" },
-    { value: "short", label: "Short" },
-    { value: "torn", label: "Torn" },
-    { value: "cross", label: "Cross hatch" }
-  ];
-
-  const RIBBON_COLORS = [
-    { value: "amber", label: "Amber" },
-    { value: "sky", label: "Sky" },
-    { value: "rose", label: "Rose" },
-    { value: "sage", label: "Sage" },
-    { value: "smoke", label: "Smoke" },
-    { value: "violet", label: "Violet" }
-  ];
-
-  const STICKER_VARIANTS = [
-    { value: "cut", label: "Cut quote" },
-    { value: "ticket", label: "Ticket" },
-    { value: "label", label: "Label" },
-    { value: "postcard", label: "Postcard" },
-    { value: "star", label: "Star burst" }
-  ];
-
-  const STICKER_COLORS = [
-    { value: "warm", label: "Warm" },
-    { value: "sage", label: "Sage" },
-    { value: "blush", label: "Blush" },
-    { value: "mist", label: "Mist" },
-    { value: "ink", label: "Ink" }
-  ];
-
-  const STAMP_COLORS = [
-    { value: "rust", label: "Rust" },
-    { value: "forest", label: "Forest" },
-    { value: "ink", label: "Ink" }
-  ];
-
-  const CUT_QUOTES = [
-    "golden hour",
-    "we should do this again",
-    "small moment, big memory",
-    "this felt like home",
-    "sunday energy"
-  ];
-
-  const STAMP_WORDS = ["KEEP", "WILD", "WEEKEND", "MEMORY", "SHARED", "ARCHIVE"];
 
   const state = {
     seq: 1,
@@ -70,7 +21,8 @@
     drag: null,
     coverDrag: false,
     locationSelectionIndex: -1,
-    locationSearchTimeout: null
+    locationSearchTimeout: null,
+    currentTemplate: "freeform"
   };
 
   function byId(id) {
@@ -87,10 +39,6 @@
 
   function rand(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
-
-  function pick(list) {
-    return list[rand(0, list.length - 1)];
   }
 
   function esc(text) {
@@ -208,6 +156,7 @@
     state.activePageId = "";
     state.selectedLayerId = "";
     state.drag = null;
+    state.currentTemplate = "freeform";
   }
 
   function normalizePhoto(photo, index) {
@@ -265,13 +214,6 @@
     img.style.transform = "scale(" + (state.cover.zoom / 100).toFixed(2) + ")";
     img.style.transformOrigin = "center center";
     holder.appendChild(img);
-
-    if (window.innerWidth <= 768) {
-      const hint = document.createElement("div");
-      hint.style.cssText = "position:absolute;bottom:4px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.9);border-radius:999px;padding:4px 8px;font-size:0.65rem;color:var(--text-tertiary);pointer-events:none";
-      hint.textContent = "Drag to pan, pinch to zoom";
-      holder.appendChild(hint);
-    }
 
     const xSlider = byId("fieldbookCoverX");
     const ySlider = byId("fieldbookCoverY");
@@ -446,6 +388,7 @@
     renderPeopleChips();
     closePeoplePicker();
   }
+
   function createPage(index) {
     return {
       id: nextId("page"),
@@ -504,7 +447,6 @@
   function noteLayer(page, text) {
     const layer = baseLayer(page, "note");
     layer.text = (text || "").trim() || "Add your memory note...";
-    layer.paper = String(rand(1, 5));
     return layer;
   }
 
@@ -515,43 +457,40 @@
     return layer;
   }
 
-  function mapLayer(page, src, label) {
+  function mapLayer(page, memory) {
     const layer = baseLayer(page, "map");
-    layer.src = src;
-    layer.label = label || "Map";
+    const location = memory.location;
+    if (location && location.lat && location.lng) {
+      layer.lat = location.lat;
+      layer.lng = location.lng;
+      layer.label = location.name || "Map";
+      layer.src = mapUrl(location.lat, location.lng);
+    }
     return layer;
   }
 
-  function tapeLayer(page) {
-    const layer = baseLayer(page, "tape");
-    layer.variant = byId("fieldbookRibbonType").value || "strip";
-    layer.color = byId("fieldbookRibbonColor").value || "amber";
-    layer.width = rand(92, 150);
-    layer.scale = rand(80, 120) / 100;
-    layer.rotate = rand(-20, 20);
-    return layer;
-  }
-
-  function stickerLayer(page, variant) {
-    const layer = baseLayer(page, "sticker");
-    layer.variant = variant || "cut";
-    layer.color = byId("fieldbookStickerColor").value || "warm";
-    layer.text = ((byId("fieldbookText").value || "").trim() || pick(CUT_QUOTES));
-    layer.scale = rand(90, 120) / 100;
-    return layer;
-  }
-
-  function stampLayer(page) {
-    const layer = baseLayer(page, "stamp");
-    layer.text = byId("fieldbookStampType").value || pick(STAMP_WORDS);
-    layer.color = "rust";
-    layer.scale = rand(90, 120) / 100;
-    return layer;
+  function mapUrl(lat, lon) {
+    return "https://staticmap.openstreetmap.de/staticmap.php?center=" + lat + "," + lon + "&zoom=13&size=300x190&maptype=mapnik&markers=" + lat + "," + lon + ",red-pushpin";
   }
 
   function addLayer(layer) {
     const page = activePage();
-    pageLayers(page).push(layer);
+    const layers = pageLayers(page);
+
+    if (layers.length >= MAX_ITEMS_PER_PAGE) {
+      showErrorSafe("Maximum " + MAX_ITEMS_PER_PAGE + " items per page");
+      return;
+    }
+
+    if (layer.type === "map") {
+      const hasMap = layers.some(function (l) { return l.type === "map"; });
+      if (hasMap) {
+        showErrorSafe("Only 1 map allowed per page");
+        return;
+      }
+    }
+
+    layers.push(layer);
     state.selectedLayerId = layer.id;
     renderEditorCanvas();
   }
@@ -607,7 +546,7 @@
   function emptyCanvas(target) {
     const empty = document.createElement("div");
     empty.className = "fieldbook-empty-canvas";
-    empty.textContent = "Start by adding notes, photos and stickers.";
+    empty.textContent = "Add photos, notes, or a map to get started.";
     target.appendChild(empty);
   }
 
@@ -638,33 +577,9 @@
       return;
     }
 
-    if (layer.type === "tape") {
-      const body = document.createElement("div");
-      body.className = "fieldbook-layer-tape fieldbook-tape-color-" + (layer.color || "amber") + " fieldbook-tape-variant-" + (layer.variant || "strip");
-      if (layer.width) body.style.width = layer.width + "px";
-      wrapper.appendChild(body);
-      return;
-    }
-
-    if (layer.type === "sticker") {
-      const body = document.createElement("div");
-      body.className = "fieldbook-layer-sticker fieldbook-sticker-type-" + (layer.variant || "cut") + " fieldbook-sticker-color-" + (layer.color || "warm");
-      body.textContent = layer.text || "";
-      wrapper.appendChild(body);
-      return;
-    }
-
-    if (layer.type === "stamp") {
-      const body = document.createElement("div");
-      body.className = "fieldbook-layer-stamp fieldbook-stamp-color-" + (layer.color || "rust");
-      body.textContent = layer.text || "MEMORY";
-      wrapper.appendChild(body);
-      return;
-    }
-
     if (layer.type === "note") {
       const body = document.createElement("div");
-      body.className = "fieldbook-layer-note fieldbook-paper-" + (layer.paper || "1");
+      body.className = "fieldbook-layer-note";
       const text = document.createElement("div");
       text.className = "fieldbook-note-text";
       text.contentEditable = interactive && canEditCurrentPage() ? "true" : "false";
@@ -721,10 +636,70 @@
     wrapper.appendChild(actions);
   }
 
+  function showLightbox(layer, memory) {
+    if (!layer) return;
+
+    const lightbox = document.createElement("div");
+    lightbox.className = "fieldbook-lightbox";
+    lightbox.innerHTML = "<div class=\"fieldbook-lightbox-backdrop\"></div><div class=\"fieldbook-lightbox-content\"></div>";
+
+    const content = lightbox.querySelector(".fieldbook-lightbox-content");
+    const backdrop = lightbox.querySelector(".fieldbook-lightbox-backdrop");
+
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "fieldbook-lightbox-close";
+    closeBtn.textContent = "×";
+    closeBtn.addEventListener("click", function () {
+      document.body.removeChild(lightbox);
+    });
+    content.appendChild(closeBtn);
+
+    if (layer.type === "photo") {
+      const img = document.createElement("img");
+      img.src = layer.src;
+      img.alt = "photo";
+      img.className = "fieldbook-lightbox-image";
+      content.appendChild(img);
+    } else if (layer.type === "note") {
+      const noteDiv = document.createElement("div");
+      noteDiv.className = "fieldbook-lightbox-note";
+      noteDiv.textContent = layer.text || "";
+      content.appendChild(noteDiv);
+    } else if (layer.type === "map") {
+      const mapDiv = document.createElement("div");
+      mapDiv.className = "fieldbook-lightbox-map";
+      const img = document.createElement("img");
+      img.src = layer.src.replace("size=300x190", "size=600x400");
+      img.alt = "map";
+      mapDiv.appendChild(img);
+      const label = document.createElement("div");
+      label.className = "fieldbook-lightbox-map-label";
+      label.textContent = layer.label || "Map";
+      mapDiv.appendChild(label);
+      if (layer.lat && layer.lng) {
+        const link = document.createElement("a");
+        link.href = "https://www.openstreetmap.org/?mlat=" + layer.lat + "&mlon=" + layer.lng + "#map=15/" + layer.lat + "/" + layer.lng;
+        link.target = "_blank";
+        link.className = "fieldbook-lightbox-map-link";
+        link.textContent = "View on OpenStreetMap";
+        mapDiv.appendChild(link);
+      }
+      content.appendChild(mapDiv);
+    }
+
+    backdrop.addEventListener("click", function () {
+      document.body.removeChild(lightbox);
+    });
+
+    document.body.appendChild(lightbox);
+  }
+
   function renderCanvas(target, page, interactive) {
     if (!target || !page) return;
     target.innerHTML = "";
     target.classList.toggle("finalized", !!page.finalized && interactive);
+
+    const isViewer = !interactive;
 
     const layers = pageLayers(page);
     if (!layers.length) {
@@ -755,16 +730,15 @@
           state.selectedLayerId = layer.id;
           renderEditorCanvas();
         });
+      } else if (isViewer && page.finalized) {
+        wrapper.style.cursor = "pointer";
+        wrapper.addEventListener("click", function (event) {
+          event.stopPropagation();
+          showLightbox(layer);
+        });
       }
       target.appendChild(wrapper);
     });
-
-    if (interactive && layers.length > 0) {
-      const hint = document.createElement("div");
-      hint.className = "fieldbook-mobile-hint";
-      hint.textContent = "Drag to move, pinch to zoom";
-      target.appendChild(hint);
-    }
   }
 
   function renderEditorCanvas() {
@@ -772,6 +746,7 @@
     renderPageControls();
     renderCanvas(byId("fieldbookCanvas"), activePage(), true);
     syncInspector();
+    updateAddMapButton();
   }
 
   function getEventCoords(event) {
@@ -809,6 +784,44 @@
     renderEditorCanvas();
   }
 
+  function constrainToBounds(layer, canvas) {
+    if (!layer || !canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const rotation = layer.rotate || 0;
+    const scale = layer.scale || 1;
+
+    let width = 160;
+    let height = 160;
+
+    if (layer.type === "photo") {
+      width = 122;
+      height = 122;
+    } else if (layer.type === "map") {
+      width = 210;
+      height = 130;
+    } else if (layer.type === "note") {
+      width = 160;
+      height = 92;
+    }
+
+    const scaledWidth = width * scale;
+    const scaledHeight = height * scale;
+    const radians = (rotation * Math.PI) / 180;
+    const cos = Math.abs(Math.cos(radians));
+    const sin = Math.abs(Math.sin(radians));
+    const boundingWidth = scaledWidth * cos + scaledHeight * sin;
+    const boundingHeight = scaledWidth * sin + scaledHeight * cos;
+
+    const padding = 10;
+    const minX = -boundingWidth / 2 + padding;
+    const maxX = rect.width - boundingWidth / 2 - padding;
+    const minY = -boundingHeight / 2 + padding;
+    const maxY = rect.height - boundingHeight / 2 - padding;
+
+    layer.x = clamp(layer.x, minX, maxX);
+    layer.y = clamp(layer.y, minY, maxY);
+  }
+
   function onDragMove(event) {
     if (!state.drag) return;
     event.preventDefault();
@@ -831,8 +844,9 @@
       }
     } else {
       const coords = getEventCoords(event);
-      layer.x = clamp(coords.x - rect.left - state.drag.offsetX, -120, rect.width - 20);
-      layer.y = clamp(coords.y - rect.top - state.drag.offsetY, -120, rect.height - 20);
+      layer.x = coords.x - rect.left - state.drag.offsetX;
+      layer.y = coords.y - rect.top - state.drag.offsetY;
+      constrainToBounds(layer, canvas);
     }
 
     renderCanvas(canvas, activePage(), true);
@@ -845,46 +859,6 @@
     window.removeEventListener("pointerup", endDrag);
     window.removeEventListener("touchmove", onDragMove);
     window.removeEventListener("touchend", endDrag);
-  }
-  function fillSelect(select, options, value) {
-    if (!select) return;
-    select.innerHTML = "";
-    options.forEach(function (entry) {
-      const option = document.createElement("option");
-      option.value = entry.value;
-      option.textContent = entry.label;
-      select.appendChild(option);
-    });
-    if (!options.length) return;
-    const valid = options.map(function (entry) { return entry.value; });
-    select.value = valid.indexOf(value) >= 0 ? value : options[0].value;
-  }
-
-  function colorOptions(layer) {
-    if (!layer) return [];
-    if (layer.type === "note") return PAPER_OPTIONS;
-    if (layer.type === "tape") return RIBBON_COLORS;
-    if (layer.type === "sticker") return STICKER_COLORS;
-    if (layer.type === "stamp") return STAMP_COLORS;
-    return [];
-  }
-
-  function variantOptions(layer) {
-    if (!layer) return [];
-    if (layer.type === "tape") return RIBBON_VARIANTS;
-    if (layer.type === "sticker") return STICKER_VARIANTS;
-    return [];
-  }
-
-  function layerColorValue(layer) {
-    if (!layer) return "";
-    if (layer.type === "note") return String(layer.paper || "1");
-    return layer.color || "";
-  }
-
-  function layerVariantValue(layer) {
-    if (!layer) return "";
-    return layer.variant || "";
   }
 
   function syncInspector() {
@@ -901,23 +875,13 @@
     if (fields) fields.classList.remove("hidden");
 
     const scale = byId("fieldbookInspectorScale");
-    const color = byId("fieldbookInspectorColor");
-    const variant = byId("fieldbookInspectorVariant");
     const text = byId("fieldbookInspectorText");
 
     if (scale) scale.value = String(Math.round((layer.scale || 1) * 100));
 
-    const colorOpts = colorOptions(layer);
-    fillSelect(color, colorOpts, layerColorValue(layer));
-    if (color) color.disabled = !colorOpts.length;
-
-    const variantOpts = variantOptions(layer);
-    fillSelect(variant, variantOpts, layerVariantValue(layer));
-    if (variant) variant.disabled = !variantOpts.length;
-
     if (text) {
       text.value = layer.text || "";
-      text.disabled = !(layer.type === "note" || layer.type === "sticker" || layer.type === "stamp");
+      text.disabled = !(layer.type === "note");
     }
   }
 
@@ -993,63 +957,23 @@
     });
   }
 
-  function addRibbon() {
+  function addMapFromMemory() {
     if (!canEditCurrentPage()) return;
-    addLayer(tapeLayer(activePage()));
-  }
-
-  function parseLatLng(raw) {
-    const match = String(raw || "").trim().match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
-    if (!match) return null;
-    return { lat: parseFloat(match[1]), lon: parseFloat(match[2]), label: raw };
-  }
-
-  function mapUrl(lat, lon) {
-    return "https://staticmap.openstreetmap.de/staticmap.php?center=" + lat + "," + lon + "&zoom=13&size=300x190&maptype=mapnik&markers=" + lat + "," + lon + ",red-pushpin";
-  }
-
-  async function resolveLocation(query) {
-    const parsed = parseLatLng(query);
-    if (parsed) return parsed;
-    const response = await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(query));
-    if (!response.ok) throw new Error("Location search failed");
-    const data = await response.json();
-    if (!data || !data.length) throw new Error("Location not found");
-    return {
-      lat: parseFloat(data[0].lat),
-      lon: parseFloat(data[0].lon),
-      label: data[0].display_name || query
-    };
-  }
-
-  async function addMapSticker() {
-    if (!canEditCurrentPage()) return;
-    const query = (byId("fieldbookLocation").value || "").trim();
-    if (!query) {
-      showToastSafe("Add a location first.");
+    const memory = getMemories().find(function (m) { return m.id === state.editingMemoryId; });
+    if (!memory || !memory.location || !memory.location.lat || !memory.location.lng) {
+      showErrorSafe("No location data available for this memory");
       return;
     }
-    try {
-      const coords = await resolveLocation(query);
-      addLayer(mapLayer(activePage(), mapUrl(coords.lat, coords.lon), coords.label || query));
-    } catch (error) {
-      showErrorSafe("Map sticker failed.");
-    }
+    addLayer(mapLayer(activePage(), memory));
   }
 
-  function addSticker() {
-    if (!canEditCurrentPage()) return;
-    const type = byId("fieldbookStickerType").value;
-    if (type === "map") {
-      addMapSticker();
-      return;
-    }
-    addLayer(stickerLayer(activePage(), type));
-  }
-
-  function addStamp() {
-    if (!canEditCurrentPage()) return;
-    addLayer(stampLayer(activePage()));
+  function updateAddMapButton() {
+    const btn = byId("fieldbookAddMapBtn");
+    if (!btn) return;
+    const page = activePage();
+    const hasMap = pageLayers(page).some(function (l) { return l.type === "map"; });
+    btn.disabled = hasMap;
+    btn.textContent = hasMap ? "Map added (1 max)" : "+ Map";
   }
 
   function rotateSelected(delta) {
@@ -1059,28 +983,9 @@
     renderEditorCanvas();
   }
 
-  function shuffleLayers() {
-    if (!canEditCurrentPage()) return;
-    pageLayers(activePage()).forEach(function (layer, index) {
-      layer.x = rand(16, 360);
-      layer.y = rand(14, 330);
-      layer.rotate = rand(-16, 16);
-      layer.scale = clamp((layer.scale || 1) * (rand(88, 115) / 100), 0.55, 1.9);
-      layer.z = index + 1;
-    });
-    renderEditorCanvas();
-  }
-
-  function clearLayers() {
-    if (!canEditCurrentPage()) return;
-    activePage().layers = [];
-    state.selectedLayerId = "";
-    renderEditorCanvas();
-  }
-
   function applyTemplate() {
     if (!canEditCurrentPage()) return;
-    const mode = byId("fieldbookTemplate").value || "free";
+    const mode = state.currentTemplate;
     const page = activePage();
     const layers = pageLayers(page).slice().sort(function (a, b) { return (a.z || 1) - (b.z || 1); });
     if (!layers.length) return;
@@ -1119,51 +1024,6 @@
       return;
     }
 
-    if (mode === "story") {
-      const notes = layers.filter(function (layer) { return layer.type === "note"; });
-      const photos = layers.filter(function (layer) { return layer.type === "photo" || layer.type === "map"; });
-      const stickers = layers.filter(function (layer) { return layer.type === "sticker"; });
-      const extras = layers.filter(function (layer) { return layer.type === "tape" || layer.type === "stamp"; });
-      const rows = Math.max(notes.length, photos.length, 1);
-      const photoX = Math.max(170, width * 0.44);
-      let z = 1;
-      for (let i = 0; i < rows; i += 1) {
-        const y = 18 + i * 176;
-        if (notes[i]) {
-          notes[i].x = 24;
-          notes[i].y = y;
-          notes[i].rotate = -2;
-          notes[i].scale = 1;
-          notes[i].z = z++;
-        }
-        if (photos[i]) {
-          photos[i].x = photoX;
-          photos[i].y = y + 20;
-          photos[i].rotate = 2;
-          photos[i].scale = 1;
-          photos[i].z = z++;
-        }
-        if (stickers[i]) {
-          stickers[i].x = photoX;
-          stickers[i].y = y + 144;
-          stickers[i].rotate = 0;
-          stickers[i].scale = 1;
-          stickers[i].variant = "label";
-          stickers[i].color = stickers[i].color || "ink";
-          if (!stickers[i].text || stickers[i].text.length < 3) stickers[i].text = "----------------";
-          stickers[i].z = z++;
-        }
-      }
-      extras.forEach(function (layer, idx) {
-        layer.x = 24 + (idx % 2) * 120;
-        layer.y = 24 + idx * 92;
-        layer.rotate = idx % 2 === 0 ? -6 : 6;
-        layer.z = z++;
-      });
-      renderEditorCanvas();
-      return;
-    }
-
     renderEditorCanvas();
   }
 
@@ -1183,6 +1043,7 @@
       };
     });
   }
+
   async function uploadEditorPhotos(memoryId) {
     const uploaded = [];
     for (const photo of state.photos) {
@@ -1314,7 +1175,7 @@
       saveMeta(savedMemory.id, {
         pages: serializePagesWithUploadedPhotos(photoMap),
         activePageId: state.activePageId,
-        template: byId("fieldbookTemplate").value || "free",
+        template: state.currentTemplate,
         cover: {
           photoId: state.cover.photoId || "",
           url: coverUrl || "",
@@ -1359,7 +1220,8 @@
     byId("fieldbookTitle").value = "";
     byId("fieldbookDate").value = todayISO();
     byId("fieldbookText").value = "";
-    byId("fieldbookTemplate").value = "free";
+    byId("fieldbookTemplate").value = "freeform";
+    state.currentTemplate = "freeform";
     clearFieldbookLocationInternal();
     renderPeopleChips();
     renderPhotoThumbs();
@@ -1380,7 +1242,8 @@
     byId("fieldbookTitle").value = memory.title || "";
     byId("fieldbookDate").value = (memory.occurredAt || "").split("T")[0] || todayISO();
     byId("fieldbookText").value = memory.text || "";
-    byId("fieldbookTemplate").value = meta.template || "free";
+    byId("fieldbookTemplate").value = meta.template || "freeform";
+    state.currentTemplate = meta.template || "freeform";
 
     state.editingMemoryId = memory.id;
     state.photos = safeArray(memory.photos).map(normalizePhoto).filter(Boolean);
@@ -1831,6 +1694,12 @@
     window.removeEventListener("touchend", endCoverDrag);
   }
 
+  function handleTemplateChange() {
+    const select = byId("fieldbookTemplate");
+    if (!select) return;
+    state.currentTemplate = select.value;
+  }
+
   function bindEvents() {
     if (state.bound) return;
     state.bound = true;
@@ -1876,33 +1745,12 @@
       });
     }
 
-    const color = byId("fieldbookInspectorColor");
-    if (color) {
-      color.addEventListener("change", function () {
-        const layer = selectedLayer();
-        if (!layer || !canEditCurrentPage()) return;
-        if (layer.type === "note") layer.paper = color.value;
-        else layer.color = color.value;
-        renderEditorCanvas();
-      });
-    }
-
-    const variant = byId("fieldbookInspectorVariant");
-    if (variant) {
-      variant.addEventListener("change", function () {
-        const layer = selectedLayer();
-        if (!layer || !canEditCurrentPage()) return;
-        layer.variant = variant.value;
-        renderEditorCanvas();
-      });
-    }
-
     const text = byId("fieldbookInspectorText");
     if (text) {
       text.addEventListener("input", function () {
         const layer = selectedLayer();
         if (!layer || !canEditCurrentPage()) return;
-        if (layer.type === "note" || layer.type === "sticker" || layer.type === "stamp") {
+        if (layer.type === "note") {
           layer.text = text.value;
           renderEditorCanvas();
         }
@@ -1941,6 +1789,11 @@
     if (locInput) {
       locInput.addEventListener("input", handleLocationInput);
       locInput.addEventListener("keydown", handleLocationKeydown);
+    }
+
+    const templateSelect = byId("fieldbookTemplate");
+    if (templateSelect) {
+      templateSelect.addEventListener("change", handleTemplateChange);
     }
 
     document.addEventListener("click", function (event) {
@@ -2005,12 +1858,8 @@
   window.fieldbookAddNote = addNote;
   window.fieldbookAddFromDescription = addFromDescription;
   window.fieldbookImportPhotos = importPhotosToLayer;
-  window.fieldbookAddRibbon = addRibbon;
-  window.fieldbookAddSticker = addSticker;
-  window.fieldbookAddStamp = addStamp;
+  window.fieldbookAddMap = addMapFromMemory;
   window.fieldbookApplyTemplate = applyTemplate;
-  window.fieldbookShuffle = shuffleLayers;
-  window.fieldbookClearLayers = clearLayers;
   window.fieldbookRotateSelected = rotateSelected;
   window.clearFieldbookLocation = clearFieldbookLocation;
   window.selectFieldbookLocation = selectFieldbookLocation;

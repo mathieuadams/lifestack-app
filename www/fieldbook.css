@@ -625,30 +625,30 @@
 .fieldbook-canvas {
   position: relative;
   width: 100%;
-  min-height: 420px;
-  height: clamp(420px, 50vh, 560px);
+  min-height: 400px;
+  height: clamp(400px, 45vh, 480px);
   border: 1px solid var(--sand-200);
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   margin-bottom: 10px;
   background:
     radial-gradient(circle at 1px 1px, rgba(120, 96, 64, 0.08) 1px, transparent 0) 0 0 / 16px 16px,
     linear-gradient(180deg, #f5efe2 0%, #efe4d3 100%);
-  touch-action: none;
+  touch-action: pan-y;
   -webkit-user-select: none;
   user-select: none;
 }
 
 @media (max-width: 768px) {
   .fieldbook-canvas {
-    min-height: 320px;
-    height: clamp(320px, 40vh, 420px);
+    min-height: 300px;
+    height: clamp(300px, 38vh, 400px);
   }
 }
 
 .fieldbook-preview-canvas {
-  min-height: 440px;
-  height: min(70vh, 640px);
+  min-height: 420px;
+  height: min(65vh, 560px);
 }
 
 .fieldbook-canvas.finalized::after {
@@ -752,13 +752,8 @@
   display: block;
   position: relative;
   box-sizing: border-box;
+  background: #fbf3de;
 }
-
-.fieldbook-paper-1 { background: #fbf3de; }
-.fieldbook-paper-2 { background: #f7eed2; }
-.fieldbook-paper-3 { background: #f8ead8; }
-.fieldbook-paper-4 { background: #e7f0e3; }
-.fieldbook-paper-5 { background: #efe6f7; }
 
 .fieldbook-note-text {
   outline: none;
@@ -981,5 +976,140 @@
 @media (max-width: 768px) {
   .fieldbook-mobile-hint {
     display: block;
+  }
+}
+
+.fieldbook-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.fieldbook-lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.fieldbook-lightbox-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  background: var(--white);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.fieldbook-lightbox-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: background 0.2s;
+}
+
+.fieldbox-lightbox-close:hover {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.fieldbook-lightbox-image {
+  max-width: 85vw;
+  max-height: 85vh;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.fieldbook-lightbox-note {
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 20px;
+}
+
+.fieldbook-lightbox-map {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 800px;
+  width: 100%;
+}
+
+.fieldbook-lightbox-map img {
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.fieldbook-lightbox-map-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.fieldbook-lightbox-map-link {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--sage-500);
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.fieldbook-lightbox-map-link:hover {
+  background: var(--sage-600);
+}
+
+@media (max-width: 768px) {
+  .fieldbook-lightbox {
+    padding: 10px;
+  }
+
+  .fieldbook-lightbox-content {
+    padding: 16px;
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+
+  .fieldbook-lightbox-note {
+    font-size: 1rem;
+    padding: 12px;
+  }
+
+  .fieldbook-lightbox-close {
+    width: 32px;
+    height: 32px;
+    font-size: 24px;
   }
 }
