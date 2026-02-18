@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"c:\\\\Users\\\\Mathieu\\\\Desktop\\\\website\\\\lifestack\\\\lifestack-app\\\\www\\\\icons\"\" 2>/dev/null || dir \"c:UsersMathieuDesktopwebsitelifestacklifestack-appwwwicons\"\")"
+    ]
+  }
+}

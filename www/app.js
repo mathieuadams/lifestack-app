@@ -107,6 +107,32 @@ function ensureArray(data) {
   return [];
 }
 
+// Local dev helper: prevent stale service-worker caches from serving old JS.
+async function clearLocalDevServiceWorkers() {
+  const isLocalDev = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+  if (!isLocalDev || !('serviceWorker' in navigator)) return;
+
+  try {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(r => r.unregister()));
+  } catch (e) {
+    console.warn('SW unregister skipped:', e);
+  }
+
+  if ('caches' in window) {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter(k => k.includes('lifestack'))
+          .map(k => caches.delete(k))
+      );
+    } catch (e) {
+      console.warn('Cache cleanup skipped:', e);
+    }
+  }
+}
+
 // =====================================================
 // HOMETOWN
 // =====================================================
@@ -485,6 +511,9 @@ async function syncAllData() {
       renderMonthCalendarGrid(currentCalendarMonth);
       renderMonthPlansList(currentCalendarMonth);
     }
+
+    // Keep top panel stats in sync immediately after manual sync.
+    if (typeof refreshPlanView === 'function') refreshPlanView();
     
     showToast(`✓ Synced ${plans.length} plans`);
     console.log('Sync complete:', {
@@ -702,30 +731,39 @@ async function toggleSubActivityComplete(planId, activityIndex) {
 
 async function fetchBucketList() {
   const tokens = await getValidTokens();
-  if (!tokens?.idToken) return [];
-  
-  try {
-    const response = await fetch(`${CONFIG.API_URL}/bucketlist`, {
-      headers: { 'Authorization': `Bearer ${tokens.idToken}` }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      bucketList = data.items || [];
-      localStorage.setItem('lifestack_bucketlist', JSON.stringify(bucketList));
-      return bucketList;
+  if (tokens?.idToken) {
+    try {
+      const response = await fetch(`${CONFIG.API_URL}/bucketlist`, {
+        headers: { 'Authorization': `Bearer ${tokens.idToken}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        bucketList = data.items || [];
+        localStorage.setItem('lifestack_bucketlist', JSON.stringify(bucketList));
+        if (typeof refreshPlanView === 'function') refreshPlanView();
+        return bucketList;
+      }
+    } catch (error) {
+      console.error('Fetch bucket list error:', error);
     }
-  } catch (error) {
-    console.error('Fetch bucket list error:', error);
   }
   
   // Fallback to cached
   const cached = localStorage.getItem('lifestack_bucketlist');
   if (cached) {
-    bucketList = JSON.parse(cached);
+    try {
+      bucketList = JSON.parse(cached);
+    } catch (parseError) {
+      console.error('Fetch bucket list cache parse error:', parseError);
+      bucketList = [];
+    }
+    if (typeof refreshPlanView === 'function') refreshPlanView();
     return bucketList;
   }
   
+  bucketList = [];
+  if (typeof refreshPlanView === 'function') refreshPlanView();
   return [];
 }
 
@@ -3977,7 +4015,8 @@ async function loadUserData() {
   try {
     const storedTokens = JSON.parse(localStorage.getItem('lifestack_tokens') || 'null');
     const auth = JSON.parse(localStorage.getItem('lifestack_auth') || 'null');
-    if (!storedTokens || !auth) {
+    // `lifestack_auth` can be missing on some sessions; tokens are enough to hydrate.
+    if (!storedTokens) {
       if (!appAlreadyVisible) showLanding();
       return;
     }
@@ -3987,7 +4026,7 @@ async function loadUserData() {
       const cachedUser = JSON.parse(savedUser);
       
       // IMPORTANT: Verify cached user matches the logged-in Cognito user
-      if (cachedUser.email && auth.email && cachedUser.email.toLowerCase() !== auth.email.toLowerCase()) {
+      if (cachedUser.email && auth?.email && cachedUser.email.toLowerCase() !== auth.email.toLowerCase()) {
         console.log('Cached user mismatch! Clearing cache. Cached:', cachedUser.email, 'Auth:', auth.email);
         // Clear all user-specific cache - wrong user cached
         localStorage.removeItem('lifestack_user');
@@ -4013,6 +4052,15 @@ async function loadUserData() {
         currentUser = cachedUser;
         loadLocalMemories();
         loadLocalPeople();
+        // Load cached plans for current year (if available)
+        try {
+          const cachedPlans = localStorage.getItem(`lifestack_plans_${currentViewYear}`);
+          if (cachedPlans) {
+            plans = ensureArray(JSON.parse(cachedPlans));
+          }
+        } catch (e) {
+          console.error('Error parsing cached plans:', e);
+        }
         // Load bucket list from cache
         const cachedBucketList = localStorage.getItem('lifestack_bucketlist');
         if (cachedBucketList) {
@@ -4023,13 +4071,31 @@ async function loadUserData() {
             bucketList = [];
           }
         }
-        // Also load friendships
-        friendships = await fetchFriendships();
-        updateFriendBadge();
+        // Also load friendships (non-blocking)
+        fetchFriendships()
+          .then(data => {
+            friendships = data;
+            updateFriendBadge();
+          })
+          .catch(err => console.error('Startup friendships fetch error:', err));
         if (!appAlreadyVisible) showApp();
 
         // Update banner stats with cached data
         if (typeof refreshPlanView === 'function') refreshPlanView();
+
+        // Immediate hydration for top panel (non-blocking).
+        Promise.allSettled([
+          fetchPlans(currentViewYear),
+          fetchBucketList()
+        ]).then(results => {
+          const plansResult = results[0];
+          const bucketResult = results[1];
+          if (plansResult.status === 'fulfilled' && Array.isArray(plansResult.value)) plans = plansResult.value;
+          if (bucketResult.status === 'fulfilled' && Array.isArray(bucketResult.value)) bucketList = bucketResult.value;
+          if (typeof refreshPlanView === 'function') refreshPlanView();
+        }).catch(hydrateError => {
+          console.error('Initial top-panel hydration error:', hydrateError);
+        });
 
         // Background refresh: silently sync latest data from server
         silentSync();
@@ -4055,6 +4121,9 @@ async function silentSync() {
   try {
     const tokens = await getValidTokens();
     if (!tokens?.idToken) return;
+
+    // Keep shared-adventure copies up-to-date in background like manual Sync does.
+    await syncSharedPlansForYear(currentViewYear);
 
     // Refresh user profile in background
     const response = await fetch(`${CONFIG.API_URL}/users`, {
@@ -4112,12 +4181,39 @@ async function fetchAndSetUserData(tokens) {
       if (userData && userData.name) {
         currentUser = userData;
         localStorage.setItem('lifestack_user', JSON.stringify(userData));
-        await loadMemories(tokens.idToken);
-        await loadPeople();
-        // Also load friendships
-        friendships = await fetchFriendships();
-        updateFriendBadge();
+        // Show app immediately after profile fetch for faster sign-in UX.
         showApp();
+
+        // Hydrate data in background and refresh top panel as soon as plans arrive.
+        const tasks = [
+          (async () => { await loadMemories(tokens.idToken); })(),
+          (async () => { await loadPeople(); })(),
+          (async () => {
+            friendships = await fetchFriendships();
+            updateFriendBadge();
+          })(),
+          (async () => { await syncSharedPlansForYear(currentViewYear); })(),
+          (async () => {
+            const freshPlans = await fetchPlans(currentViewYear);
+            if (Array.isArray(freshPlans)) {
+              plans = freshPlans;
+              if (typeof refreshPlanView === 'function') refreshPlanView();
+            }
+          })(),
+          (async () => {
+            const freshBucketList = await fetchBucketList();
+            if (Array.isArray(freshBucketList)) {
+              bucketList = freshBucketList;
+              if (typeof refreshPlanView === 'function') refreshPlanView();
+            }
+          })()
+        ];
+
+        Promise.allSettled(tasks).then(() => {
+          if (typeof refreshPlanView === 'function') refreshPlanView();
+        }).catch(err => {
+          console.error('Post-login hydration error:', err);
+        });
       } else { showOnboarding(); }
     } else if (response.status === 404) { showOnboarding(); }
     else { throw new Error('Failed to fetch user'); }
@@ -8902,6 +8998,8 @@ function renderJournalEntries() {
 
 document.addEventListener('DOMContentLoaded', async function() {
   try {
+    clearLocalDevServiceWorkers().catch(err => console.warn('Local SW cleanup skipped:', err));
+
     const tokens = localStorage.getItem('lifestack_tokens');
     const savedUser = localStorage.getItem('lifestack_user');
 

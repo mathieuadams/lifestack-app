@@ -801,11 +801,51 @@ function openAvatarPicker(){
 
 // ===== THEME EDITING =====
 function editYearTheme(){
-  const current=document.getElementById('yearBannerTheme').textContent.replace(/"/g,'');
-  const newTheme=prompt('Enter your year theme:',current);
-  if(newTheme!==null&&newTheme.trim()){
-    document.getElementById('yearBannerTheme').textContent='"'+newTheme.trim()+'"';
-    const ytEl=document.getElementById('yearTheme');if(ytEl){ytEl.value=newTheme.trim();if(typeof saveYearTheme==='function')saveYearTheme()}
+  const bannerThemeEl=document.getElementById('yearBannerTheme');
+  if(!bannerThemeEl)return;
+  const current=bannerThemeEl.textContent.replace(/"/g,'').trim();
+  const overlayId='yearThemeEditorOverlay';
+  const existing=document.getElementById(overlayId);
+  if(existing)existing.remove();
+
+  const overlay=document.createElement('div');
+  overlay.id=overlayId;
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:2000;padding:16px';
+  overlay.innerHTML=`
+    <div style="width:min(92vw,420px);background:#fff;border-radius:14px;box-shadow:0 20px 45px rgba(0,0,0,.2);padding:16px">
+      <div style="font-weight:700;color:var(--sage-700);margin-bottom:10px">Year Theme</div>
+      <input id="yearThemeEditorInput" type="text" maxlength="120" placeholder="Enter your year theme..." style="width:100%;padding:12px;border:1px solid var(--sand-200);border-radius:10px;font:inherit">
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button id="yearThemeCancelBtn" type="button" style="padding:8px 12px;border:1px solid var(--sand-200);background:#fff;border-radius:8px;cursor:pointer">Cancel</button>
+        <button id="yearThemeSaveBtn" type="button" style="padding:8px 12px;border:none;background:var(--sage-600);color:#fff;border-radius:8px;cursor:pointer">Save</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const input=document.getElementById('yearThemeEditorInput');
+  if(input)input.value=current;
+  const closeEditor=()=>{const el=document.getElementById(overlayId);if(el)el.remove();};
+  const saveEditor=()=>{
+    const newTheme=(input?.value||'').trim();
+    if(!newTheme){closeEditor();return;}
+    bannerThemeEl.textContent='"'+newTheme+'"';
+    const ytEl=document.getElementById('yearTheme');
+    if(ytEl)ytEl.value=newTheme;
+    if(typeof saveYearTheme==='function')saveYearTheme();
+    closeEditor();
+  };
+
+  overlay.addEventListener('click',(e)=>{if(e.target===overlay)closeEditor();});
+  document.getElementById('yearThemeCancelBtn')?.addEventListener('click',closeEditor);
+  document.getElementById('yearThemeSaveBtn')?.addEventListener('click',saveEditor);
+  if(input){
+    input.focus();
+    input.setSelectionRange(input.value.length,input.value.length);
+    input.addEventListener('keydown',(e)=>{
+      if(e.key==='Enter'){e.preventDefault();saveEditor();}
+      if(e.key==='Escape'){e.preventDefault();closeEditor();}
+    });
   }
 }
 
@@ -874,11 +914,37 @@ function initCalendarDrag(){
 // ===== PLAN VIEW REFRESH =====
 function refreshPlanView(){
   try{
+    const viewYear=(typeof currentViewYear!=='undefined'&&currentViewYear)?parseInt(currentViewYear,10):new Date().getFullYear();
+    const yearEl=document.getElementById('yearBannerYear');if(yearEl&&!isNaN(viewYear))yearEl.textContent=String(viewYear);
+
     if(typeof plans!=='undefined'&&Array.isArray(plans)){
-      const adventures=plans.filter(p=>p.type==='adventure').length;
-      const sharedAdventures=plans.filter(p=>p.type==='shared-adventure').length;
-      const misogis=plans.filter(p=>p.type==='misogi').length;
-      const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)?bucketList.length:0;
+      const normalizeType=(p)=>String(p&&p.type?p.type:'').trim().toLowerCase();
+      const getPlanYear=(p)=>{
+        const explicit=parseInt(p&&p.year?p.year:null,10);
+        if(!isNaN(explicit)&&explicit>0)return explicit;
+        if(p&&p.startDate){
+          const dt=typeof parseLocalDate==='function'?parseLocalDate(p.startDate):new Date(p.startDate);
+          if(dt&&!isNaN(dt.getTime()))return dt.getFullYear();
+        }
+        return null;
+      };
+      const inYear=plans.filter(p=>{
+        if(!p)return false;
+        const py=getPlanYear(p);
+        return py===null||py===viewYear;
+      });
+
+      const isSharedType=(t)=>t==='shared-adventure'||t==='shared_adventure'||t==='shared';
+      const sharedAdventures=inYear.filter(p=>isSharedType(normalizeType(p))).length;
+      const misogis=inYear.filter(p=>normalizeType(p)==='misogi').length;
+      const adventures=inYear.filter(p=>{
+        const t=normalizeType(p);
+        return t&&t!=='habit'&&t!=='theme'&&t!=='misogi'&&!isSharedType(t);
+      }).length;
+
+      const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)
+        ? bucketList.filter(item=>item&&!item.temporary).length
+        : 0;
 
       const el=document.getElementById('statAdventures');if(el)el.textContent=adventures;
       const sel=document.getElementById('statSharedAdventures');if(sel)sel.textContent=sharedAdventures;
