@@ -727,13 +727,14 @@ function buildMemYearGrid(targetId){
   const g=document.getElementById(targetId||'memYearGrid');if(!g)return;
   const mems=typeof memories!=='undefined'&&Array.isArray(memories)?memories:[];
   const year=typeof currentViewYear!=='undefined'?currentViewYear:2026;
+  const isFieldbookTarget=targetId==='fieldbookMemYearGrid';
   g.innerHTML='';
   MN.forEach((name,i)=>{
-    const monthMems=mems.filter(m=>{const d=new Date(m.occurredAt);return d.getMonth()===i&&d.getFullYear()===year});
+    const monthMems=mems.filter(m=>{const d=new Date(m.occurredAt);return d.getMonth()===i&&d.getFullYear()===year&&(!isFieldbookTarget||isFieldbookMemoryForMap(m))});
     const photos=monthMems.flatMap(m=>m.photos||[]);
     const card=document.createElement('div');card.className='mem-month-card';
     card.innerHTML=`<div class="mem-month-name">${name.slice(0,3)}</div><div class="mem-month-count">${monthMems.length} memor${monthMems.length!==1?'ies':'y'}</div>${photos.length>0?`<div class="mem-month-photos">${photos.slice(0,3).map(p=>`<img src="${p.url}" alt="" class="mem-month-thumb">`).join('')}</div>`:''}`;
-    card.onclick=()=>{if(monthMems.length>0)openMemoryForEdit(monthMems[0].id)};
+    card.onclick=()=>{if(!monthMems.length)return;const first=monthMems[0];if(isFieldbookTarget&&typeof openFieldbookViewer==='function'){openFieldbookViewer(first.id);return;}openMemoryForEdit(first.id)};
     g.appendChild(card);
   });
 }
@@ -770,7 +771,8 @@ function buildMemMap(containerId,listId){
   });
   if(bounds.length>1)memMap.fitBounds(bounds,{padding:[30,30]});
   const list=document.getElementById(listId||'memMapList');if(!list)return;
-  list.innerHTML=mems.map(m=>`<div class="mem-map-item" onclick="openMemoryForEdit('${m.id}')" style="cursor:pointer"><span class="mem-map-pin">📍</span><div class="mem-map-info"><div class="mem-map-title">${escapeHtmlUI(m.title||'Memory')}</div><div class="mem-map-date">${escapeHtmlUI(m.location.name||'')}</div></div></div>`).join('');
+  const listAction=isFieldbookTarget&&typeof openFieldbookViewer==='function'?'openFieldbookViewer':'openMemoryForEdit';
+  list.innerHTML=mems.map(m=>`<div class="mem-map-item" onclick="${listAction}('${m.id}')" style="cursor:pointer"><span class="mem-map-pin">📍</span><div class="mem-map-info"><div class="mem-map-title">${escapeHtmlUI(m.title||'Memory')}</div><div class="mem-map-date">${escapeHtmlUI(m.location.name||'')}</div></div></div>`).join('');
 }
 
 // ===== ACCOUNT SETTINGS =====

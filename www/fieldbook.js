@@ -2713,7 +2713,11 @@
       months.forEach(function (monthName, monthIndex) {
         const monthMemories = list.filter(function (entry) {
           const parsed = entry && entry.occurredAt ? new Date(entry.occurredAt) : null;
-          return parsed && !Number.isNaN(parsed.getTime()) && parsed.getFullYear() === year && parsed.getMonth() === monthIndex;
+          return parsed &&
+            !Number.isNaN(parsed.getTime()) &&
+            parsed.getFullYear() === year &&
+            parsed.getMonth() === monthIndex &&
+            fallbackIsFieldbookMemory(entry);
         });
         const photos = monthMemories.reduce(function (acc, entry) {
           return acc.concat(safeArray(entry && entry.photos));
@@ -2735,7 +2739,12 @@
           card.style.cursor = "pointer";
           card.addEventListener("click", function () {
             const first = monthMemories[0];
-            if (first && typeof showMemoryModal === "function") showMemoryModal(first);
+            if (!first) return;
+            if (typeof window.openFieldbookViewer === "function") {
+              window.openFieldbookViewer(first.id);
+              return;
+            }
+            openViewer(first.id, { fullscreen: true });
           });
         }
         grid.appendChild(card);
@@ -2806,7 +2815,12 @@
       Array.from(listNode.querySelectorAll(".mem-map-item")).forEach(function (node, index) {
         node.addEventListener("click", function () {
           const entry = mems[index];
-          if (entry && typeof showMemoryModal === "function") showMemoryModal(entry);
+          if (!entry) return;
+          if (typeof window.openFieldbookViewer === "function") {
+            window.openFieldbookViewer(entry.id);
+            return;
+          }
+          openViewer(entry.id, { fullscreen: true });
         });
       });
     };
