@@ -432,13 +432,35 @@
     }, 0) + 1;
   }
 
+  function editorCanvasRect() {
+    const canvas = byId("fieldbookCanvas");
+    if (!canvas) return { width: 360, height: 420 };
+    const rect = canvas.getBoundingClientRect();
+    return {
+      width: rect.width > 120 ? rect.width : 360,
+      height: rect.height > 120 ? rect.height : 420
+    };
+  }
+
+  function layerSize(type, canvasWidth) {
+    const compact = canvasWidth <= 420;
+    if (type === "photo") return { width: compact ? 100 : 122, height: compact ? 100 : 122 };
+    if (type === "map") return { width: compact ? 180 : 210, height: compact ? 110 : 130 };
+    if (type === "note") return { width: compact ? 140 : 160, height: compact ? 80 : 92 };
+    return { width: 160, height: 160 };
+  }
+
   function baseLayer(page, type) {
+    const rect = editorCanvasRect();
+    const size = layerSize(type, rect.width);
+    const maxX = Math.max(16, Math.floor(rect.width - size.width - 16));
+    const maxY = Math.max(14, Math.floor(rect.height - size.height - 16));
     return {
       id: nextId("layer"),
       type: type,
       author: userTag(),
-      x: rand(16, 340),
-      y: rand(14, 280),
+      x: rand(16, maxX),
+      y: rand(14, maxY),
       rotate: rand(-8, 8),
       scale: 1,
       z: nextZ(page)
@@ -493,6 +515,8 @@
       }
     }
 
+    const canvas = byId("fieldbookCanvas");
+    if (canvas) constrainToBounds(layer, canvas);
     layers.push(layer);
     state.selectedLayerId = layer.id;
     renderEditorCanvas();
@@ -759,11 +783,18 @@
     return { x: event.clientX, y: event.clientY };
   }
 
+  function inputMode(event) {
+    if (event && event.type && event.type.indexOf("touch") === 0) return "touch";
+    return "pointer";
+  }
+
   function startDrag(event) {
+    if (event.type === "touchstart" && window.PointerEvent) return;
     if (!canEditCurrentPage()) return;
     const layer = findLayer(event.currentTarget.dataset.id);
     if (!layer) return;
 
+    const mode = inputMode(event);
     event.preventDefault();
     event.stopPropagation();
 
@@ -777,13 +808,23 @@
       offsetX: coords.x - rect.left - layer.x,
       offsetY: coords.y - rect.top - layer.y,
       initialDistance: null,
-      initialScale: layer.scale || 1
+      initialScale: layer.scale || 1,
+      mode: mode,
+      pointerId: (mode === "pointer" && Number.isFinite(event.pointerId)) ? event.pointerId : null
     };
 
-    window.addEventListener("pointermove", onDragMove, { passive: false });
-    window.addEventListener("pointerup", endDrag);
-    window.addEventListener("touchmove", onDragMove, { passive: false });
-    window.addEventListener("touchend", endDrag);
+    if (mode === "pointer") {
+      window.addEventListener("pointermove", onDragMove, { passive: false });
+      window.addEventListener("pointerup", endDrag);
+      window.addEventListener("pointercancel", endDrag);
+      if (event.currentTarget.setPointerCapture && Number.isFinite(event.pointerId)) {
+        try { event.currentTarget.setPointerCapture(event.pointerId); } catch (error) { /* no-op */ }
+      }
+    } else {
+      window.addEventListener("touchmove", onDragMove, { passive: false });
+      window.addEventListener("touchend", endDrag);
+      window.addEventListener("touchcancel", endDrag);
+    }
     renderEditorCanvas();
   }
 
@@ -792,20 +833,9 @@
     const rect = canvas.getBoundingClientRect();
     const rotation = layer.rotate || 0;
     const scale = layer.scale || 1;
-
-    let width = 160;
-    let height = 160;
-
-    if (layer.type === "photo") {
-      width = 122;
-      height = 122;
-    } else if (layer.type === "map") {
-      width = 210;
-      height = 130;
-    } else if (layer.type === "note") {
-      width = 160;
-      height = 92;
-    }
+    const size = layerSize(layer.type, rect.width);
+    const width = size.width;
+    const height = size.height;
 
     const scaledWidth = width * scale;
     const scaledHeight = height * scale;
@@ -827,6 +857,9 @@
 
   function onDragMove(event) {
     if (!state.drag) return;
+    const mode = inputMode(event);
+    if (mode !== state.drag.mode) return;
+    if (mode === "pointer" && Number.isFinite(state.drag.pointerId) && Number.isFinite(event.pointerId) && event.pointerId !== state.drag.pointerId) return;
     event.preventDefault();
 
     const layer = findLayer(state.drag.id);
@@ -857,11 +890,18 @@
   }
 
   function endDrag() {
+    if (!state.drag) return;
+    const mode = state.drag.mode;
     state.drag = null;
-    window.removeEventListener("pointermove", onDragMove);
-    window.removeEventListener("pointerup", endDrag);
-    window.removeEventListener("touchmove", onDragMove);
-    window.removeEventListener("touchend", endDrag);
+    if (mode === "pointer") {
+      window.removeEventListener("pointermove", onDragMove);
+      window.removeEventListener("pointerup", endDrag);
+      window.removeEventListener("pointercancel", endDrag);
+    } else {
+      window.removeEventListener("touchmove", onDragMove);
+      window.removeEventListener("touchend", endDrag);
+      window.removeEventListener("touchcancel", endDrag);
+    }
   }
 
   function syncInspector() {
@@ -1018,8 +1058,9 @@
     const layers = pageLayers(page).slice().sort(function (a, b) { return (a.z || 1) - (b.z || 1); });
     if (!layers.length) return;
     const canvas = byId("fieldbookCanvas");
-    const width = Math.max(360, canvas.clientWidth || 360);
-    const height = Math.max(420, canvas.clientHeight || 420);
+    const rect = editorCanvasRect();
+    const width = Math.max(260, canvas && canvas.clientWidth ? canvas.clientWidth : rect.width);
+    const height = Math.max(240, canvas && canvas.clientHeight ? canvas.clientHeight : rect.height);
 
     if (mode === "grid") {
       const cols = 3;
@@ -1336,6 +1377,11 @@
       resetEditorForm();
     }
     modal.classList.add("active");
+    if (window.requestAnimationFrame) {
+      window.requestAnimationFrame(function () {
+        renderEditorCanvas();
+      });
+    }
   }
 
   function closeEditor() {
@@ -1679,7 +1725,9 @@
   }
 
   function startCoverDrag(event) {
+    if (event.type === "touchstart" && window.PointerEvent) return;
     if (!currentCoverPhoto()) return;
+    const mode = inputMode(event);
     event.preventDefault();
     const coords = getEventCoords(event);
     state.coverDrag = {
@@ -1688,16 +1736,26 @@
       ox: state.cover.x,
       oy: state.cover.y,
       initialDistance: null,
-      initialZoom: state.cover.zoom
+      initialZoom: state.cover.zoom,
+      mode: mode,
+      pointerId: (mode === "pointer" && Number.isFinite(event.pointerId)) ? event.pointerId : null
     };
-    window.addEventListener("pointermove", onCoverDragMove, { passive: false });
-    window.addEventListener("pointerup", endCoverDrag);
-    window.addEventListener("touchmove", onCoverDragMove, { passive: false });
-    window.addEventListener("touchend", endCoverDrag);
+    if (mode === "pointer") {
+      window.addEventListener("pointermove", onCoverDragMove, { passive: false });
+      window.addEventListener("pointerup", endCoverDrag);
+      window.addEventListener("pointercancel", endCoverDrag);
+    } else {
+      window.addEventListener("touchmove", onCoverDragMove, { passive: false });
+      window.addEventListener("touchend", endCoverDrag);
+      window.addEventListener("touchcancel", endCoverDrag);
+    }
   }
 
   function onCoverDragMove(event) {
     if (!state.coverDrag) return;
+    const mode = inputMode(event);
+    if (mode !== state.coverDrag.mode) return;
+    if (mode === "pointer" && Number.isFinite(state.coverDrag.pointerId) && Number.isFinite(event.pointerId) && event.pointerId !== state.coverDrag.pointerId) return;
     event.preventDefault();
 
     if (event.touches && event.touches.length === 2) {
@@ -1723,11 +1781,18 @@
   }
 
   function endCoverDrag() {
+    if (!state.coverDrag) return;
+    const mode = state.coverDrag.mode;
     state.coverDrag = null;
-    window.removeEventListener("pointermove", onCoverDragMove);
-    window.removeEventListener("pointerup", endCoverDrag);
-    window.removeEventListener("touchmove", onCoverDragMove);
-    window.removeEventListener("touchend", endCoverDrag);
+    if (mode === "pointer") {
+      window.removeEventListener("pointermove", onCoverDragMove);
+      window.removeEventListener("pointerup", endCoverDrag);
+      window.removeEventListener("pointercancel", endCoverDrag);
+    } else {
+      window.removeEventListener("touchmove", onCoverDragMove);
+      window.removeEventListener("touchend", endCoverDrag);
+      window.removeEventListener("touchcancel", endCoverDrag);
+    }
   }
 
   function handleTemplateChange() {
