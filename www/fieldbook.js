@@ -2696,6 +2696,152 @@
     renderFieldbookShelf();
   }
 
+  if (typeof window.switchFieldbookMemView !== "function") {
+    let fallbackMemMap = null;
+
+    const fallbackBuildMemYearGrid = function (targetId) {
+      const grid = byId(targetId || "fieldbookMemYearGrid");
+      if (!grid) return;
+      const list = (typeof memories !== "undefined" && Array.isArray(memories)) ? memories : [];
+      const year = (typeof currentViewYear !== "undefined" && Number.isFinite(Number(currentViewYear)))
+        ? Number(currentViewYear)
+        : new Date().getFullYear();
+      const months = ["January", "February", "March", "April", "May", "June", "July",
+        "August", "September", "October", "November", "December"];
+
+      grid.innerHTML = "";
+      months.forEach(function (monthName, monthIndex) {
+        const monthMemories = list.filter(function (entry) {
+          const parsed = entry && entry.occurredAt ? new Date(entry.occurredAt) : null;
+          return parsed && !Number.isNaN(parsed.getTime()) && parsed.getFullYear() === year && parsed.getMonth() === monthIndex;
+        });
+        const photos = monthMemories.reduce(function (acc, entry) {
+          return acc.concat(safeArray(entry && entry.photos));
+        }, []);
+        const card = document.createElement("div");
+        card.className = "mem-month-card";
+        card.innerHTML =
+          "<div class=\"mem-month-name\">" + esc(monthName.slice(0, 3)) + "</div>" +
+          "<div class=\"mem-month-count\">" + monthMemories.length + " memor" + (monthMemories.length === 1 ? "y" : "ies") + "</div>" +
+          (photos.length
+            ? ("<div class=\"mem-month-photos\">" +
+              photos.slice(0, 3).map(function (photo) {
+                const url = photo && photo.url ? photo.url : "";
+                return url ? ("<img src=\"" + esc(url) + "\" alt=\"\" class=\"mem-month-thumb\">") : "";
+              }).join("") +
+              "</div>")
+            : "");
+        if (monthMemories.length) {
+          card.style.cursor = "pointer";
+          card.addEventListener("click", function () {
+            const first = monthMemories[0];
+            if (first && typeof showMemoryModal === "function") showMemoryModal(first);
+          });
+        }
+        grid.appendChild(card);
+      });
+    };
+
+    const fallbackIsFieldbookMemory = function (entry) {
+      if (!entry || !entry.id) return false;
+      const tags = safeArray(entry.tags).map(function (tag) { return String(tag || "").toLowerCase(); });
+      if (tags.indexOf("fieldbook") >= 0) return true;
+      try {
+        const raw = localStorage.getItem(META_KEY);
+        if (!raw) return false;
+        const store = JSON.parse(raw);
+        return !!(store && typeof store === "object" && store[entry.id]);
+      } catch (error) {
+        return false;
+      }
+    };
+
+    const fallbackBuildMemMap = function (containerId, listId) {
+      const container = byId(containerId || "fieldbookMemMapContainer");
+      const listNode = byId(listId || "fieldbookMemMapList");
+      if (!container) return;
+      const mems = ((typeof memories !== "undefined" && Array.isArray(memories)) ? memories : []).filter(function (entry) {
+        const lat = Number(entry && entry.location && entry.location.lat);
+        const lng = Number(entry && entry.location && entry.location.lng);
+        return Number.isFinite(lat) && Number.isFinite(lng) && fallbackIsFieldbookMemory(entry);
+      });
+
+      if (fallbackMemMap && typeof fallbackMemMap.remove === "function") {
+        try { fallbackMemMap.remove(); } catch (error) { /* no-op */ }
+        fallbackMemMap = null;
+      }
+
+      container.style.height = "300px";
+      if (!mems.length) {
+        container.innerHTML = "<p style=\"color:var(--text-tertiary);text-align:center;padding:40px 0\">No geotagged memories yet</p>";
+        if (listNode) listNode.innerHTML = "";
+        return;
+      }
+      if (typeof L === "undefined" || typeof L.map !== "function") {
+        container.innerHTML = "<p style=\"color:var(--text-tertiary);text-align:center;padding:40px 0\">Map unavailable</p>";
+        return;
+      }
+
+      const first = mems[0];
+      fallbackMemMap = L.map(container).setView([Number(first.location.lat), Number(first.location.lng)], 10);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM" }).addTo(fallbackMemMap);
+
+      const bounds = [];
+      mems.forEach(function (entry) {
+        const lat = Number(entry.location.lat);
+        const lng = Number(entry.location.lng);
+        bounds.push([lat, lng]);
+        L.marker([lat, lng]).addTo(fallbackMemMap)
+          .bindPopup("<b>" + esc(entry.title || "Memory") + "</b><br>" + esc(entry.location.name || ""));
+      });
+      if (bounds.length > 1) fallbackMemMap.fitBounds(bounds, { padding: [30, 30] });
+
+      if (!listNode) return;
+      listNode.innerHTML = mems.map(function (entry) {
+        return "<div class=\"mem-map-item\" style=\"cursor:pointer\"><span class=\"mem-map-pin\">📍</span><div class=\"mem-map-info\"><div class=\"mem-map-title\">" +
+          esc(entry.title || "Memory") +
+          "</div><div class=\"mem-map-date\">" + esc((entry.location && entry.location.name) || "") +
+          "</div></div></div>";
+      }).join("");
+      Array.from(listNode.querySelectorAll(".mem-map-item")).forEach(function (node, index) {
+        node.addEventListener("click", function () {
+          const entry = mems[index];
+          if (entry && typeof showMemoryModal === "function") showMemoryModal(entry);
+        });
+      });
+    };
+
+    window.switchFieldbookMemView = function (view, btn) {
+      document.querySelectorAll(".fieldbook-mem-tab").forEach(function (tab) { tab.classList.remove("active"); });
+      if (btn && btn.classList) btn.classList.add("active");
+
+      const shelf = byId("fieldbookShelfView");
+      const yearly = byId("fieldbookYearlyView");
+      const map = byId("fieldbookMapView");
+      if (shelf) shelf.style.display = view === "fieldbook" ? "block" : "none";
+      if (yearly) yearly.style.display = view === "yearly" ? "block" : "none";
+      if (map) map.style.display = view === "map" ? "block" : "none";
+
+      if (view === "fieldbook") {
+        if (typeof renderFieldbookShelf === "function") renderFieldbookShelf();
+        return;
+      }
+      if (view === "yearly") {
+        if (typeof buildMemYearGrid === "function") {
+          try { buildMemYearGrid("fieldbookMemYearGrid"); return; } catch (error) { /* fallback */ }
+        }
+        fallbackBuildMemYearGrid("fieldbookMemYearGrid");
+        return;
+      }
+      if (view === "map") {
+        if (typeof buildMemMap === "function") {
+          try { buildMemMap("fieldbookMemMapContainer", "fieldbookMemMapList"); return; } catch (error) { /* fallback */ }
+        }
+        fallbackBuildMemMap("fieldbookMemMapContainer", "fieldbookMemMapList");
+      }
+    };
+  }
+
   window.openFieldbookEditor = openFieldbookEditor;
   window.closeFieldbookEditor = closeFieldbookEditor;
   window.openFieldbookPeoplePicker = openFieldbookPeoplePicker;

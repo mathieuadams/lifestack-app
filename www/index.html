@@ -302,21 +302,13 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
       </div>
     </div></div>
 
-    <!-- ===== MEMORIES VIEW ===== -->
+    <!-- ===== MEMORIES VIEW (legacy hidden entry point) ===== -->
     <div id="memoriesView" class="v"><div class="vp">
-      <div id="onThisDayContainer"></div>
       <div class="sl">Memories</div>
-      <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
-        <button class="btn btn-secondary" style="padding:8px 12px;font-size:.8rem;" onclick="swView('fieldbook')">Fieldbook (beta)</button>
+      <div class="fieldbook-empty">Yearly and Map memory views moved into the Fieldbook tab.</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+        <button class="btn btn-secondary" style="padding:8px 12px;font-size:.8rem;" onclick="swView('fieldbook')">Open Fieldbook</button>
       </div>
-      <div class="mem-yearly-tabs" style="margin-bottom:16px">
-        <button class="mem-yearly-tab active" onclick="switchMemView('timeline',this)">📅 Timeline</button>
-        <button class="mem-yearly-tab" onclick="switchMemView('yearly',this)">🗓️ Yearly</button>
-        <button class="mem-yearly-tab" onclick="switchMemView('map',this)">🗺️ Map</button>
-      </div>
-      <div id="memTimelineView"><div class="mmt" id="memoriesTimeline"></div></div>
-      <div id="memYearlyView" style="display:none"><div class="mem-year-grid" id="memYearGrid"></div></div>
-      <div id="memMapView" style="display:none"><div class="mem-map-container" id="memMapContainer"></div><div class="mem-map-list" id="memMapList"></div></div>
     </div></div>
 
 
@@ -330,7 +322,23 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
         </div>
         <button class="btn btn-primary" onclick="openFieldbookEditor()">+ New</button>
       </div>
-      <div id="fieldbookShelf" class="fieldbook-shelf-grid"></div>
+
+      <div class="mem-yearly-tabs" style="margin-bottom:12px">
+        <button class="mem-yearly-tab fieldbook-mem-tab active" onclick="switchFieldbookMemView('fieldbook',this)">📚 Fieldbook</button>
+        <button class="mem-yearly-tab fieldbook-mem-tab" onclick="switchFieldbookMemView('yearly',this)">🗓️ Yearly</button>
+        <button class="mem-yearly-tab fieldbook-mem-tab" onclick="switchFieldbookMemView('map',this)">🗺️ Map</button>
+      </div>
+
+      <div id="fieldbookShelfView">
+        <div id="fieldbookShelf" class="fieldbook-shelf-grid"></div>
+      </div>
+      <div id="fieldbookYearlyView" style="display:none">
+        <div class="mem-year-grid" id="fieldbookMemYearGrid"></div>
+      </div>
+      <div id="fieldbookMapView" style="display:none">
+        <div class="mem-map-container" id="fieldbookMemMapContainer"></div>
+        <div class="mem-map-list" id="fieldbookMemMapList"></div>
+      </div>
     </div></div>
 
   </div><!-- end .mc -->
@@ -345,10 +353,9 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 
   <!-- ===== BOTTOM NAV ===== -->
   <nav class="bn">
-    <button class="ni active" onclick="swView('plan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nl">Plan</span></button>
-    <button class="ni" onclick="swView('habits')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nl">Habits</span></button>
-    <button class="ni" onclick="swView('memories')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span class="nl">Memories</span></button>
-    <button class="ni" onclick="swView('fieldbook')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 12h8"/><path d="M8 17h5"/></svg><span class="nl">Fieldbook</span></button>
+    <button class="ni active" data-view="plan" onclick="swView('plan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nl">Plan</span></button>
+    <button class="ni" data-view="habits" onclick="swView('habits')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nl">Habits</span></button>
+    <button class="ni" data-view="fieldbook" onclick="swView('fieldbook')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 12h8"/><path d="M8 17h5"/></svg><span class="nl">Fieldbook</span></button>
   </nav>
 
   <!-- ===== SLIDE-UP PANELS ===== -->
@@ -1113,9 +1120,9 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
   </div>
 </div></div></div>
 <div id="toast" class="toast"></div>
-<script src="ui.js"></script>
+<script src="ui.js?v=20260218d"></script>
 <script src="app.js"></script>
-<script src="fieldbook.js?v=20260218g"></script>
+<script src="fieldbook.js?v=20260218m"></script>
 <script src="adventure.js"></script>
 <link rel="stylesheet" href="adventure.css">
 </body>

@@ -11,14 +11,23 @@ const catBgs={travel:'var(--cat-travel-bg)',food:'var(--cat-food-bg)',adventure:
 // ===== UI CORE =====
 function swView(v){
   if(typeof hideLegacyYearDataViews==='function')hideLegacyYearDataViews();
+  if(v==='memories'&&!document.querySelector('.ni[data-view="memories"]'))v='fieldbook';
   document.querySelectorAll('.v').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
   const map={plan:'planView',habits:'habitsView',memories:'memoriesView',fieldbook:'fieldbookView'};
-  const idx={plan:0,habits:1,memories:2,fieldbook:3};
   if(!map[v]||!document.getElementById(map[v]))v='plan';
-  document.getElementById(map[v]).classList.add('active');
-  document.querySelectorAll('.ni')[idx[v]].classList.add('active');
-  document.querySelector('.mc').scrollTop=0;
+  const target=document.getElementById(map[v]);
+  if(!target||!target.classList)return;
+  target.classList.add('active');
+  let navBtn=document.querySelector('.ni[data-view="'+v+'"]');
+  if(!navBtn){
+    const legacyIdx={plan:0,habits:1,memories:2,fieldbook:3}[v];
+    const navButtons=document.querySelectorAll('.ni');
+    navBtn=Number.isInteger(legacyIdx)&&navButtons[legacyIdx]?navButtons[legacyIdx]:null;
+  }
+  if(navBtn&&navBtn.classList)navBtn.classList.add('active');
+  const mc=document.querySelector('.mc');
+  if(mc)mc.scrollTop=0;
   closeFab();
   const fabBtn=document.getElementById('fabBtn');
   if(fabBtn)fabBtn.style.display=(v==='fieldbook')?'none':'flex';
@@ -30,8 +39,9 @@ function swView(v){
 function swTab(t,b){
   document.querySelectorAll('.ptb').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ps').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');
-  document.getElementById('st-'+t).classList.add('active');
+  if(b&&b.classList)b.classList.add('active');
+  const tabSection=document.getElementById('st-'+t);
+  if(tabSection&&tabSection.classList)tabSection.classList.add('active');
   if(t==='week') buildWeekView();
   if(t==='month') buildMG();
   if(t==='year') buildYV();
@@ -39,8 +49,8 @@ function swTab(t,b){
 }
 function openPanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.add('open');if(p)p.classList.add('open');if(n==='notif'&&typeof renderNotificationList==='function')renderNotificationList()}
 function closePanel(n){const o=document.getElementById(n+'Overlay'),p=document.getElementById(n+'Panel');if(o)o.classList.remove('open');if(p)p.classList.remove('open')}
-function toggleFab(){const m=document.getElementById('fabMenu'),b=document.getElementById('fabBtn');m.classList.toggle('open');b.textContent=m.classList.contains('open')?'×':'+'}
-function closeFab(){document.getElementById('fabMenu').classList.remove('open');document.getElementById('fabBtn').textContent='+'}
+function toggleFab(){const m=document.getElementById('fabMenu'),b=document.getElementById('fabBtn');if(!m||!b)return;m.classList.toggle('open');b.textContent=m.classList.contains('open')?'�':'+'}
+function closeFab(){const m=document.getElementById('fabMenu'),b=document.getElementById('fabBtn');if(m)m.classList.remove('open');if(b)b.textContent='+'}
 function toggleProfile(){document.getElementById('profileOverlay').classList.toggle('open');document.getElementById('profilePanel').classList.toggle('open')}
 function toast(m){const t=document.getElementById('toastEl');if(!t)return;t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
 function tgChk(b){b.classList.toggle('done');if(b.classList.contains('done'))toast('✓ Done!')}
@@ -638,15 +648,31 @@ function renderMemoriesView(){
   buildOnThisDay();
 }
 
+function setViewDisplay(id,show){
+  const el=document.getElementById(id);
+  if(el)el.style.display=show?'block':'none';
+}
+
 function switchMemView(view,btn){
-  document.querySelectorAll('.mem-yearly-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#memoriesView .mem-yearly-tab').forEach(t=>t.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('memTimelineView').style.display=view==='timeline'?'block':'none';
-  document.getElementById('memYearlyView').style.display=view==='yearly'?'block':'none';
-  document.getElementById('memMapView').style.display=view==='map'?'block':'none';
+  setViewDisplay('memTimelineView',view==='timeline');
+  setViewDisplay('memYearlyView',view==='yearly');
+  setViewDisplay('memMapView',view==='map');
   if(view==='timeline')buildMemTimeline();
   if(view==='yearly')buildMemYearGrid();
   if(view==='map')buildMemMap();
+}
+
+function switchFieldbookMemView(view,btn){
+  document.querySelectorAll('.fieldbook-mem-tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  setViewDisplay('fieldbookShelfView',view==='fieldbook');
+  setViewDisplay('fieldbookYearlyView',view==='yearly');
+  setViewDisplay('fieldbookMapView',view==='map');
+  if(view==='fieldbook'&&typeof renderFieldbookShelf==='function')renderFieldbookShelf();
+  if(view==='yearly')buildMemYearGrid('fieldbookMemYearGrid');
+  if(view==='map')buildMemMap('fieldbookMemMapContainer','fieldbookMemMapList');
 }
 
 function buildMemTimeline(){
@@ -697,8 +723,8 @@ function buildOnThisDay(){
   }else{c.innerHTML=''}
 }
 
-function buildMemYearGrid(){
-  const g=document.getElementById('memYearGrid');if(!g)return;
+function buildMemYearGrid(targetId){
+  const g=document.getElementById(targetId||'memYearGrid');if(!g)return;
   const mems=typeof memories!=='undefined'&&Array.isArray(memories)?memories:[];
   const year=typeof currentViewYear!=='undefined'?currentViewYear:2026;
   g.innerHTML='';
@@ -707,15 +733,31 @@ function buildMemYearGrid(){
     const photos=monthMems.flatMap(m=>m.photos||[]);
     const card=document.createElement('div');card.className='mem-month-card';
     card.innerHTML=`<div class="mem-month-name">${name.slice(0,3)}</div><div class="mem-month-count">${monthMems.length} memor${monthMems.length!==1?'ies':'y'}</div>${photos.length>0?`<div class="mem-month-photos">${photos.slice(0,3).map(p=>`<img src="${p.url}" alt="" class="mem-month-thumb">`).join('')}</div>`:''}`;
-    card.onclick=()=>{curM=i;switchMemView('timeline',document.querySelector('.mem-yearly-tab'))};
+    card.onclick=()=>{if(monthMems.length>0)openMemoryForEdit(monthMems[0].id)};
     g.appendChild(card);
   });
 }
 
 let memMap=null;
-function buildMemMap(){
-  const container=document.getElementById('memMapContainer');if(!container)return;
-  const mems=(typeof memories!=='undefined'&&Array.isArray(memories)?memories:[]).filter(m=>m.location&&m.location.lat&&m.location.lng);
+function isFieldbookMemoryForMap(memory){
+  if(!memory||!memory.id)return false;
+  const tags=Array.isArray(memory.tags)?memory.tags:[];
+  if(tags.some(t=>String(t||'').toLowerCase()==='fieldbook'))return true;
+  try{
+    const raw=localStorage.getItem('lifestack_fieldbook_meta');
+    if(!raw)return false;
+    const store=JSON.parse(raw);
+    return !!(store&&typeof store==='object'&&store[memory.id]);
+  }catch(e){
+    return false;
+  }
+}
+function buildMemMap(containerId,listId){
+  const container=document.getElementById(containerId||'memMapContainer');if(!container)return;
+  const isFieldbookTarget=(containerId==='fieldbookMemMapContainer'||listId==='fieldbookMemMapList');
+  const mems=(typeof memories!=='undefined'&&Array.isArray(memories)?memories:[])
+    .filter(m=>m.location&&m.location.lat&&m.location.lng)
+    .filter(m=>!isFieldbookTarget||isFieldbookMemoryForMap(m));
   if(memMap){memMap.remove();memMap=null}
   container.style.height='300px';
   if(mems.length===0){container.innerHTML='<p style="color:var(--text-tertiary);text-align:center;padding:40px 0">No geotagged memories yet</p>';return}
@@ -727,7 +769,7 @@ function buildMemMap(){
     L.marker([m.location.lat,m.location.lng]).addTo(memMap).bindPopup(`<b>${escapeHtmlUI(m.title||'Memory')}</b><br>${escapeHtmlUI(m.location.name||'')}`);
   });
   if(bounds.length>1)memMap.fitBounds(bounds,{padding:[30,30]});
-  const list=document.getElementById('memMapList');if(!list)return;
+  const list=document.getElementById(listId||'memMapList');if(!list)return;
   list.innerHTML=mems.map(m=>`<div class="mem-map-item" onclick="openMemoryForEdit('${m.id}')" style="cursor:pointer"><span class="mem-map-pin">📍</span><div class="mem-map-info"><div class="mem-map-title">${escapeHtmlUI(m.title||'Memory')}</div><div class="mem-map-date">${escapeHtmlUI(m.location.name||'')}</div></div></div>`).join('');
 }
 
