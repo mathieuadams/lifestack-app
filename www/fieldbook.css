@@ -110,26 +110,42 @@
 .fieldbook-editor-modal,
 .fieldbook-viewer-modal {
   max-width: 520px;
-  width: min(520px, 96vw);
+  width: min(520px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
   max-height: min(92vh, 860px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.fieldbook-editor-body {
+#fieldbookEditorModal .modal-body.fieldbook-editor-body {
+  --fieldbook-side-pad: clamp(16px, 4.8vw, 24px);
   max-height: min(78vh, 760px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 1rem clamp(14px, 4vw, 22px) max(10px, env(safe-area-inset-bottom, 0px));
+  padding: 1rem var(--fieldbook-side-pad) max(12px, env(safe-area-inset-bottom, 0px));
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+}
+
+#fieldbookEditorModal .fieldbook-editor-body > * {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+#fieldbookEditorModal .fieldbook-editor-body .form-group {
+  margin-bottom: 0;
 }
 
 #fieldbookEditorModal .modal,
 #fieldbookViewerModal .modal,
 #fieldbookPreviewModal .modal,
 #fieldbookPeopleModal .modal {
+  width: min(620px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
   overflow: hidden;
 }
 
@@ -139,7 +155,16 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding: 1rem clamp(14px, 4vw, 22px) 1.25rem;
+  padding: 1rem clamp(16px, 4.8vw, 24px) 1.25rem;
+}
+
+#fieldbookEditorModal .fieldbook-page-manager,
+#fieldbookEditorModal #fieldbookPageStrip,
+#fieldbookEditorModal #fieldbookTemplateGroup,
+#fieldbookEditorModal .fieldbook-toolbar,
+#fieldbookEditorModal .fieldbook-inspector,
+#fieldbookEditorModal #fieldbookCanvas {
+  display: none;
 }
 
 #fieldbookViewerModal.viewer-fullscreen {
@@ -181,11 +206,32 @@
   touch-action: auto;
 }
 
+#fieldbookEditorModal .modal,
+#fieldbookEditorModal .modal-content,
+#fieldbookEditorModal .modal-body,
+#fieldbookEditorModal .form-group,
+#fieldbookEditorModal input,
+#fieldbookEditorModal textarea,
+#fieldbookEditorModal select,
+#fieldbookEditorModal button,
+#fieldbookEditorModal .fieldbook-cover-preview,
+#fieldbookEditorModal .fieldbook-photo-thumbs,
+#fieldbookEditorModal .fieldbook-photo-thumb {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.fieldbook-title-lock-hint {
+  margin-top: 6px;
+  font-size: 0.74rem;
+  color: var(--text-tertiary);
+}
+
 @media (max-width: 768px) {
   .fieldbook-editor-modal,
   .fieldbook-viewer-modal {
-    width: min(560px, calc(100vw - 18px));
-    max-width: calc(100vw - 18px);
+    width: min(560px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
     height: auto;
     max-height: calc(100dvh - 16px);
     border-radius: 14px;
@@ -194,8 +240,9 @@
   .fieldbook-editor-body {
     max-height: calc(100dvh - 128px);
     height: auto;
-    padding-left: 14px;
-    padding-right: 14px;
+    --fieldbook-side-pad: 16px;
+    padding-left: var(--fieldbook-side-pad);
+    padding-right: var(--fieldbook-side-pad);
   }
 }
 
@@ -224,15 +271,15 @@
 }
 
 .fieldbook-photo-thumbs {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-top: 8px;
 }
 
 .fieldbook-photo-thumb {
-  width: 58px;
-  height: 58px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   border-radius: 8px;
   overflow: hidden;
   border: 2px solid transparent;
@@ -265,10 +312,66 @@
   cursor: pointer;
 }
 
+.fieldbook-photo-thumb.dragging {
+  opacity: 0.6;
+}
+
+.fieldbook-photo-thumb.drop-target {
+  border-color: var(--sage-500);
+}
+
+.fieldbook-photo-order {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  font-size: 0.62rem;
+  color: white;
+  background: rgba(18, 18, 18, 0.75);
+  border-radius: 999px;
+  padding: 2px 5px;
+  line-height: 1;
+}
+
+.fieldbook-photo-contributor {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(18, 18, 18, 0.75);
+  color: white;
+  font-size: 0.58rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fieldbook-photo-thumb-actions {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  display: flex;
+  gap: 4px;
+}
+
+.fieldbook-photo-thumb-actions button {
+  position: static;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 0;
+  background: rgba(18, 18, 18, 0.74);
+  color: white;
+  font-size: 0.58rem;
+  padding: 0;
+  line-height: 1;
+}
+
 .fieldbook-cover-preview {
   position: relative;
   width: 100%;
-  max-width: 270px;
+  max-width: 300px;
   aspect-ratio: 1 / 1;
   border: 1px dashed var(--sand-300);
   border-radius: 12px;
@@ -301,6 +404,7 @@
 
 .fieldbook-cover-controls {
   margin-top: 8px;
+  width: 100%;
 }
 
 .fieldbook-cover-controls label {
@@ -419,12 +523,12 @@
   border-radius: 12px;
   background: var(--white);
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) auto;
+  grid-template-columns: 52px minmax(0, 1fr);
   gap: 8px;
   align-items: center;
   padding: 7px;
   box-shadow: 0 2px 10px rgba(35, 31, 20, 0.08);
-  cursor: move;
+  cursor: default;
 }
 
 .fieldbook-person-card.dragging {
@@ -563,6 +667,12 @@
   margin: 0;
 }
 
+.fieldbook-simple-byline {
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+}
+
 .fieldbook-simple-map-card {
   margin-top: 10px;
   border: 1px solid var(--sand-200);
@@ -598,6 +708,46 @@
   margin: 0 0 8px;
   font-size: 0.9rem;
   color: var(--text-primary);
+}
+
+.fieldbook-simple-photos {
+  border: 1px solid var(--sand-200);
+  border-radius: 12px;
+  background: var(--sand-50);
+  padding: 12px;
+}
+
+.fieldbook-simple-photos h3 {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.fieldbook-view-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.fieldbook-view-photo-card {
+  border: 1px solid var(--sand-200);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--white);
+}
+
+.fieldbook-view-photo-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: block;
+  object-fit: cover;
+}
+
+.fieldbook-view-photo-meta {
+  padding: 5px 6px;
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  border-top: 1px solid var(--sand-100);
 }
 
 .fieldbook-simple-empty {
@@ -683,6 +833,14 @@
   .fieldbook-page-manager {
     background: var(--sand-50);
   }
+
+  .fieldbook-photo-thumbs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .fieldbook-view-photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 420px) {
@@ -693,6 +851,10 @@
   .fieldbook-people-grid,
   .fieldbook-contributor-grid {
     grid-template-columns: 1fr;
+  }
+
+  .fieldbook-photo-thumbs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .fieldbook-card-meta {

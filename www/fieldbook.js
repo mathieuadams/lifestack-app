@@ -12,7 +12,9 @@
   const state = {
     seq: 1,
     editingMemoryId: "",
+    editingMemoryOwnerId: "",
     photos: [],
+    photoDragId: "",
     selectedPeopleIds: [],
     peopleDragId: "",
     cover: { photoId: "", x: 50, y: 50, zoom: 100 },
@@ -80,6 +82,23 @@
 
   function getCurrentUser() {
     return typeof currentUser !== "undefined" ? currentUser : null;
+  }
+
+  function currentUserId() {
+    const user = getCurrentUser();
+    return user && user.id ? String(user.id) : "";
+  }
+
+  function currentUserName() {
+    const user = getCurrentUser();
+    return (user && (user.name || user.firstName || user.email)) ? (user.name || user.firstName || user.email) : "You";
+  }
+
+  function isMemoryOwner(memory) {
+    if (!memory || !memory.userId) return true;
+    const uid = currentUserId();
+    if (!uid) return true;
+    return String(memory.userId) === uid;
   }
 
   function getCurrentYearView() {
@@ -150,7 +169,9 @@
 
   function resetCoreState() {
     state.editingMemoryId = "";
+    state.editingMemoryOwnerId = "";
     state.photos = [];
+    state.photoDragId = "";
     state.selectedPeopleIds = [];
     state.peopleDragId = "";
     state.cover = { photoId: "", x: 50, y: 50, zoom: 100 };
@@ -163,13 +184,17 @@
 
   function normalizePhoto(photo, index) {
     if (!photo) return null;
+    const ownerId = state.editingMemoryOwnerId || currentUserId();
+    const ownerName = currentUserName();
     if (typeof photo === "string") {
       return {
         id: "remote_" + index + "_" + Date.now(),
         url: photo,
         key: "",
         file: null,
-        source: "remote"
+        source: "remote",
+        contributorId: ownerId,
+        contributorName: ownerName
       };
     }
     const url = photo.url || photo.viewUrl || "";
@@ -179,7 +204,9 @@
       url: url,
       key: photo.key || "",
       file: null,
-      source: "remote"
+      source: "remote",
+      contributorId: normalizePersonId(photo.contributorId || photo.authorId || ownerId),
+      contributorName: photo.contributorName || photo.authorName || ownerName
     };
   }
 
@@ -232,13 +259,96 @@
       node.innerHTML = "";
       return;
     }
-    node.innerHTML = state.photos.map(function (photo) {
+    const peopleMap = peopleByIdMap();
+    node.innerHTML = state.photos.map(function (photo, index) {
+      const contributorId = normalizePersonId(photo.contributorId || state.editingMemoryOwnerId || currentUserId());
+      const contributor = resolvePerson(contributorId, peopleMap);
+      const contributorName = photo.contributorName || contributor.name || "Contributor";
+      const canRemove = canRemovePhoto(photo);
       return "" +
-        "<div class=\"fieldbook-photo-thumb " + (photo.id === state.cover.photoId ? "selected" : "") + "\">" +
+        "<div class=\"fieldbook-photo-thumb " + (photo.id === state.cover.photoId ? "selected" : "") + "\" draggable=\"true\" data-photo-id=\"" + esc(photo.id) + "\">" +
           "<img src=\"" + esc(photo.url) + "\" alt=\"thumb\" onclick=\"setFieldbookCoverPhoto('" + esc(photo.id) + "')\">" +
-          "<button type=\"button\" onclick=\"event.stopPropagation();removeFieldbookPhoto('" + esc(photo.id) + "')\">x</button>" +
+          (canRemove ? "<button type=\"button\" class=\"fieldbook-photo-remove\" onclick=\"event.stopPropagation();removeFieldbookPhoto('" + esc(photo.id) + "')\">x</button>" : "") +
+          "<span class=\"fieldbook-photo-order\">#" + (index + 1) + "</span>" +
+          "<span class=\"fieldbook-photo-contributor\" title=\"" + esc(contributorName) + "\">" + esc(initialsFromName(contributorName)) + "</span>" +
+          "<div class=\"fieldbook-photo-thumb-actions\">" +
+            "<button type=\"button\" onclick=\"event.stopPropagation();moveFieldbookPhoto('" + esc(photo.id) + "',-1)\">&larr;</button>" +
+            "<button type=\"button\" onclick=\"event.stopPropagation();moveFieldbookPhoto('" + esc(photo.id) + "',1)\">&rarr;</button>" +
+          "</div>" +
         "</div>";
     }).join("");
+    bindPhotoThumbInteractions(node);
+  }
+
+  function canRemovePhoto(photo) {
+    const ownerId = normalizePersonId(state.editingMemoryOwnerId || currentUserId());
+    const me = normalizePersonId(currentUserId());
+    const contributorId = normalizePersonId(photo && photo.contributorId);
+    if (!contributorId) return true;
+    if (me && contributorId === me) return true;
+    if (me && ownerId && ownerId === me) return true;
+    return false;
+  }
+
+  function movePhoto(photoId, delta) {
+    const from = state.photos.findIndex(function (photo) { return photo.id === photoId; });
+    if (from < 0) return;
+    const to = clamp(from + delta, 0, state.photos.length - 1);
+    if (to === from) return;
+    const next = state.photos.slice();
+    const picked = next.splice(from, 1)[0];
+    next.splice(to, 0, picked);
+    state.photos = next;
+    renderPhotoThumbs();
+    renderCoverPreview();
+  }
+
+  function reorderPhotos(fromId, toId) {
+    if (!fromId || !toId || fromId === toId) return;
+    const from = state.photos.findIndex(function (photo) { return photo.id === fromId; });
+    const to = state.photos.findIndex(function (photo) { return photo.id === toId; });
+    if (from < 0 || to < 0 || from === to) return;
+    const next = state.photos.slice();
+    const picked = next.splice(from, 1)[0];
+    next.splice(to, 0, picked);
+    state.photos = next;
+    renderPhotoThumbs();
+    renderCoverPreview();
+  }
+
+  function bindPhotoThumbInteractions(node) {
+    if (!node) return;
+    const cards = Array.from(node.querySelectorAll(".fieldbook-photo-thumb[data-photo-id]"));
+    cards.forEach(function (card) {
+      const id = card.dataset.photoId || "";
+      if (!id) return;
+      card.addEventListener("dragstart", function (event) {
+        state.photoDragId = id;
+        card.classList.add("dragging");
+        if (event.dataTransfer) {
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", id);
+        }
+      });
+      card.addEventListener("dragend", function () {
+        state.photoDragId = "";
+        card.classList.remove("dragging");
+        cards.forEach(function (entry) { entry.classList.remove("drop-target"); });
+      });
+      card.addEventListener("dragover", function (event) {
+        event.preventDefault();
+        card.classList.add("drop-target");
+      });
+      card.addEventListener("dragleave", function () {
+        card.classList.remove("drop-target");
+      });
+      card.addEventListener("drop", function (event) {
+        event.preventDefault();
+        const fromId = state.photoDragId || (event.dataTransfer ? event.dataTransfer.getData("text/plain") : "");
+        card.classList.remove("drop-target");
+        reorderPhotos(fromId, id);
+      });
+    });
   }
 
   function setCoverPhoto(photoId) {
@@ -249,6 +359,11 @@
   }
 
   function removeEditorPhoto(photoId) {
+    const target = state.photos.find(function (photo) { return photo.id === photoId; }) || null;
+    if (target && !canRemovePhoto(target)) {
+      showErrorSafe("Only the contributor or memory owner can remove this photo");
+      return;
+    }
     state.photos = state.photos.filter(function (photo) { return photo.id !== photoId; });
     if (state.cover.photoId === photoId) {
       state.cover.photoId = state.photos.length ? state.photos[0].id : "";
@@ -280,7 +395,9 @@
           url: preview,
           key: "",
           file: file,
-          source: "file"
+          source: "file",
+          contributorId: currentUserId() || state.editingMemoryOwnerId,
+          contributorName: currentUserName()
         });
       } catch (error) {
         console.warn("Fieldbook file read error:", error);
@@ -506,22 +623,16 @@
     const map = peopleByIdMap();
     const ids = state.selectedPeopleIds.map(normalizePersonId).filter(Boolean);
     state.selectedPeopleIds = ids;
-    node.innerHTML = ids.map(function (personId, index) {
+    node.innerHTML = ids.map(function (personId) {
       const person = resolvePerson(personId, map);
       return "" +
-        "<article class=\"fieldbook-person-card\" draggable=\"true\" data-person-id=\"" + esc(personId) + "\">" +
+        "<article class=\"fieldbook-person-card\" data-person-id=\"" + esc(personId) + "\">" +
           "<div class=\"fieldbook-person-card-photo\">" + avatarMarkup(person, "fieldbook-person-card-avatar") + "</div>" +
           "<div class=\"fieldbook-person-card-meta\">" +
             "<div class=\"fieldbook-person-card-name\">" + esc(person.name || "Person") + "</div>" +
-            "<div class=\"fieldbook-person-card-order\">Order " + (index + 1) + "</div>" +
-          "</div>" +
-          "<div class=\"fieldbook-person-card-actions\">" +
-            "<button type=\"button\" data-move=\"left\" aria-label=\"Move left\">&larr;</button>" +
-            "<button type=\"button\" data-move=\"right\" aria-label=\"Move right\">&rarr;</button>" +
           "</div>" +
         "</article>";
     }).join("");
-    bindPeopleGridInteractions(node);
   }
 
   function openPeoplePicker() {
@@ -672,8 +783,17 @@
     return layer;
   }
 
-  function mapUrl(lat, lon) {
-    return "https://staticmap.openstreetmap.de/staticmap.php?center=" + lat + "," + lon + "&zoom=13&size=300x190&maptype=mapnik&markers=" + lat + "," + lon + ",red-pushpin";
+  function mapUrl(lat, lon, variant) {
+    const latNum = Number(lat);
+    const lonNum = Number(lon);
+    if (!Number.isFinite(latNum) || !Number.isFinite(lonNum)) return "";
+    const latText = latNum.toFixed(6);
+    const lonText = lonNum.toFixed(6);
+
+    if (variant === 1) {
+      return "https://staticmap.openstreetmap.de/staticmap.php?center=" + latText + "," + lonText + "&zoom=13&size=300x190&maptype=mapnik&markers=" + latText + "," + lonText + ",red-pushpin";
+    }
+    return "https://static-maps.yandex.ru/1.x/?ll=" + lonText + "," + latText + "&size=450,300&z=13&l=map&pt=" + lonText + "," + latText + ",pm2rdm";
   }
 
   function addLayer(layer) {
@@ -773,6 +893,13 @@
       const img = document.createElement("img");
       img.src = layer.src;
       img.alt = "map";
+      if (Number.isFinite(Number(layer.lat)) && Number.isFinite(Number(layer.lng))) {
+        img.addEventListener("error", function () {
+          if (img.dataset.mapFallbackTried === "1") return;
+          img.dataset.mapFallbackTried = "1";
+          img.src = mapUrl(layer.lat, layer.lng, 1);
+        });
+      }
       body.appendChild(img);
       const label = document.createElement("div");
       label.className = "fieldbook-map-label";
@@ -1294,8 +1421,16 @@
   async function uploadEditorPhotos(memoryId) {
     const uploaded = [];
     for (const photo of state.photos) {
+      const contributorId = normalizePersonId(photo.contributorId || state.editingMemoryOwnerId || currentUserId());
+      const contributorName = photo.contributorName || currentUserName();
       if (!photo.file) {
-        uploaded.push({ id: photo.id, key: photo.key || "", url: photo.url });
+        uploaded.push({
+          id: photo.id,
+          key: photo.key || "",
+          url: photo.url,
+          contributorId: contributorId,
+          contributorName: contributorName
+        });
         continue;
       }
 
@@ -1307,10 +1442,22 @@
         if (!urlData || !urlData.uploadUrl || !urlData.viewUrl) throw new Error("Upload URL failed");
         const ok = await uploadPhotoToS3(urlData.uploadUrl, file);
         if (!ok) throw new Error("Upload failed");
-        uploaded.push({ id: photo.id, key: urlData.key || "", url: urlData.viewUrl });
+        uploaded.push({
+          id: photo.id,
+          key: urlData.key || "",
+          url: urlData.viewUrl,
+          contributorId: contributorId,
+          contributorName: contributorName
+        });
       } catch (error) {
         console.warn("Fieldbook photo upload fallback:", error);
-        uploaded.push({ id: photo.id, key: "", url: photo.url });
+        uploaded.push({
+          id: photo.id,
+          key: "",
+          url: photo.url,
+          contributorId: contributorId,
+          contributorName: contributorName
+        });
       }
     }
     return uploaded;
@@ -1330,16 +1477,20 @@
     };
   }
 
+  function applyTitleLock(memory) {
+    const input = byId("fieldbookTitle");
+    const hint = byId("fieldbookTitleLockHint");
+    if (!input) return;
+    const locked = !!(memory && !isMemoryOwner(memory));
+    input.disabled = locked;
+    if (hint) hint.classList.toggle("hidden", !locked);
+  }
+
   async function saveEditor() {
     const title = byId("fieldbookTitle").value.trim();
     const occurredAt = byId("fieldbookDate").value;
     const text = byId("fieldbookText").value || "";
     const memoryId = byId("fieldbookMemoryId").value || "";
-
-    if (!title || !occurredAt) {
-      showErrorSafe("Please add title and date");
-      return;
-    }
 
     const saveBtn = byId("fieldbookSaveBtn");
     if (saveBtn) {
@@ -1359,10 +1510,16 @@
       const yearOffset = String(occYear - birthYear);
 
       const existing = memoryId ? (getMemories().find(function (memory) { return memory.id === memoryId; }) || null) : null;
+      const canEditTitle = !existing || isMemoryOwner(existing);
+      const effectiveTitle = canEditTitle ? title : String(existing.title || "").trim();
+      if (!effectiveTitle || !occurredAt) {
+        showErrorSafe("Please add title and date");
+        return;
+      }
       const tags = Array.from(new Set(safeArray(existing && existing.tags).concat(["fieldbook"])));
 
       const payload = {
-        title: title,
+        title: effectiveTitle,
         occurredAt: occurredAt,
         text: text,
         tags: tags,
@@ -1370,7 +1527,14 @@
         planId: existing ? (existing.planId || null) : null,
         subActivity: existing ? (existing.subActivity || null) : null,
         people: state.selectedPeopleIds.slice(),
-        photos: uploadedPhotos.map(function (item) { return { key: item.key || "", url: item.url }; }),
+        photos: uploadedPhotos.map(function (item) {
+          return {
+            key: item.key || "",
+            url: item.url,
+            contributorId: normalizePersonId(item.contributorId),
+            contributorName: item.contributorName || ""
+          };
+        }),
         location: collectLocation()
       };
 
@@ -1461,6 +1625,7 @@
 
   function resetEditorForm() {
     resetCoreState();
+    state.editingMemoryOwnerId = currentUserId();
     ensurePages();
     byId("fieldbookMemoryId").value = "";
     byId("fieldbookEditorTitle").textContent = "Create Fieldbook Memory";
@@ -1470,6 +1635,7 @@
     byId("fieldbookTemplate").value = "freeform";
     state.currentTemplate = "freeform";
     clearFieldbookLocationInternal();
+    applyTitleLock(null);
     renderPeopleChips();
     renderPhotoThumbs();
     renderCoverPreview();
@@ -1493,8 +1659,10 @@
     state.currentTemplate = meta.template || "freeform";
 
     state.editingMemoryId = memory.id;
+    state.editingMemoryOwnerId = normalizePersonId(memory.userId || memory.ownerId || memory.createdBy || currentUserId());
     state.photos = safeArray(memory.photos).map(normalizePhoto).filter(Boolean);
     state.selectedPeopleIds = safeArray(memory.people).map(normalizePersonId).filter(Boolean);
+    applyTitleLock(memory);
 
     if (memory.location) {
       byId("fieldbookLocation").value = memory.location.name || "";
@@ -1645,10 +1813,19 @@
     const top = document.createElement("section");
     top.className = "fieldbook-simple-top";
 
+    const peopleMap = peopleByIdMap();
+    const ownerId = normalizePersonId(memory.userId || memory.ownerId || memory.createdBy);
+    const ownerPerson = resolvePerson(ownerId, peopleMap);
+
     const desc = document.createElement("p");
     desc.className = "fieldbook-simple-description";
     desc.textContent = (memory.text || "").trim() || "No description yet.";
     top.appendChild(desc);
+
+    const byline = document.createElement("div");
+    byline.className = "fieldbook-simple-byline";
+    byline.textContent = "Text by " + (ownerPerson.name || "Owner");
+    top.appendChild(byline);
 
     const location = memory.location || {};
     const lat = Number(location.lat);
@@ -1657,11 +1834,28 @@
     if (hasCoords || location.name) {
       const mapCard = document.createElement("div");
       mapCard.className = "fieldbook-simple-map-card";
+      let mapLabel = null;
       if (hasCoords) {
         const mapImg = document.createElement("img");
         mapImg.className = "fieldbook-simple-map-image";
         mapImg.src = mapUrl(lat, lng);
         mapImg.alt = location.name || "map";
+        mapImg.addEventListener("error", function () {
+          if (mapImg.dataset.mapFallbackTried !== "1") {
+            mapImg.dataset.mapFallbackTried = "1";
+            mapImg.src = mapUrl(lat, lng, 1);
+            return;
+          }
+          mapImg.remove();
+          const mapEmpty = document.createElement("div");
+          mapEmpty.className = "fieldbook-simple-map-empty";
+          mapEmpty.textContent = "Map preview unavailable";
+          if (mapLabel && mapLabel.parentNode === mapCard) {
+            mapCard.insertBefore(mapEmpty, mapLabel);
+          } else {
+            mapCard.appendChild(mapEmpty);
+          }
+        });
         mapCard.appendChild(mapImg);
       } else {
         const mapEmpty = document.createElement("div");
@@ -1670,13 +1864,55 @@
         mapCard.appendChild(mapEmpty);
       }
 
-      const mapLabel = document.createElement("div");
+      mapLabel = document.createElement("div");
       mapLabel.className = "fieldbook-simple-map-label";
       mapLabel.textContent = location.name || "Location";
       mapCard.appendChild(mapLabel);
       top.appendChild(mapCard);
     }
     layout.appendChild(top);
+
+    const photosSection = document.createElement("section");
+    photosSection.className = "fieldbook-simple-photos";
+    const photosHeading = document.createElement("h3");
+    photosHeading.textContent = "Photos";
+    photosSection.appendChild(photosHeading);
+
+    const photos = safeArray(memory.photos);
+    if (!photos.length) {
+      const emptyPhotos = document.createElement("p");
+      emptyPhotos.className = "fieldbook-simple-empty";
+      emptyPhotos.textContent = "No photos yet.";
+      photosSection.appendChild(emptyPhotos);
+    } else {
+      const gallery = document.createElement("div");
+      gallery.className = "fieldbook-view-photo-grid";
+      photos.forEach(function (photo, index) {
+        const photoUrl = photo && (photo.url || photo.viewUrl) ? (photo.url || photo.viewUrl) : "";
+        if (!photoUrl) return;
+        const pid = normalizePersonId(photo.contributorId || photo.authorId || ownerId);
+        const person = resolvePerson(pid, peopleMap);
+        const label = photo.contributorName || person.name || "Contributor";
+
+        const card = document.createElement("article");
+        card.className = "fieldbook-view-photo-card";
+
+        const img = document.createElement("img");
+        img.className = "fieldbook-view-photo-image";
+        img.src = photoUrl;
+        img.alt = "photo " + (index + 1);
+        card.appendChild(img);
+
+        const meta = document.createElement("div");
+        meta.className = "fieldbook-view-photo-meta";
+        meta.textContent = "By " + label;
+        card.appendChild(meta);
+
+        gallery.appendChild(card);
+      });
+      if (gallery.childNodes.length) photosSection.appendChild(gallery);
+    }
+    layout.appendChild(photosSection);
 
     const peopleSection = document.createElement("section");
     peopleSection.className = "fieldbook-simple-people";
@@ -1685,7 +1921,6 @@
     peopleSection.appendChild(heading);
 
     const peopleIds = safeArray(memory.people).map(normalizePersonId).filter(Boolean);
-    const map = peopleByIdMap();
     if (!peopleIds.length) {
       const empty = document.createElement("p");
       empty.className = "fieldbook-simple-empty";
@@ -1694,8 +1929,8 @@
     } else {
       const grid = document.createElement("div");
       grid.className = "fieldbook-contributor-grid";
-      peopleIds.forEach(function (personId, index) {
-        const person = resolvePerson(personId, map);
+      peopleIds.forEach(function (personId) {
+        const person = resolvePerson(personId, peopleMap);
         const card = document.createElement("article");
         card.className = "fieldbook-contributor-card";
 
@@ -1709,11 +1944,6 @@
         name.textContent = person.name || "Person";
         card.appendChild(name);
 
-        const order = document.createElement("div");
-        order.className = "fieldbook-contributor-order";
-        order.textContent = "Order " + (index + 1);
-        card.appendChild(order);
-
         grid.appendChild(card);
       });
       peopleSection.appendChild(grid);
@@ -1722,7 +1952,8 @@
     layout.appendChild(peopleSection);
     content.appendChild(layout);
 
-    setViewerFullscreen(!!(options && options.fullscreen));
+    const fullscreen = !options || options.fullscreen !== false;
+    setViewerFullscreen(fullscreen);
 
     modal.classList.add("active");
   }
@@ -1744,6 +1975,10 @@
   async function deleteFieldbookMemory(memoryId) {
     const memory = getMemories().find(function (entry) { return entry.id === memoryId; });
     if (!memory) return;
+    if (!isMemoryOwner(memory)) {
+      showErrorSafe("Only the memory owner can delete this fieldbook");
+      return;
+    }
     if (!window.confirm("Delete this fieldbook memory?")) return;
 
     try {
@@ -1789,6 +2024,7 @@
       const cover = memoryCoverUrl(memory);
       const title = memory.title || "Untitled";
       const date = formatDateLabel(memory.occurredAt || memory.createdAt) || "No date";
+      const canDelete = isMemoryOwner(memory);
       const safeId = esc(memory.id);
       return "" +
         "<article class=\"fieldbook-card\" onclick=\"openFieldbookViewer('" + safeId + "')\">" +
@@ -1801,7 +2037,7 @@
             "<div class=\"fieldbook-card-actions\">" +
               "<button type=\"button\" onclick=\"event.stopPropagation();openFieldbookEditor('" + safeId + "')\">Edit</button>" +
               "<button type=\"button\" onclick=\"event.stopPropagation();openFieldbookViewer('" + safeId + "')\">View</button>" +
-              "<button type=\"button\" onclick=\"event.stopPropagation();deleteFieldbookMemory('" + safeId + "')\">Delete</button>" +
+              (canDelete ? ("<button type=\"button\" onclick=\"event.stopPropagation();deleteFieldbookMemory('" + safeId + "')\">Delete</button>") : "<button type=\"button\" disabled title=\"Only owner can delete\">Delete</button>") +
             "</div>" +
           "</div>" +
         "</article>";
@@ -2152,6 +2388,10 @@
     saveEditor();
   }
 
+  function moveFieldbookPhoto(photoId, delta) {
+    movePhoto(photoId, parseInt(delta, 10) || 0);
+  }
+
   function openFieldbookViewer(memoryId) {
     openViewer(memoryId);
   }
@@ -2187,6 +2427,7 @@
   window.clearFieldbookLocation = clearFieldbookLocation;
   window.selectFieldbookLocation = selectFieldbookLocation;
   window.setFieldbookCoverPhoto = setCoverPhoto;
+  window.moveFieldbookPhoto = moveFieldbookPhoto;
   window.removeFieldbookPhoto = removeEditorPhoto;
   window.deleteFieldbookMemory = deleteFieldbookMemory;
   window.renderFieldbookShelf = renderFieldbookShelf;
