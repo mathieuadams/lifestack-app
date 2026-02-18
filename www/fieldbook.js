@@ -308,6 +308,7 @@
     byId("fieldbookLocationClearBtn").style.display = "none";
     statusText("");
     hideLocationDropdown();
+    updateAddMapButton();
   }
 
   function getSelectablePeople() {
@@ -457,14 +458,16 @@
     return layer;
   }
 
-  function mapLayer(page, memory) {
+  function mapLayer(page, source) {
     const layer = baseLayer(page, "map");
-    const location = memory.location;
-    if (location && location.lat && location.lng) {
-      layer.lat = location.lat;
-      layer.lng = location.lng;
+    const location = source && source.location ? source.location : source;
+    const lat = Number(location && location.lat);
+    const lng = Number(location && location.lng);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      layer.lat = lat;
+      layer.lng = lng;
       layer.label = location.name || "Map";
-      layer.src = mapUrl(location.lat, location.lng);
+      layer.src = mapUrl(lat, lng);
     }
     return layer;
   }
@@ -959,12 +962,25 @@
 
   function addMapFromMemory() {
     if (!canEditCurrentPage()) return;
-    const memory = getMemories().find(function (m) { return m.id === state.editingMemoryId; });
-    if (!memory || !memory.location || !memory.location.lat || !memory.location.lng) {
-      showErrorSafe("No location data available for this memory");
+    const draftLocation = collectLocation();
+    const draftLat = Number(draftLocation && draftLocation.lat);
+    const draftLng = Number(draftLocation && draftLocation.lng);
+    const memory = getMemories().find(function (m) { return m.id === state.editingMemoryId; }) || null;
+    const memoryLocation = memory && memory.location ? memory.location : null;
+    const memoryLat = Number(memoryLocation && memoryLocation.lat);
+    const memoryLng = Number(memoryLocation && memoryLocation.lng);
+
+    const location = Number.isFinite(draftLat) && Number.isFinite(draftLng)
+      ? { name: draftLocation.name || "Map", lat: draftLat, lng: draftLng, placeId: draftLocation.placeId || "" }
+      : (Number.isFinite(memoryLat) && Number.isFinite(memoryLng)
+          ? { name: memoryLocation.name || "Map", lat: memoryLat, lng: memoryLng, placeId: memoryLocation.placeId || "" }
+          : null);
+
+    if (!location) {
+      showErrorSafe("Select a location first, then add the map");
       return;
     }
-    addLayer(mapLayer(activePage(), memory));
+    addLayer(mapLayer(activePage(), location));
   }
 
   function updateAddMapButton() {
@@ -972,8 +988,20 @@
     if (!btn) return;
     const page = activePage();
     const hasMap = pageLayers(page).some(function (l) { return l.type === "map"; });
-    btn.disabled = hasMap;
-    btn.textContent = hasMap ? "Map added (1 max)" : "+ Map";
+    const location = collectLocation();
+    const hasLocation = Number.isFinite(Number(location && location.lat)) && Number.isFinite(Number(location && location.lng));
+    const memory = getMemories().find(function (m) { return m.id === state.editingMemoryId; }) || null;
+    const memoryHasLocation = !!(memory && memory.location && Number.isFinite(Number(memory.location.lat)) && Number.isFinite(Number(memory.location.lng)));
+    const canAddMap = !hasMap && (hasLocation || memoryHasLocation);
+
+    btn.disabled = !canAddMap;
+    if (hasMap) {
+      btn.textContent = "Map added (1 max)";
+    } else if (!canAddMap) {
+      btn.textContent = "Select location first";
+    } else {
+      btn.textContent = "+ Map";
+    }
   }
 
   function rotateSelected(delta) {
@@ -1299,6 +1327,8 @@
   function openEditor(memoryId) {
     const modal = byId("fieldbookEditorModal");
     if (!modal) return;
+    clearTimeout(state.locationSearchTimeout);
+    hideLocationDropdown();
     if (memoryId) {
       const memory = getMemories().find(function (entry) { return entry.id === memoryId; });
       hydrateEditorFromMemory(memory || null);
@@ -1310,6 +1340,8 @@
 
   function closeEditor() {
     const modal = byId("fieldbookEditorModal");
+    clearTimeout(state.locationSearchTimeout);
+    hideLocationDropdown();
     if (modal) modal.classList.remove("active");
   }
 
@@ -1541,6 +1573,7 @@
     byId("fieldbookLocationClearBtn").style.display = "flex";
     statusText("Location selected", "success");
     hideLocationDropdown();
+    updateAddMapButton();
   }
 
   function selectFieldbookLocation(node) {
@@ -1578,8 +1611,7 @@
             " data-name=\"" + esc(name || address) + "\"" +
             " data-lat=\"" + esc(coords[1]) + "\"" +
             " data-lng=\"" + esc(coords[0]) + "\"" +
-            " data-place-id=\"" + esc(props.osm_id || "") + "\"" +
-            " onclick=\"selectFieldbookLocation(this)\">" +
+            " data-place-id=\"" + esc(props.osm_id || "") + "\">" +
             "<span class=\"location-autocomplete-icon\">*</span>" +
             "<div class=\"location-autocomplete-text\">" +
               "<div class=\"location-autocomplete-name\">" + esc(name || "Location") + "</div>" +
@@ -1595,6 +1627,10 @@
 
   function handleLocationInput() {
     const query = byId("fieldbookLocation").value.trim();
+    byId("fieldbookLat").value = "";
+    byId("fieldbookLng").value = "";
+    byId("fieldbookPlaceId").value = "";
+    updateAddMapButton();
     clearTimeout(state.locationSearchTimeout);
     if (query.length < 2) {
       hideLocationDropdown();
@@ -1632,7 +1668,7 @@
     if (event.key === "Enter") {
       if (state.locationSelectionIndex >= 0 && items[state.locationSelectionIndex]) {
         event.preventDefault();
-        items[state.locationSelectionIndex].click();
+        selectFieldbookLocation(items[state.locationSelectionIndex]);
       }
       return;
     }
@@ -1789,6 +1825,18 @@
     if (locInput) {
       locInput.addEventListener("input", handleLocationInput);
       locInput.addEventListener("keydown", handleLocationKeydown);
+    }
+
+    const locDropdown = byId("fieldbookLocationAutocomplete");
+    if (locDropdown) {
+      const pickLocation = function (event) {
+        const item = event.target.closest(".location-autocomplete-item");
+        if (!item) return;
+        event.preventDefault();
+        event.stopPropagation();
+        selectFieldbookLocation(item);
+      };
+      locDropdown.addEventListener("pointerdown", pickLocation);
     }
 
     const templateSelect = byId("fieldbookTemplate");

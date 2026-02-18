@@ -1434,15 +1434,26 @@ async function removeFriend(friendshipId) {
 }
 
 // Edit friend (relationship details)
+function safePrompt(message, defaultValue) {
+  if (typeof window.prompt === 'function') {
+    try {
+      return window.prompt(message, defaultValue);
+    } catch (error) {
+      console.warn('Prompt not supported:', error);
+    }
+  }
+  showToast('This browser does not support text prompts here yet');
+  return null;
+}
+
 function editFriend(friendshipId) {
   const friend = friendships.friends.find(f => f.id === friendshipId);
   if (!friend) return;
   
-  // For now, use prompts. Could create a modal later.
-  const newType = prompt('Relationship type (spouse, family, friend, colleague, other):', friend.relationshipType || 'friend');
+  const newType = safePrompt('Relationship type (spouse, family, friend, colleague, other):', friend.relationshipType || 'friend');
   if (newType === null) return;
   
-  const newNotes = prompt('Notes:', friend.notes || '');
+  const newNotes = safePrompt('Notes:', friend.notes || '');
   if (newNotes === null) return;
   
   updateFriendship(friendshipId, { 
@@ -9112,6 +9123,18 @@ document.addEventListener('DOMContentLoaded', async function() {
           closeAddFriendModal();
         } else if (modalId === 'bucketListModal') {
           closeBucketListModal();
+        } else if (modalId === 'fieldbookEditorModal') {
+          if (typeof closeFieldbookEditor === 'function') closeFieldbookEditor();
+          else overlay.classList.remove('active');
+        } else if (modalId === 'fieldbookViewerModal') {
+          if (typeof closeFieldbookViewer === 'function') closeFieldbookViewer();
+          else overlay.classList.remove('active');
+        } else if (modalId === 'fieldbookPreviewModal') {
+          if (typeof closeFieldbookPreview === 'function') closeFieldbookPreview();
+          else overlay.classList.remove('active');
+        } else if (modalId === 'fieldbookPeopleModal') {
+          if (typeof closeFieldbookPeoplePicker === 'function') closeFieldbookPeoplePicker();
+          else overlay.classList.remove('active');
         } else {
           overlay.classList.remove('active');
         }

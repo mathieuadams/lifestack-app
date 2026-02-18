@@ -992,7 +992,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const themeEl=document.getElementById('yearBannerTheme');
   if(themeEl){themeEl.onclick=function(){editYearTheme()}}
   // Keyboard scroll fix
-  document.addEventListener('focusin',function(e){if(e.target.matches('.pf-fullscreen input,.pf-fullscreen textarea,.sp input,.sp textarea,.modal input,.modal textarea')){setTimeout(()=>{e.target.scrollIntoView({behavior:'smooth',block:'center'})},300)}});
+  document.addEventListener('focusin',function(e){if(e.target.matches('.pf-fullscreen input,.pf-fullscreen textarea,.sp input,.sp textarea')){setTimeout(()=>{e.target.scrollIntoView({behavior:'smooth',block:'center'})},300)}});
   // Hook: after app.js renderHabits, also refresh our habits view
   setTimeout(()=>{
     if(typeof renderHabits==='function'){

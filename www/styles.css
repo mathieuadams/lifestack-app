@@ -532,6 +532,12 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--sand-50);co
 .modal-medium{max-width:520px}
 .modal-small{max-width:400px}
 .modal-fullscreen{max-width:100%;max-height:100%;border-radius:0;height:100%}
+.modal input,.modal textarea,.modal [contenteditable="true"]{-webkit-user-select:text;user-select:text}
+
+/* Keep auth modals stable while typing on mobile keyboards */
+#signInModal.modal-overlay,#signUpModal.modal-overlay,#verifyModal.modal-overlay{overflow:hidden;overscroll-behavior:contain}
+#signInModal .modal,#signUpModal .modal,#verifyModal .modal{width:min(460px,calc(100vw - 24px));max-height:min(560px,calc(100dvh - 24px));overflow:hidden}
+#signInModal .modal-body,#signUpModal .modal-body,#verifyModal .modal-body{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 
 /* MONTH CALENDAR MODAL */
 #monthCalendarModal.modal-overlay{align-items:center;justify-content:center}
