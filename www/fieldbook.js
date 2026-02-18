@@ -15,6 +15,7 @@
     editingMemoryOwnerId: "",
     photos: [],
     photoDragId: "",
+    photoTouchDrag: null,
     selectedPeopleIds: [],
     peopleDragId: "",
     cover: { photoId: "", x: 50, y: 50, zoom: 100 },
@@ -23,6 +24,8 @@
     selectedLayerId: "",
     drag: null,
     coverDrag: false,
+    viewerMaps: [],
+    activeImageLightbox: null,
     locationSelectionIndex: -1,
     locationSearchTimeout: null,
     currentTemplate: "freeform"
@@ -172,6 +175,7 @@
     state.editingMemoryOwnerId = "";
     state.photos = [];
     state.photoDragId = "";
+    state.photoTouchDrag = null;
     state.selectedPeopleIds = [];
     state.peopleDragId = "";
     state.cover = { photoId: "", x: 50, y: 50, zoom: 100 };
@@ -179,6 +183,8 @@
     state.activePageId = "";
     state.selectedLayerId = "";
     state.drag = null;
+    state.viewerMaps = [];
+    state.activeImageLightbox = null;
     state.currentTemplate = "freeform";
   }
 
@@ -271,10 +277,6 @@
           (canRemove ? "<button type=\"button\" class=\"fieldbook-photo-remove\" onclick=\"event.stopPropagation();removeFieldbookPhoto('" + esc(photo.id) + "')\">x</button>" : "") +
           "<span class=\"fieldbook-photo-order\">#" + (index + 1) + "</span>" +
           "<span class=\"fieldbook-photo-contributor\" title=\"" + esc(contributorName) + "\">" + esc(initialsFromName(contributorName)) + "</span>" +
-          "<div class=\"fieldbook-photo-thumb-actions\">" +
-            "<button type=\"button\" onclick=\"event.stopPropagation();moveFieldbookPhoto('" + esc(photo.id) + "',-1)\">&larr;</button>" +
-            "<button type=\"button\" onclick=\"event.stopPropagation();moveFieldbookPhoto('" + esc(photo.id) + "',1)\">&rarr;</button>" +
-          "</div>" +
         "</div>";
     }).join("");
     bindPhotoThumbInteractions(node);
@@ -288,19 +290,6 @@
     if (me && contributorId === me) return true;
     if (me && ownerId && ownerId === me) return true;
     return false;
-  }
-
-  function movePhoto(photoId, delta) {
-    const from = state.photos.findIndex(function (photo) { return photo.id === photoId; });
-    if (from < 0) return;
-    const to = clamp(from + delta, 0, state.photos.length - 1);
-    if (to === from) return;
-    const next = state.photos.slice();
-    const picked = next.splice(from, 1)[0];
-    next.splice(to, 0, picked);
-    state.photos = next;
-    renderPhotoThumbs();
-    renderCoverPreview();
   }
 
   function reorderPhotos(fromId, toId) {
@@ -319,6 +308,9 @@
   function bindPhotoThumbInteractions(node) {
     if (!node) return;
     const cards = Array.from(node.querySelectorAll(".fieldbook-photo-thumb[data-photo-id]"));
+    const clearDropTargets = function () {
+      cards.forEach(function (entry) { entry.classList.remove("drop-target"); });
+    };
     cards.forEach(function (card) {
       const id = card.dataset.photoId || "";
       if (!id) return;
@@ -333,7 +325,7 @@
       card.addEventListener("dragend", function () {
         state.photoDragId = "";
         card.classList.remove("dragging");
-        cards.forEach(function (entry) { entry.classList.remove("drop-target"); });
+        clearDropTargets();
       });
       card.addEventListener("dragover", function (event) {
         event.preventDefault();
@@ -348,6 +340,54 @@
         card.classList.remove("drop-target");
         reorderPhotos(fromId, id);
       });
+
+      card.addEventListener("pointerdown", function (event) {
+        if (event.pointerType !== "touch") return;
+        if (event.target && event.target.closest("button")) return;
+        state.photoTouchDrag = {
+          id: id,
+          pointerId: event.pointerId,
+          targetId: id,
+          startX: event.clientX,
+          startY: event.clientY,
+          moved: false
+        };
+        if (card.setPointerCapture) {
+          try { card.setPointerCapture(event.pointerId); } catch (error) { /* no-op */ }
+        }
+      });
+
+      card.addEventListener("pointermove", function (event) {
+        const drag = state.photoTouchDrag;
+        if (!drag || drag.pointerId !== event.pointerId || drag.id !== id) return;
+        const dx = Math.abs(event.clientX - drag.startX);
+        const dy = Math.abs(event.clientY - drag.startY);
+        if (!drag.moved && dx + dy < 10) return;
+        drag.moved = true;
+        event.preventDefault();
+        const hit = document.elementFromPoint(event.clientX, event.clientY);
+        const targetCard = hit && hit.closest ? hit.closest(".fieldbook-photo-thumb[data-photo-id]") : null;
+        clearDropTargets();
+        if (targetCard && targetCard.dataset.photoId) {
+          drag.targetId = targetCard.dataset.photoId;
+          targetCard.classList.add("drop-target");
+        } else {
+          drag.targetId = id;
+        }
+      });
+
+      const finishTouchDrag = function (event) {
+        const drag = state.photoTouchDrag;
+        if (!drag || drag.pointerId !== event.pointerId || drag.id !== id) return;
+        clearDropTargets();
+        if (drag.moved && drag.targetId && drag.targetId !== drag.id) {
+          reorderPhotos(drag.id, drag.targetId);
+          event.preventDefault();
+        }
+        state.photoTouchDrag = null;
+      };
+      card.addEventListener("pointerup", finishTouchDrag);
+      card.addEventListener("pointercancel", finishTouchDrag);
     });
   }
 
@@ -787,13 +827,12 @@
     const latNum = Number(lat);
     const lonNum = Number(lon);
     if (!Number.isFinite(latNum) || !Number.isFinite(lonNum)) return "";
-    const latText = latNum.toFixed(6);
-    const lonText = lonNum.toFixed(6);
-
-    if (variant === 1) {
-      return "https://staticmap.openstreetmap.de/staticmap.php?center=" + latText + "," + lonText + "&zoom=13&size=300x190&maptype=mapnik&markers=" + latText + "," + lonText + ",red-pushpin";
-    }
-    return "https://static-maps.yandex.ru/1.x/?ll=" + lonText + "," + latText + "&size=450,300&z=13&l=map&pt=" + lonText + "," + latText + ",pm2rdm";
+    const zoom = variant === 1 ? 12 : 13;
+    const tiles = Math.pow(2, zoom);
+    const latRad = latNum * Math.PI / 180;
+    const x = Math.floor(((lonNum + 180) / 360) * tiles);
+    const y = Math.floor((1 - Math.log(Math.tan(latRad) + (1 / Math.cos(latRad))) / Math.PI) / 2 * tiles);
+    return "https://tile.openstreetmap.org/" + zoom + "/" + x + "/" + y + ".png";
   }
 
   function addLayer(layer) {
@@ -1790,6 +1829,49 @@
     modal.classList.toggle("viewer-fullscreen", !!enabled);
   }
 
+  function clearViewerMaps() {
+    safeArray(state.viewerMaps).forEach(function (map) {
+      if (!map || typeof map.remove !== "function") return;
+      try { map.remove(); } catch (error) { /* no-op */ }
+    });
+    state.viewerMaps = [];
+  }
+
+  function renderViewerLocationMap(target, lat, lng, label) {
+    if (!target) return false;
+    const latNum = Number(lat);
+    const lngNum = Number(lng);
+    if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) return false;
+    if (typeof L === "undefined" || typeof L.map !== "function") return false;
+    try {
+      const map = L.map(target, {
+        zoomControl: false,
+        attributionControl: false,
+        dragging: false,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+        boxZoom: false,
+        keyboard: false,
+        touchZoom: false,
+        tap: false
+      });
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        subdomains: ["a", "b", "c"]
+      }).addTo(map);
+      map.setView([latNum, lngNum], 13);
+      L.marker([latNum, lngNum], { title: label || "Location", keyboard: false }).addTo(map);
+      state.viewerMaps.push(map);
+      setTimeout(function () {
+        try { map.invalidateSize(); } catch (error) { /* no-op */ }
+      }, 40);
+      return true;
+    } catch (error) {
+      console.warn("Fieldbook viewer map render failed:", error);
+      return false;
+    }
+  }
+
   function openViewer(memoryId, options) {
     const memory = getMemories().find(function (entry) { return entry.id === memoryId; });
     if (!memory) {
@@ -1802,6 +1884,7 @@
     const date = byId("fieldbookViewerDate");
     const content = byId("fieldbookViewerContent");
     if (!modal || !content) return;
+    clearViewerMaps();
 
     if (title) title.textContent = memory.title || "Fieldbook";
     if (date) date.textContent = formatDateLabel(memory.occurredAt || memory.createdAt);
@@ -1834,29 +1917,24 @@
     if (hasCoords || location.name) {
       const mapCard = document.createElement("div");
       mapCard.className = "fieldbook-simple-map-card";
-      let mapLabel = null;
       if (hasCoords) {
-        const mapImg = document.createElement("img");
-        mapImg.className = "fieldbook-simple-map-image";
-        mapImg.src = mapUrl(lat, lng);
-        mapImg.alt = location.name || "map";
-        mapImg.addEventListener("error", function () {
-          if (mapImg.dataset.mapFallbackTried !== "1") {
-            mapImg.dataset.mapFallbackTried = "1";
-            mapImg.src = mapUrl(lat, lng, 1);
-            return;
-          }
-          mapImg.remove();
-          const mapEmpty = document.createElement("div");
-          mapEmpty.className = "fieldbook-simple-map-empty";
-          mapEmpty.textContent = "Map preview unavailable";
-          if (mapLabel && mapLabel.parentNode === mapCard) {
-            mapCard.insertBefore(mapEmpty, mapLabel);
-          } else {
-            mapCard.appendChild(mapEmpty);
-          }
-        });
-        mapCard.appendChild(mapImg);
+        const mapNode = document.createElement("div");
+        mapNode.className = "fieldbook-simple-map-canvas";
+        mapCard.appendChild(mapNode);
+        if (!renderViewerLocationMap(mapNode, lat, lng, location.name || "Location")) {
+          const mapImg = document.createElement("img");
+          mapImg.className = "fieldbook-simple-map-image";
+          mapImg.src = mapUrl(lat, lng);
+          mapImg.alt = location.name || "map";
+          mapImg.addEventListener("error", function () {
+            mapImg.remove();
+            const mapEmpty = document.createElement("div");
+            mapEmpty.className = "fieldbook-simple-map-empty";
+            mapEmpty.textContent = "Map preview unavailable";
+            mapCard.insertBefore(mapEmpty, mapCard.firstChild);
+          });
+          mapCard.insertBefore(mapImg, mapCard.firstChild);
+        }
       } else {
         const mapEmpty = document.createElement("div");
         mapEmpty.className = "fieldbook-simple-map-empty";
@@ -1864,7 +1942,7 @@
         mapCard.appendChild(mapEmpty);
       }
 
-      mapLabel = document.createElement("div");
+      const mapLabel = document.createElement("div");
       mapLabel.className = "fieldbook-simple-map-label";
       mapLabel.textContent = location.name || "Location";
       mapCard.appendChild(mapLabel);
@@ -1907,6 +1985,9 @@
         meta.className = "fieldbook-view-photo-meta";
         meta.textContent = "By " + label;
         card.appendChild(meta);
+        card.addEventListener("click", function () {
+          showLightbox({ type: "photo", src: photoUrl, label: label });
+        });
 
         gallery.appendChild(card);
       });
@@ -1960,6 +2041,7 @@
 
   function closeViewer() {
     const modal = byId("fieldbookViewerModal");
+    clearViewerMaps();
     setViewerFullscreen(false);
     if (modal) modal.classList.remove("active");
   }
@@ -2388,10 +2470,6 @@
     saveEditor();
   }
 
-  function moveFieldbookPhoto(photoId, delta) {
-    movePhoto(photoId, parseInt(delta, 10) || 0);
-  }
-
   function openFieldbookViewer(memoryId) {
     openViewer(memoryId);
   }
@@ -2427,7 +2505,6 @@
   window.clearFieldbookLocation = clearFieldbookLocation;
   window.selectFieldbookLocation = selectFieldbookLocation;
   window.setFieldbookCoverPhoto = setCoverPhoto;
-  window.moveFieldbookPhoto = moveFieldbookPhoto;
   window.removeFieldbookPhoto = removeEditorPhoto;
   window.deleteFieldbookMemory = deleteFieldbookMemory;
   window.renderFieldbookShelf = renderFieldbookShelf;
