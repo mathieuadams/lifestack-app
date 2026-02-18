@@ -14,6 +14,7 @@
     editingMemoryId: "",
     photos: [],
     selectedPeopleIds: [],
+    peopleDragId: "",
     cover: { photoId: "", x: 50, y: 50, zoom: 100 },
     pages: [],
     activePageId: "",
@@ -151,6 +152,7 @@
     state.editingMemoryId = "";
     state.photos = [];
     state.selectedPeopleIds = [];
+    state.peopleDragId = "";
     state.cover = { photoId: "", x: 50, y: 50, zoom: 100 };
     state.pages = [];
     state.activePageId = "";
@@ -311,14 +313,68 @@
     updateAddMapButton();
   }
 
+  function initialsFromName(name) {
+    const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "P";
+    if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+    return (parts[0].slice(0, 1) + parts[1].slice(0, 1)).toUpperCase();
+  }
+
+  function normalizePersonId(value) {
+    if (value === undefined || value === null) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "number") return String(value);
+    if (typeof value === "object") {
+      return String(value.id || value.userId || value.friendUserId || value.odId || "").trim();
+    }
+    return "";
+  }
+
+  function isImageSource(value) {
+    if (!value) return false;
+    const text = String(value).trim();
+    return /^https?:\/\//i.test(text) || /^data:image\//i.test(text) || /^blob:/i.test(text);
+  }
+
+  function avatarImageUrl(person) {
+    if (!person) return "";
+    if (person.avatarUrl && isImageSource(person.avatarUrl)) return String(person.avatarUrl);
+    if (person.avatar && isImageSource(person.avatar)) return String(person.avatar);
+    return "";
+  }
+
+  function avatarText(person) {
+    if (!person) return "P";
+    if (person.avatar && !isImageSource(person.avatar)) return String(person.avatar);
+    return initialsFromName(person.name || "Person");
+  }
+
+  function avatarMarkup(person, className) {
+    const image = avatarImageUrl(person);
+    if (image) {
+      return "<img src=\"" + esc(image) + "\" alt=\"" + esc(person.name || "person") + "\" class=\"" + esc(className + " " + className + "-image") + "\">";
+    }
+    return "<span class=\"" + esc(className) + "\">" + esc(avatarText(person)) + "</span>";
+  }
+
   function getSelectablePeople() {
     const fromPeople = getPeopleList().map(function (person) {
-      return { id: person.id, name: person.name || "Person", avatar: person.avatar || "P" };
+      return {
+        id: person.id,
+        name: person.name || "Person",
+        avatar: person.avatar || "",
+        avatarUrl: person.avatarUrl || ""
+      };
     });
 
     const fromFriends = getFriendList().map(function (friend) {
       const id = friend.odId || friend.friendUserId || friend.id;
-      return { id: id, name: friend.name || friend.email || "Friend", avatar: friend.avatar || "F" };
+      return {
+        id: id,
+        name: friend.name || friend.email || "Friend",
+        avatar: friend.avatar || "",
+        avatarUrl: friend.avatarUrl || ""
+      };
     }).filter(function (friend) { return !!friend.id; });
 
     const all = fromPeople.concat(fromFriends);
@@ -335,6 +391,111 @@
     return unique;
   }
 
+  function peopleByIdMap() {
+    const map = {};
+    getSelectablePeople().forEach(function (person) {
+      map[person.id] = person;
+    });
+    const current = getCurrentUser();
+    if (current && current.id && !map[current.id]) {
+      map[current.id] = {
+        id: current.id,
+        name: current.name || current.firstName || "You",
+        avatar: current.avatar || "",
+        avatarUrl: current.avatarUrl || ""
+      };
+    }
+    return map;
+  }
+
+  function resolvePerson(personId, map) {
+    const hit = map[personId];
+    if (hit) return hit;
+    return {
+      id: personId,
+      name: personId || "Person",
+      avatar: "",
+      avatarUrl: ""
+    };
+  }
+
+  function moveSelectedPerson(personId, delta) {
+    const from = state.selectedPeopleIds.indexOf(personId);
+    if (from < 0) return;
+    const to = clamp(from + delta, 0, state.selectedPeopleIds.length - 1);
+    if (to === from) return;
+    const next = state.selectedPeopleIds.slice();
+    const picked = next.splice(from, 1)[0];
+    next.splice(to, 0, picked);
+    state.selectedPeopleIds = next;
+    renderPeopleChips();
+  }
+
+  function reorderSelectedPeople(fromId, toId) {
+    if (!fromId || !toId || fromId === toId) return;
+    const from = state.selectedPeopleIds.indexOf(fromId);
+    const to = state.selectedPeopleIds.indexOf(toId);
+    if (from < 0 || to < 0 || from === to) return;
+    const next = state.selectedPeopleIds.slice();
+    const picked = next.splice(from, 1)[0];
+    next.splice(to, 0, picked);
+    state.selectedPeopleIds = next;
+    renderPeopleChips();
+  }
+
+  function bindPeopleGridInteractions(node) {
+    if (!node) return;
+    const cards = Array.from(node.querySelectorAll(".fieldbook-person-card"));
+    cards.forEach(function (card) {
+      const personId = card.dataset.personId || "";
+      if (!personId) return;
+
+      const leftBtn = card.querySelector("[data-move='left']");
+      const rightBtn = card.querySelector("[data-move='right']");
+      if (leftBtn) {
+        leftBtn.addEventListener("click", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          moveSelectedPerson(personId, -1);
+        });
+      }
+      if (rightBtn) {
+        rightBtn.addEventListener("click", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          moveSelectedPerson(personId, 1);
+        });
+      }
+
+      card.addEventListener("dragstart", function (event) {
+        state.peopleDragId = personId;
+        card.classList.add("dragging");
+        if (event.dataTransfer) {
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", personId);
+        }
+      });
+      card.addEventListener("dragend", function () {
+        state.peopleDragId = "";
+        card.classList.remove("dragging");
+        cards.forEach(function (entry) { entry.classList.remove("drop-target"); });
+      });
+      card.addEventListener("dragover", function (event) {
+        event.preventDefault();
+        card.classList.add("drop-target");
+      });
+      card.addEventListener("dragleave", function () {
+        card.classList.remove("drop-target");
+      });
+      card.addEventListener("drop", function (event) {
+        event.preventDefault();
+        const fromId = state.peopleDragId || (event.dataTransfer ? event.dataTransfer.getData("text/plain") : "");
+        card.classList.remove("drop-target");
+        reorderSelectedPeople(fromId, personId);
+      });
+    });
+  }
+
   function renderPeopleChips() {
     const node = byId("fieldbookPeopleGrid");
     if (!node) return;
@@ -342,13 +503,25 @@
       node.innerHTML = "<span class=\"fieldbook-person-chip\">No people selected</span>";
       return;
     }
-    const map = {};
-    getSelectablePeople().forEach(function (person) { map[person.id] = person; });
-    node.innerHTML = state.selectedPeopleIds.map(function (personId) {
-      const person = map[personId];
-      if (!person) return "";
-      return "<span class=\"fieldbook-person-chip\">" + esc(person.avatar || "P") + " " + esc(person.name) + "</span>";
+    const map = peopleByIdMap();
+    const ids = state.selectedPeopleIds.map(normalizePersonId).filter(Boolean);
+    state.selectedPeopleIds = ids;
+    node.innerHTML = ids.map(function (personId, index) {
+      const person = resolvePerson(personId, map);
+      return "" +
+        "<article class=\"fieldbook-person-card\" draggable=\"true\" data-person-id=\"" + esc(personId) + "\">" +
+          "<div class=\"fieldbook-person-card-photo\">" + avatarMarkup(person, "fieldbook-person-card-avatar") + "</div>" +
+          "<div class=\"fieldbook-person-card-meta\">" +
+            "<div class=\"fieldbook-person-card-name\">" + esc(person.name || "Person") + "</div>" +
+            "<div class=\"fieldbook-person-card-order\">Order " + (index + 1) + "</div>" +
+          "</div>" +
+          "<div class=\"fieldbook-person-card-actions\">" +
+            "<button type=\"button\" data-move=\"left\" aria-label=\"Move left\">&larr;</button>" +
+            "<button type=\"button\" data-move=\"right\" aria-label=\"Move right\">&rarr;</button>" +
+          "</div>" +
+        "</article>";
     }).join("");
+    bindPeopleGridInteractions(node);
   }
 
   function openPeoplePicker() {
@@ -366,7 +539,7 @@
       return "" +
         "<label class=\"fieldbook-person-item\">" +
           "<span class=\"fieldbook-person-left\">" +
-            "<span class=\"fieldbook-person-avatar\">" + esc(person.avatar || "P") + "</span>" +
+            avatarMarkup(person, "fieldbook-person-avatar") +
             "<span>" + esc(person.name) + "</span>" +
           "</span>" +
           "<input type=\"checkbox\" value=\"" + esc(person.id) + "\" " + checked + ">" +
@@ -383,9 +556,14 @@
   function confirmPeoplePicker() {
     const list = byId("fieldbookPeopleList");
     if (!list) return;
-    state.selectedPeopleIds = Array.from(list.querySelectorAll("input[type='checkbox']:checked")).map(function (node) {
-      return node.value;
+    const checked = Array.from(list.querySelectorAll("input[type='checkbox']:checked")).map(function (node) {
+      return normalizePersonId(node.value);
+    }).filter(Boolean);
+    const ordered = state.selectedPeopleIds.filter(function (id) { return checked.indexOf(id) >= 0; });
+    checked.forEach(function (id) {
+      if (ordered.indexOf(id) < 0) ordered.push(id);
     });
+    state.selectedPeopleIds = ordered;
     renderPeopleChips();
     closePeoplePicker();
   }
@@ -1268,7 +1446,7 @@
       renderFieldbookShelf();
 
       closeEditor();
-      openViewer(savedMemory.id);
+      openViewer(savedMemory.id, { fullscreen: true });
       showToastSafe("Fieldbook memory saved");
     } catch (error) {
       console.error("Fieldbook save error:", error);
@@ -1276,7 +1454,7 @@
     } finally {
       if (saveBtn) {
         saveBtn.disabled = false;
-        saveBtn.textContent = "Save and Finalize";
+        saveBtn.textContent = "Finish Fieldbook";
       }
     }
   }
@@ -1316,7 +1494,7 @@
 
     state.editingMemoryId = memory.id;
     state.photos = safeArray(memory.photos).map(normalizePhoto).filter(Boolean);
-    state.selectedPeopleIds = safeArray(memory.people).slice();
+    state.selectedPeopleIds = safeArray(memory.people).map(normalizePersonId).filter(Boolean);
 
     if (memory.location) {
       byId("fieldbookLocation").value = memory.location.name || "";
@@ -1438,7 +1616,13 @@
     });
   }
 
-  function openViewer(memoryId) {
+  function setViewerFullscreen(enabled) {
+    const modal = byId("fieldbookViewerModal");
+    if (!modal) return;
+    modal.classList.toggle("viewer-fullscreen", !!enabled);
+  }
+
+  function openViewer(memoryId, options) {
     const memory = getMemories().find(function (entry) { return entry.id === memoryId; });
     if (!memory) {
       showErrorSafe("Memory not found");
@@ -1451,75 +1635,101 @@
     const content = byId("fieldbookViewerContent");
     if (!modal || !content) return;
 
-    const meta = getMeta(memory.id) || {};
-    const pages = sanitizeViewerPages(meta.pages, memory);
-    const finalized = pages.filter(function (page) { return page.finalized; });
-    const pagesToShow = finalized.length ? finalized : pages.slice(0, 1);
-
     if (title) title.textContent = memory.title || "Fieldbook";
     if (date) date.textContent = formatDateLabel(memory.occurredAt || memory.createdAt);
 
     content.innerHTML = "";
+    const layout = document.createElement("div");
+    layout.className = "fieldbook-simple-view";
 
-    pagesToShow.forEach(function (page, index) {
-      const block = document.createElement("div");
-      block.className = "fieldbook-view-page";
-      if (index > 0) block.style.marginTop = "10px";
+    const top = document.createElement("section");
+    top.className = "fieldbook-simple-top";
 
-      const head = document.createElement("div");
-      head.style.display = "flex";
-      head.style.justifyContent = "space-between";
-      head.style.alignItems = "center";
-      head.style.marginBottom = "6px";
-      head.innerHTML = "<strong>" + esc(page.title) + "</strong>" + (page.finalized ? "<span class=\"tag\">Finalized</span>" : "");
-      block.appendChild(head);
+    const desc = document.createElement("p");
+    desc.className = "fieldbook-simple-description";
+    desc.textContent = (memory.text || "").trim() || "No description yet.";
+    top.appendChild(desc);
 
-      const canvas = document.createElement("div");
-      canvas.className = "fieldbook-canvas fieldbook-preview-canvas";
-      block.appendChild(canvas);
-      renderCanvas(canvas, page, false);
+    const location = memory.location || {};
+    const lat = Number(location.lat);
+    const lng = Number(location.lng);
+    const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+    if (hasCoords || location.name) {
+      const mapCard = document.createElement("div");
+      mapCard.className = "fieldbook-simple-map-card";
+      if (hasCoords) {
+        const mapImg = document.createElement("img");
+        mapImg.className = "fieldbook-simple-map-image";
+        mapImg.src = mapUrl(lat, lng);
+        mapImg.alt = location.name || "map";
+        mapCard.appendChild(mapImg);
+      } else {
+        const mapEmpty = document.createElement("div");
+        mapEmpty.className = "fieldbook-simple-map-empty";
+        mapEmpty.textContent = "No map coordinates available";
+        mapCard.appendChild(mapEmpty);
+      }
 
-      content.appendChild(block);
-    });
+      const mapLabel = document.createElement("div");
+      mapLabel.className = "fieldbook-simple-map-label";
+      mapLabel.textContent = location.name || "Location";
+      mapCard.appendChild(mapLabel);
+      top.appendChild(mapCard);
+    }
+    layout.appendChild(top);
 
-    const footer = document.createElement("div");
-    footer.className = "fieldbook-view-page";
-    footer.style.marginTop = "10px";
+    const peopleSection = document.createElement("section");
+    peopleSection.className = "fieldbook-simple-people";
+    const heading = document.createElement("h3");
+    heading.textContent = "Contributors";
+    peopleSection.appendChild(heading);
 
-    const cover = memoryCoverUrl(memory);
-    if (cover) {
-      const coverNode = document.createElement("div");
-      coverNode.className = "fieldbook-view-cover";
-      const img = document.createElement("img");
-      img.src = cover;
-      img.alt = "cover";
-      coverNode.appendChild(img);
-      footer.appendChild(coverNode);
+    const peopleIds = safeArray(memory.people).map(normalizePersonId).filter(Boolean);
+    const map = peopleByIdMap();
+    if (!peopleIds.length) {
+      const empty = document.createElement("p");
+      empty.className = "fieldbook-simple-empty";
+      empty.textContent = "No contributors added yet.";
+      peopleSection.appendChild(empty);
+    } else {
+      const grid = document.createElement("div");
+      grid.className = "fieldbook-contributor-grid";
+      peopleIds.forEach(function (personId, index) {
+        const person = resolvePerson(personId, map);
+        const card = document.createElement("article");
+        card.className = "fieldbook-contributor-card";
+
+        const photo = document.createElement("div");
+        photo.className = "fieldbook-contributor-photo";
+        photo.innerHTML = avatarMarkup(person, "fieldbook-contributor-avatar");
+        card.appendChild(photo);
+
+        const name = document.createElement("div");
+        name.className = "fieldbook-contributor-name";
+        name.textContent = person.name || "Person";
+        card.appendChild(name);
+
+        const order = document.createElement("div");
+        order.className = "fieldbook-contributor-order";
+        order.textContent = "Order " + (index + 1);
+        card.appendChild(order);
+
+        grid.appendChild(card);
+      });
+      peopleSection.appendChild(grid);
     }
 
-    if (memory.text) {
-      const text = document.createElement("div");
-      text.className = "fieldbook-view-text";
-      text.textContent = memory.text;
-      footer.appendChild(text);
-    }
+    layout.appendChild(peopleSection);
+    content.appendChild(layout);
 
-    const metaRow = document.createElement("div");
-    metaRow.className = "fieldbook-view-meta";
-    if (memory.location && memory.location.name) {
-      metaRow.innerHTML += "<span class=\"tag\">Location: " + esc(memory.location.name) + "</span>";
-    }
-    safeArray(memory.people).forEach(function (personId) {
-      metaRow.innerHTML += "<span class=\"tag\">Shared: " + esc(personId) + "</span>";
-    });
-    if (metaRow.innerHTML) footer.appendChild(metaRow);
-    content.appendChild(footer);
+    setViewerFullscreen(!!(options && options.fullscreen));
 
     modal.classList.add("active");
   }
 
   function closeViewer() {
     const modal = byId("fieldbookViewerModal");
+    setViewerFullscreen(false);
     if (modal) modal.classList.remove("active");
   }
 

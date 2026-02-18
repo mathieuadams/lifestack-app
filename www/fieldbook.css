@@ -142,6 +142,36 @@
   padding: 1rem clamp(14px, 4vw, 22px) 1.25rem;
 }
 
+#fieldbookViewerModal.viewer-fullscreen {
+  padding: 0;
+}
+
+#fieldbookViewerModal.viewer-fullscreen .modal {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+#fieldbookViewerModal.viewer-fullscreen .fieldbook-viewer-modal {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+}
+
+#fieldbookViewerModal.viewer-fullscreen .modal-header {
+  padding-top: max(16px, env(safe-area-inset-top, 0px));
+}
+
+#fieldbookViewerModal.viewer-fullscreen .modal-body {
+  height: calc(100dvh - 92px);
+  padding-bottom: max(18px, env(safe-area-inset-bottom, 0px));
+}
+
 #fieldbookEditorModal input,
 #fieldbookEditorModal textarea,
 #fieldbookEditorModal select,
@@ -369,19 +399,106 @@
 }
 
 .fieldbook-people-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  min-height: 24px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-height: 36px;
 }
 
 .fieldbook-person-chip {
-  border-radius: 999px;
+  border-radius: 10px;
+  border: 1px dashed var(--sand-300);
+  background: var(--sand-50);
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+  padding: 8px;
+}
+
+.fieldbook-person-card {
   border: 1px solid var(--sand-200);
+  border-radius: 12px;
+  background: var(--white);
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 7px;
+  box-shadow: 0 2px 10px rgba(35, 31, 20, 0.08);
+  cursor: move;
+}
+
+.fieldbook-person-card.dragging {
+  opacity: 0.6;
+}
+
+.fieldbook-person-card.drop-target {
+  border-color: var(--sage-400);
+  box-shadow: 0 0 0 2px rgba(94, 119, 82, 0.18);
+}
+
+.fieldbook-person-card-photo {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--sand-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fieldbook-person-card-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.fieldbook-person-card-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.fieldbook-person-card-meta {
+  min-width: 0;
+}
+
+.fieldbook-person-card-name {
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fieldbook-person-card-order {
+  margin-top: 2px;
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+}
+
+.fieldbook-person-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fieldbook-person-card-actions button {
+  width: 26px;
+  height: 22px;
+  border: 1px solid var(--sand-200);
+  border-radius: 7px;
   background: var(--sand-50);
   color: var(--text-secondary);
-  font-size: 0.72rem;
-  padding: 4px 8px;
+  font-size: 0.78rem;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .fieldbook-person-item {
@@ -416,53 +533,137 @@
   font-size: 0.9rem;
 }
 
-.fieldbook-view-page {
+.fieldbook-person-avatar-image {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: inline-block;
+}
+
+.fieldbook-simple-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fieldbook-simple-top,
+.fieldbook-simple-people {
   border: 1px solid var(--sand-200);
   border-radius: 12px;
   background: var(--sand-50);
-  padding: 10px;
+  padding: 12px;
 }
 
-.fieldbook-view-cover {
-  width: min(300px, 100%);
-  aspect-ratio: 1 / 1;
+.fieldbook-simple-description {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.fieldbook-simple-map-card {
+  margin-top: 10px;
+  border: 1px solid var(--sand-200);
   border-radius: 10px;
   overflow: hidden;
-  margin: 0 auto 10px;
-  border: 1px solid var(--sand-200);
-  background: var(--sand-100);
+  background: var(--white);
 }
 
-.fieldbook-view-cover img {
+.fieldbook-simple-map-image {
   width: 100%;
-  height: 100%;
+  height: 120px;
+  display: block;
   object-fit: cover;
 }
 
-.fieldbook-view-text {
-  margin-top: 8px;
-  font-size: 0.86rem;
-  line-height: 1.42;
-  color: var(--text-secondary);
-  white-space: pre-wrap;
+.fieldbook-simple-map-empty {
+  height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-size: 0.78rem;
 }
 
-.fieldbook-view-meta {
-  margin-top: 8px;
+.fieldbook-simple-map-label {
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--sand-100);
+}
+
+.fieldbook-simple-people h3 {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.fieldbook-simple-empty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+}
+
+.fieldbook-contributor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.fieldbook-contributor-card {
+  border: 1px solid var(--sand-200);
+  border-radius: 10px;
+  background: var(--white);
+  padding: 8px;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
   gap: 6px;
 }
 
-.fieldbook-view-meta .tag {
+.fieldbook-contributor-photo {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--sand-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fieldbook-contributor-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.7rem;
-  border: 1px solid var(--sand-200);
-  border-radius: 999px;
-  padding: 3px 8px;
-  background: var(--white);
+  justify-content: center;
+  font-size: 1.35rem;
+}
+
+.fieldbook-contributor-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.fieldbook-contributor-name {
+  max-width: 100%;
+  font-size: 0.76rem;
+  color: var(--text-primary);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fieldbook-contributor-order {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
 }
 
 @media (max-width: 768px) {
@@ -487,6 +688,11 @@
 @media (max-width: 420px) {
   .fieldbook-shelf-grid {
     gap: 8px;
+  }
+
+  .fieldbook-people-grid,
+  .fieldbook-contributor-grid {
+    grid-template-columns: 1fr;
   }
 
   .fieldbook-card-meta {
