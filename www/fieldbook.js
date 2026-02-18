@@ -1837,6 +1837,145 @@
     state.viewerMaps = [];
   }
 
+  function closeActiveImageLightbox() {
+    if (!state.activeImageLightbox || !state.activeImageLightbox.node) return;
+    try {
+      if (typeof state.activeImageLightbox.cleanup === "function") state.activeImageLightbox.cleanup();
+    } catch (error) { /* no-op */ }
+    if (state.activeImageLightbox.node.parentNode) {
+      state.activeImageLightbox.node.parentNode.removeChild(state.activeImageLightbox.node);
+    }
+    state.activeImageLightbox = null;
+  }
+
+  function showPhotoGalleryLightbox(galleryItems, startIndex) {
+    const gallery = safeArray(galleryItems).filter(function (item) {
+      return item && (item.src || item.url);
+    }).map(function (item) {
+      return {
+        src: item.src || item.url,
+        label: item.label || ""
+      };
+    });
+    if (!gallery.length) return;
+
+    closeActiveImageLightbox();
+
+    let index = clamp(parseInt(startIndex, 10) || 0, 0, gallery.length - 1);
+    const lightbox = document.createElement("div");
+    lightbox.className = "fieldbook-lightbox";
+    lightbox.innerHTML = "<div class=\"fieldbook-lightbox-backdrop\"></div><div class=\"fieldbook-lightbox-content\"></div>";
+
+    const backdrop = lightbox.querySelector(".fieldbook-lightbox-backdrop");
+    const content = lightbox.querySelector(".fieldbook-lightbox-content");
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "fieldbook-lightbox-close";
+    closeBtn.textContent = "x";
+    closeBtn.setAttribute("aria-label", "Close photo viewer");
+    content.appendChild(closeBtn);
+
+    const img = document.createElement("img");
+    img.className = "fieldbook-lightbox-image";
+    img.alt = "photo";
+    content.appendChild(img);
+
+    const caption = document.createElement("div");
+    caption.className = "fieldbook-lightbox-caption";
+    content.appendChild(caption);
+
+    const counter = document.createElement("div");
+    counter.className = "fieldbook-lightbox-counter";
+    content.appendChild(counter);
+
+    const prevBtn = document.createElement("button");
+    prevBtn.type = "button";
+    prevBtn.className = "fieldbook-lightbox-nav prev";
+    prevBtn.setAttribute("aria-label", "Previous photo");
+    prevBtn.textContent = "<";
+    content.appendChild(prevBtn);
+
+    const nextBtn = document.createElement("button");
+    nextBtn.type = "button";
+    nextBtn.className = "fieldbook-lightbox-nav next";
+    nextBtn.setAttribute("aria-label", "Next photo");
+    nextBtn.textContent = ">";
+    content.appendChild(nextBtn);
+
+    const render = function () {
+      const entry = gallery[index];
+      if (!entry) return;
+      img.src = entry.src;
+      caption.textContent = entry.label ? ("By " + entry.label) : "";
+      counter.textContent = gallery.length > 1 ? ((index + 1) + " / " + gallery.length) : "";
+      const showNav = gallery.length > 1;
+      prevBtn.style.display = showNav ? "flex" : "none";
+      nextBtn.style.display = showNav ? "flex" : "none";
+    };
+
+    const move = function (delta) {
+      if (gallery.length <= 1) return;
+      index = (index + delta + gallery.length) % gallery.length;
+      render();
+    };
+
+    prevBtn.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      move(-1);
+    });
+    nextBtn.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      move(1);
+    });
+
+    let swipeStart = null;
+    img.addEventListener("touchstart", function (event) {
+      if (!event.touches || event.touches.length !== 1) return;
+      swipeStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    }, { passive: true });
+    img.addEventListener("touchend", function (event) {
+      if (!swipeStart || !event.changedTouches || !event.changedTouches.length) return;
+      const dx = event.changedTouches[0].clientX - swipeStart.x;
+      const dy = event.changedTouches[0].clientY - swipeStart.y;
+      swipeStart = null;
+      if (Math.abs(dx) < 38 || Math.abs(dx) < Math.abs(dy)) return;
+      move(dx < 0 ? 1 : -1);
+    }, { passive: true });
+
+    const onKeydown = function (event) {
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        move(-1);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        move(1);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        closeActiveImageLightbox();
+      }
+    };
+    document.addEventListener("keydown", onKeydown);
+
+    const close = function () {
+      closeActiveImageLightbox();
+    };
+    closeBtn.addEventListener("click", close);
+    backdrop.addEventListener("click", close);
+
+    state.activeImageLightbox = {
+      node: lightbox,
+      cleanup: function () {
+        document.removeEventListener("keydown", onKeydown);
+      }
+    };
+
+    document.body.appendChild(lightbox);
+    render();
+  }
+
   function renderViewerLocationMap(target, lat, lng, label) {
     if (!target) return false;
     const latNum = Number(lat);
@@ -1885,6 +2024,7 @@
     const content = byId("fieldbookViewerContent");
     if (!modal || !content) return;
     clearViewerMaps();
+    closeActiveImageLightbox();
 
     if (title) title.textContent = memory.title || "Fieldbook";
     if (date) date.textContent = formatDateLabel(memory.occurredAt || memory.createdAt);
@@ -1963,14 +2103,21 @@
       emptyPhotos.textContent = "No photos yet.";
       photosSection.appendChild(emptyPhotos);
     } else {
-      const gallery = document.createElement("div");
-      gallery.className = "fieldbook-view-photo-grid";
-      photos.forEach(function (photo, index) {
+      const galleryItems = [];
+      photos.forEach(function (photo) {
         const photoUrl = photo && (photo.url || photo.viewUrl) ? (photo.url || photo.viewUrl) : "";
         if (!photoUrl) return;
         const pid = normalizePersonId(photo.contributorId || photo.authorId || ownerId);
         const person = resolvePerson(pid, peopleMap);
         const label = photo.contributorName || person.name || "Contributor";
+        galleryItems.push({ src: photoUrl, label: label });
+      });
+
+      const gallery = document.createElement("div");
+      gallery.className = "fieldbook-view-photo-grid";
+      galleryItems.forEach(function (entry, index) {
+        const photoUrl = entry.src;
+        const label = entry.label;
 
         const card = document.createElement("article");
         card.className = "fieldbook-view-photo-card";
@@ -1986,7 +2133,7 @@
         meta.textContent = "By " + label;
         card.appendChild(meta);
         card.addEventListener("click", function () {
-          showLightbox({ type: "photo", src: photoUrl, label: label });
+          showPhotoGalleryLightbox(galleryItems, index);
         });
 
         gallery.appendChild(card);
@@ -2041,6 +2188,7 @@
 
   function closeViewer() {
     const modal = byId("fieldbookViewerModal");
+    closeActiveImageLightbox();
     clearViewerMaps();
     setViewerFullscreen(false);
     if (modal) modal.classList.remove("active");
