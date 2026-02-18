@@ -256,14 +256,24 @@
   background: white;
   border: 1.5px solid var(--sand-200);
   border-radius: var(--radius-md);
-  max-height: 180px;
+  max-height: min(44dvh, 280px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scroll-padding-block: 4px;
+  touch-action: pan-y;
+  padding-block: 2px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   margin-top: 4px;
 }
 
 #fieldbookLocationAutocomplete.active {
   display: block;
+}
+
+#fieldbookLocationAutocomplete .location-autocomplete-item {
+  touch-action: manipulation;
+  min-height: 44px;
 }
 
 .fieldbook-photo-add-row input[type="file"] {

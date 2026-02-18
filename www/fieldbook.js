@@ -27,6 +27,7 @@
     viewerMaps: [],
     activeImageLightbox: null,
     locationSelectionIndex: -1,
+    locationTouch: null,
     locationSearchTimeout: null,
     currentTemplate: "freeform"
   };
@@ -171,6 +172,7 @@
   }
 
   function resetCoreState() {
+    releaseLocalPhotoUrls(state.photos);
     state.editingMemoryId = "";
     state.editingMemoryOwnerId = "";
     state.photos = [];
@@ -186,6 +188,7 @@
     state.viewerMaps = [];
     state.activeImageLightbox = null;
     state.currentTemplate = "freeform";
+    state.locationTouch = null;
   }
 
   function normalizePhoto(photo, index) {
@@ -405,6 +408,7 @@
       return;
     }
     state.photos = state.photos.filter(function (photo) { return photo.id !== photoId; });
+    revokeLocalPhotoUrl(target);
     if (state.cover.photoId === photoId) {
       state.cover.photoId = state.photos.length ? state.photos[0].id : "";
     }
@@ -422,6 +426,23 @@
     });
   }
 
+  function createPreviewUrl(file) {
+    if (typeof URL !== "undefined" && typeof URL.createObjectURL === "function") {
+      return { url: URL.createObjectURL(file), localObjectUrl: true };
+    }
+    return null;
+  }
+
+  function revokeLocalPhotoUrl(photo) {
+    if (!photo || !photo.localObjectUrl || !photo.url) return;
+    if (typeof URL === "undefined" || typeof URL.revokeObjectURL !== "function") return;
+    try { URL.revokeObjectURL(photo.url); } catch (error) { /* no-op */ }
+  }
+
+  function releaseLocalPhotoUrls(photos) {
+    safeArray(photos).forEach(revokeLocalPhotoUrl);
+  }
+
   async function addFilesToEditor(files) {
     const valid = safeArray(files).filter(function (file) {
       return file && file.type && file.type.indexOf("image/") === 0;
@@ -429,13 +450,22 @@
 
     for (const file of valid) {
       try {
-        const preview = await fileToDataUrl(file);
+        let preview = "";
+        let localObjectUrl = false;
+        const objectPreview = createPreviewUrl(file);
+        if (objectPreview && objectPreview.url) {
+          preview = objectPreview.url;
+          localObjectUrl = true;
+        } else {
+          preview = await fileToDataUrl(file);
+        }
         state.photos.push({
           id: "file_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
           url: preview,
           key: "",
           file: file,
           source: "file",
+          localObjectUrl: localObjectUrl,
           contributorId: currentUserId() || state.editingMemoryOwnerId,
           contributorName: currentUserName()
         });
@@ -1490,10 +1520,18 @@
         });
       } catch (error) {
         console.warn("Fieldbook photo upload fallback:", error);
+        let fallbackUrl = photo.url;
+        if (photo && photo.file && (!fallbackUrl || String(fallbackUrl).indexOf("blob:") === 0)) {
+          try {
+            fallbackUrl = await fileToDataUrl(photo.file);
+          } catch (readError) {
+            console.warn("Fieldbook photo local fallback read failed:", readError);
+          }
+        }
         uploaded.push({
           id: photo.id,
           key: "",
-          url: photo.url,
+          url: fallbackUrl,
           contributorId: contributorId,
           contributorName: contributorName
         });
@@ -2312,7 +2350,7 @@
     state.locationSelectionIndex = -1;
 
     try {
-      const response = await fetch("https://photon.komoot.io/api/?q=" + encodeURIComponent(query) + "&limit=5", {
+      const response = await fetch("https://photon.komoot.io/api/?q=" + encodeURIComponent(query) + "&limit=6", {
         headers: { "Accept": "application/json" }
       });
       if (!response.ok) throw new Error("Search failed");
@@ -2330,6 +2368,7 @@
         const address = [props.street, props.city, props.state, props.country].filter(Boolean).join(", ");
         return "" +
           "<div class=\"location-autocomplete-item\"" +
+            " role=\"button\" tabindex=\"0\"" +
             " data-name=\"" + esc(name || address) + "\"" +
             " data-lat=\"" + esc(coords[1]) + "\"" +
             " data-lng=\"" + esc(coords[0]) + "\"" +
@@ -2577,7 +2616,33 @@
         event.stopPropagation();
         selectFieldbookLocation(item);
       };
-      locDropdown.addEventListener("pointerdown", pickLocation);
+      const onDropdownTouchStart = function (event) {
+        const item = event.target.closest(".location-autocomplete-item");
+        if (!item || !event.touches || !event.touches.length) return;
+        state.locationTouch = {
+          id: item.dataset.placeId || item.dataset.name || "",
+          x: event.touches[0].clientX,
+          y: event.touches[0].clientY
+        };
+      };
+      const onDropdownTouchEnd = function (event) {
+        if (!state.locationTouch || !event.changedTouches || !event.changedTouches.length) return;
+        const touch = event.changedTouches[0];
+        const dx = Math.abs(touch.clientX - state.locationTouch.x);
+        const dy = Math.abs(touch.clientY - state.locationTouch.y);
+        const hit = document.elementFromPoint(touch.clientX, touch.clientY);
+        const item = hit && hit.closest ? hit.closest(".location-autocomplete-item") : null;
+        const touchId = item ? (item.dataset.placeId || item.dataset.name || "") : "";
+        const shouldSelect = !!item && dx < 14 && dy < 14 && touchId === state.locationTouch.id;
+        state.locationTouch = null;
+        if (!shouldSelect) return;
+        event.preventDefault();
+        event.stopPropagation();
+        selectFieldbookLocation(item);
+      };
+      locDropdown.addEventListener("click", pickLocation);
+      locDropdown.addEventListener("touchstart", onDropdownTouchStart, { passive: true });
+      locDropdown.addEventListener("touchend", onDropdownTouchEnd, { passive: false });
     }
 
     const templateSelect = byId("fieldbookTemplate");
