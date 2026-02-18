@@ -3,16 +3,23 @@
 }
 
 .fieldbook-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  place-items: center;
   gap: 12px;
   margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid #ded2bf;
+  border-radius: 14px;
+  background: #fbf7ee;
+}
+.fieldbook-header-row .btn {
+  justify-self: center;
+  min-width: 92px;
 }
 
 .fieldbook-subtitle {
   font-size: 0.8rem;
-  color: var(--text-tertiary);
+  color: #7a6a58;
   margin-top: 2px;
 }
 
@@ -24,9 +31,9 @@
 }
 
 .fieldbook-card {
-  border: 1px solid var(--sand-200);
+  border: 1px solid #dfd2be;
   border-radius: 12px;
-  background: var(--white);
+  background: #fffdf8;
   overflow: hidden;
   box-shadow: 0 3px 10px rgba(35, 31, 20, 0.08);
   cursor: pointer;
@@ -87,12 +94,12 @@
 
 .fieldbook-card-actions button {
   flex: 1;
-  border: 1px solid var(--sand-200);
+  border: 1px solid #ddd0bc;
   border-radius: 8px;
-  background: var(--sand-50);
+  background: #f5efe2;
   font-size: 0.66rem;
   padding: 4px 2px;
-  color: var(--text-secondary);
+  color: #6f5f4d;
   cursor: pointer;
 }
 

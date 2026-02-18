@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="LifeStack">
+<meta name="apple-mobile-web-app-title" content="Fieldbook">
 <meta name="theme-color" content="#556847">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>LifeStack v4</title>
+<title>Fieldbook</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="fieldbook.css?v=20260218j">
+<link rel="stylesheet" href="fieldbook.css?v=20260218q">
 </head>
 <body>
 <script>
@@ -28,35 +28,39 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 <!-- Loading Screen -->
 <div id="loadingScreen" class="loading-screen">
   <div class="loading-spinner"></div>
-  <p class="loading-text">Loading LifeStack...</p>
+  <p class="loading-text">Loading Fieldbook...</p>
 </div>
 
 <!-- Landing Page -->
 <div id="landing" class="landing hidden">
-  <div class="landing-logo">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-    </svg>
-  </div>
-  <h1>Life by Design</h1>
-  <p class="landing-subtitle">Most people don't plan their lives. They just let them happen. You're different.</p>
-  <div class="landing-features">
-    <div class="landing-feature">
-      <div class="landing-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg></div>
-      <span>See your life as 80 years</span>
+  <div class="landing-content">
+    <div class="landing-logo">
+      <img src="icons/Fieldbook_logo.png" alt="Fieldbook logo">
     </div>
-    <div class="landing-feature">
-      <div class="landing-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-      <span>Set your Misogi - one defining challenge</span>
+    <p class="landing-tagline">Plan slowly. Share warmly. Keep everything.</p>
+    <p class="landing-subtitle">The quiet middle ground between planning and remembering. Built for moments that are real and worth keeping.</p>
+    <div class="landing-features">
+      <div class="landing-feature">
+        <div class="landing-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg></div>
+        <div class="landing-feature-copy"><strong>Intentional by Design</strong><small>Plan with purpose, without pressure.</small></div>
+      </div>
+      <div class="landing-feature">
+        <div class="landing-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+        <div class="landing-feature-copy"><strong>Analog Soul / Digital Form</strong><small>Feels like a keepsake journal, with modern tools.</small></div>
+      </div>
+      <div class="landing-feature">
+        <div class="landing-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+        <div class="landing-feature-copy"><strong>Intimate, Not Social</strong><small>Share with your people. No feed, no likes, no noise.</small></div>
+      </div>
+      <div class="landing-feature">
+        <div class="landing-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></div>
+        <div class="landing-feature-copy"><strong>Keepworthy</strong><small>Trips, notes, photos, and maps that stay yours.</small></div>
+      </div>
     </div>
-    <div class="landing-feature">
-      <div class="landing-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
-      <span>Capture memories & photos</span>
+    <div class="landing-buttons">
+      <button class="btn btn-primary" onclick="showSignInModal()">Sign In</button>
+      <button class="btn btn-secondary" onclick="showSignUpModal()">Create Account</button>
     </div>
-  </div>
-  <div class="landing-buttons">
-    <button class="btn btn-primary" onclick="showSignInModal()">Sign In</button>
-    <button class="btn btn-secondary" onclick="showSignUpModal()">Create Account</button>
   </div>
 </div>
 
@@ -64,7 +68,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 <div id="signInModal" class="modal-overlay">
   <div class="modal"><div class="modal-content">
     <button class="modal-close" onclick="closeAllModals()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    <div class="modal-header"><h2>Welcome Back</h2><p>Sign in to your LifeStack account</p></div>
+    <div class="modal-header"><h2>Welcome back</h2><p>Your private place for trips and shared memories.</p></div>
     <div class="modal-body">
       <div id="signInError" class="alert alert-error hidden"></div>
       <form id="signInForm" onsubmit="handleSignIn(event)">
@@ -88,7 +92,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 <div id="signUpModal" class="modal-overlay">
   <div class="modal"><div class="modal-content">
     <button class="modal-close" onclick="closeAllModals()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    <div class="modal-header"><h2>Create Account</h2><p>Start your Life by Design journey</p></div>
+    <div class="modal-header"><h2>Create Account</h2><p>Create your Fieldbook and invite people you trust.</p></div>
     <div class="modal-body">
       <div id="signUpError" class="alert alert-error hidden"></div>
       <form id="signUpForm" onsubmit="handleSignUp(event)">
@@ -190,8 +194,8 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 <!-- Onboarding -->
 <div id="onboarding" class="onboarding hidden">
   <div class="onboarding-card">
-    <h2>Welcome to LifeStack</h2>
-    <p>Let's set up your life timeline. This will only take a moment.</p>
+    <h2>Welcome to Fieldbook</h2>
+    <p>Set up your profile to keep trips and memories in one place.</p>
     <form id="onboardingForm">
       <div class="form-group"><label for="name">Your Name</label><input type="text" id="name" placeholder="Enter your name" required></div>
       <div class="form-group"><label for="birthdate">Date of Birth</label><input type="date" id="birthdate" required></div>
@@ -211,7 +215,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 
   <!-- Header -->
   <header class="app-header">
-    <div class="hb"><div class="hl">🏔️</div><span class="ht">LifeStack</span></div>
+    <div class="hb"><div class="hl"><img src="icons/icon-192.png" alt="Fieldbook"></div><span class="ht">Fieldbook</span></div>
     <div class="ha">
       <button class="hbtn" id="syncBtn" onclick="typeof syncAllData==='function'&&syncAllData()" title="Sync">🔄</button>
       <button class="hbtn" onclick="openPanel('notif')">🔔<span class="nb" id="friendRequestBadge"></span></button>
@@ -230,12 +234,12 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
       <!-- Year Banner -->
       <div class="yb">
         <div class="yn" id="yearBannerYear">2026</div>
-        <div class="yth" id="yearBannerTheme">"Life by Design"</div>
+        <div class="yth" id="yearBannerTheme">"Plan slowly. Share warmly."</div>
         <div class="ys">
           <div class="ysi"><span class="ysn" id="statAdventures">0</span><span class="ysl">Adventures</span></div>
           <div class="ysi"><span class="ysn" id="statSharedAdventures">0</span><span class="ysl">Shared</span></div>
           <div class="ysi"><span class="ysn" id="statBucket">0</span><span class="ysl">Bucket list</span></div>
-          <div class="ysi"><span class="ysn" id="statMisogi">0</span><span class="ysl">Misogi</span></div>
+          <div class="ysi"><span class="ysn" id="statMemoriesCreated">0</span><span class="ysl">Memories</span></div>
         </div>
       </div>
 
@@ -290,18 +294,6 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
       </div>
     </div></div>
 
-    <!-- ===== HABITS VIEW ===== -->
-    <div id="habitsView" class="v"><div class="vp">
-      <div class="sl">Winning Habits</div>
-      <p style="font-size:.85rem;color:var(--text-tertiary);margin-bottom:20px;margin-top:-8px">Build the habits that shape your year.</p>
-      <div id="habitsContainer"></div>
-      <div style="margin-top:28px">
-        <div class="sl">🏔️ Misogi Challenge</div>
-        <p style="font-size:.85rem;color:var(--text-tertiary);margin-bottom:16px;margin-top:-8px">One epic challenge that defines your year.</p>
-        <div id="misogiContainer"></div>
-      </div>
-    </div></div>
-
     <!-- ===== MEMORIES VIEW (legacy hidden entry point) ===== -->
     <div id="memoriesView" class="v"><div class="vp">
       <div class="sl">Memories</div>
@@ -316,10 +308,6 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
     <!-- ===== FIELDBOOK VIEW ===== -->
     <div id="fieldbookView" class="v"><div class="vp fieldbook-view-shell">
       <div class="fieldbook-header-row">
-        <div>
-          <div class="sl">Fieldbook</div>
-          <div class="fieldbook-subtitle">Shared memory pages, newest first</div>
-        </div>
         <button class="btn btn-primary" onclick="openFieldbookEditor()">+ New</button>
       </div>
 
@@ -353,8 +341,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 
   <!-- ===== BOTTOM NAV ===== -->
   <nav class="bn">
-    <button class="ni active" data-view="plan" onclick="swView('plan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nl">Plan</span></button>
-    <button class="ni" data-view="habits" onclick="swView('habits')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nl">Habits</span></button>
+    <button class="ni active" data-view="plan" onclick="swView('plan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nl">Trip</span></button>
     <button class="ni" data-view="fieldbook" onclick="swView('fieldbook')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 12h8"/><path d="M8 17h5"/></svg><span class="nl">Fieldbook</span></button>
   </nav>
 
@@ -1120,7 +1107,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
   </div>
 </div></div></div>
 <div id="toast" class="toast"></div>
-<script src="ui.js?v=20260218e"></script>
+<script src="ui.js?v=20260218g"></script>
 <script src="app.js"></script>
 <script src="fieldbook.js?v=20260218n"></script>
 <script src="adventure.js"></script>

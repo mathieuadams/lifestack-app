@@ -11,17 +11,18 @@ const catBgs={travel:'var(--cat-travel-bg)',food:'var(--cat-food-bg)',adventure:
 // ===== UI CORE =====
 function swView(v){
   if(typeof hideLegacyYearDataViews==='function')hideLegacyYearDataViews();
+  if(v==='habits')v='plan';
   if(v==='memories'&&!document.querySelector('.ni[data-view="memories"]'))v='fieldbook';
   document.querySelectorAll('.v').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
-  const map={plan:'planView',habits:'habitsView',memories:'memoriesView',fieldbook:'fieldbookView'};
+  const map={plan:'planView',memories:'memoriesView',fieldbook:'fieldbookView'};
   if(!map[v]||!document.getElementById(map[v]))v='plan';
   const target=document.getElementById(map[v]);
   if(!target||!target.classList)return;
   target.classList.add('active');
   let navBtn=document.querySelector('.ni[data-view="'+v+'"]');
   if(!navBtn){
-    const legacyIdx={plan:0,habits:1,memories:2,fieldbook:3}[v];
+    const legacyIdx={plan:0,fieldbook:1}[v];
     const navButtons=document.querySelectorAll('.ni');
     navBtn=Number.isInteger(legacyIdx)&&navButtons[legacyIdx]?navButtons[legacyIdx]:null;
   }
@@ -32,7 +33,6 @@ function swView(v){
   const fabBtn=document.getElementById('fabBtn');
   if(fabBtn)fabBtn.style.display=(v==='fieldbook')?'none':'flex';
   if(v==='memories') renderMemoriesView();
-  if(v==='habits') renderHabitsView();
   if(v==='plan') refreshPlanView();
   if(v==='fieldbook'&&typeof renderFieldbookShelf==='function')renderFieldbookShelf();
 }
@@ -980,11 +980,30 @@ function refreshPlanView(){
 
       const isSharedType=(t)=>t==='shared-adventure'||t==='shared_adventure'||t==='shared';
       const sharedAdventures=inYear.filter(p=>isSharedType(normalizeType(p))).length;
-      const misogis=inYear.filter(p=>normalizeType(p)==='misogi').length;
       const adventures=inYear.filter(p=>{
         const t=normalizeType(p);
         return t&&t!=='habit'&&t!=='theme'&&t!=='misogi'&&!isSharedType(t);
       }).length;
+
+      let fieldbookMetaStore=null;
+      try{
+        const raw=localStorage.getItem('lifestack_fieldbook_meta');
+        fieldbookMetaStore=raw?JSON.parse(raw):null;
+      }catch(_){fieldbookMetaStore=null}
+      const isFieldbookMemoryLocal=(m)=>{
+        if(!m||!m.id)return false;
+        if(typeof isFieldbookMemoryForMap==='function')return !!isFieldbookMemoryForMap(m);
+        const tags=Array.isArray(m.tags)?m.tags:[];
+        if(tags.some(t=>String(t||'').toLowerCase()==='fieldbook'))return true;
+        return !!(fieldbookMetaStore&&typeof fieldbookMetaStore==='object'&&fieldbookMetaStore[m.id]);
+      };
+      const memoriesCreated=typeof memories!=='undefined'&&Array.isArray(memories)
+        ? memories.filter(m=>{
+            if(!isFieldbookMemoryLocal(m))return false;
+            const dt=new Date(m.occurredAt||m.createdAt||m.updatedAt||0);
+            return !isNaN(dt.getTime())&&dt.getFullYear()===viewYear;
+          }).length
+        : 0;
 
       const bucketCount=typeof bucketList!=='undefined'&&Array.isArray(bucketList)
         ? bucketList.filter(item=>item&&!item.temporary).length
@@ -992,7 +1011,7 @@ function refreshPlanView(){
 
       const el=document.getElementById('statAdventures');if(el)el.textContent=adventures;
       const sel=document.getElementById('statSharedAdventures');if(sel)sel.textContent=sharedAdventures;
-      const mel=document.getElementById('statMisogi');if(mel)mel.textContent=misogis;
+      const mel=document.getElementById('statMemoriesCreated')||document.getElementById('statMisogi');if(mel)mel.textContent=memoriesCreated;
       const bel=document.getElementById('statBucket');if(bel)bel.textContent=bucketCount;
     }
   }catch(e){console.error('Error updating stats:',e)}
