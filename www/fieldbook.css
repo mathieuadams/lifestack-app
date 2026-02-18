@@ -204,6 +204,22 @@
   padding-bottom: max(18px, env(safe-area-inset-bottom, 0px));
 }
 
+#fieldbookViewerModal .modal-close {
+  top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
+  right: max(12px, calc(env(safe-area-inset-right, 0px) + 8px));
+  width: 44px;
+  height: 44px;
+  border: 1px solid #ddcfbb;
+  background: rgba(250, 246, 237, 0.96);
+  box-shadow: 0 6px 18px rgba(46, 35, 25, 0.18);
+  z-index: 10010;
+  pointer-events: auto;
+}
+
+#fieldbookViewerModal.viewer-fullscreen .modal-close {
+  position: fixed;
+}
+
 #fieldbookEditorModal input,
 #fieldbookEditorModal textarea,
 #fieldbookEditorModal select,
