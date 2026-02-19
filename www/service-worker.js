@@ -1,7 +1,7 @@
 // LifeStack Service Worker
-const CACHE_NAME = 'lifestack-v1';
-const STATIC_CACHE = 'lifestack-static-v1';
-const DYNAMIC_CACHE = 'lifestack-dynamic-v1';
+const CACHE_NAME = 'lifestack-v2';
+const STATIC_CACHE = 'lifestack-static-v2';
+const DYNAMIC_CACHE = 'lifestack-dynamic-v2';
 
 // Files to cache immediately on install
 const STATIC_ASSETS = [

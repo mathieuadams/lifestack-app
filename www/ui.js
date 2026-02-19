@@ -34,7 +34,19 @@ function swView(v){
   if(fabBtn)fabBtn.style.display=(v==='fieldbook')?'none':'flex';
   if(v==='memories') renderMemoriesView();
   if(v==='plan') refreshPlanView();
-  if(v==='fieldbook'&&typeof renderFieldbookShelf==='function')renderFieldbookShelf();
+  if(v==='fieldbook'){
+    if(typeof renderFieldbookShelf==='function')renderFieldbookShelf();
+    if(typeof fetchMemories==='function'){
+      fetchMemories().then(function(latest){
+        if(Array.isArray(latest)){
+          if(typeof memories!=='undefined')memories=latest;
+          if(typeof renderFieldbookShelf==='function')renderFieldbookShelf();
+        }
+      }).catch(function(err){
+        console.error('Fieldbook refresh error:',err);
+      });
+    }
+  }
 }
 function swTab(t,b){
   document.querySelectorAll('.ptb').forEach(x=>x.classList.remove('active'));
