@@ -1663,7 +1663,18 @@
       const canEditContributors = !existing || isMemoryOwner(existing);
       const existingPeople = safeArray(existing && existing.people).map(normalizePersonId).filter(Boolean);
       const selectedPeople = state.selectedPeopleIds.map(normalizePersonId).filter(Boolean);
-      const payloadPeople = Array.from(new Set((canEditContributors ? selectedPeople : existingPeople)));
+      const ownerUserId = normalizePersonId((existing && (existing.userId || existing.ownerId || existing.createdBy)) || state.editingMemoryOwnerId || "");
+      const meUserId = normalizePersonId(currentUserId());
+      const photoContributorIds = uploadedPhotos.map(function (item) {
+        return normalizePersonId(item && item.contributorId);
+      }).filter(Boolean);
+      const payloadPeople = Array.from(new Set(
+        (canEditContributors ? selectedPeople : existingPeople)
+          .concat(existingPeople)
+          .concat(photoContributorIds)
+          .concat([ownerUserId, meUserId])
+          .filter(Boolean)
+      ));
 
       const payload = {
         title: effectiveTitle,
@@ -1671,7 +1682,7 @@
         text: text,
         tags: tags,
         year: yearOffset,
-        ownerUserId: normalizePersonId((existing && (existing.userId || existing.ownerId || existing.createdBy)) || state.editingMemoryOwnerId || "") || null,
+        ownerUserId: ownerUserId || null,
         planId: existing ? (existing.planId || null) : null,
         subActivity: existing ? (existing.subActivity || null) : null,
         people: payloadPeople,
