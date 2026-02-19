@@ -257,7 +257,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
         <div class="wd" id="weekDays"></div>
         <div class="slsm">Plans</div>
         <div id="planCards"></div>
-        <div style="background:linear-gradient(135deg,var(--sand-100),var(--sage-50));border-radius:var(--radius-lg);padding:20px;margin-top:20px;text-align:center">
+        <div style="margin-top:20px;text-align:center">
           <button onclick="typeof startAdventureWizard==='function'&&startAdventureWizard()" style="background:var(--sage-500);color:white;border:none;border-radius:var(--radius-lg);padding:16px 32px;font-size:1rem;font-weight:700;cursor:pointer;box-shadow:var(--shadow-soft);width:100%">
             ✨ Plan your weekend
           </button>
@@ -330,14 +330,6 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
     </div></div>
 
   </div><!-- end .mc -->
-
-  <!-- ===== FAB ===== -->
-  <div class="fm" id="fabMenu">
-    <button class="fo" onclick="startPlanFlow();closeFab()"><div class="fi" style="background:var(--sage-100)">📋</div>Plan Activity</button>
-    <button class="fo" onclick="startRecurring();closeFab()"><div class="fi" style="background:var(--lavender-light)">🔁</div>Recurring Event</button>
-    <button class="fo" onclick="captureMemory();closeFab()"><div class="fi" style="background:var(--coral-bg)">📸</div>Capture Memory</button>
-  </div>
-  <button class="fab" id="fabBtn" onclick="toggleFab()">+</button>
 
   <!-- ===== BOTTOM NAV ===== -->
   <nav class="bn">
@@ -708,8 +700,6 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
         <label>Cover (square)</label>
         <div class="fieldbook-cover-preview" id="fieldbookCoverPreview">Choose a photo</div>
         <div class="fieldbook-cover-controls">
-          <label>X <input id="fieldbookCoverX" type="range" min="0" max="100" value="50"></label>
-          <label>Y <input id="fieldbookCoverY" type="range" min="0" max="100" value="50"></label>
           <label>Zoom <input id="fieldbookCoverZoom" type="range" min="40" max="260" value="100"></label>
         </div>
       </div>
@@ -1109,7 +1099,7 @@ const CONFIG = { API_URL: "https://yqdxeta204.execute-api.us-east-1.amazonaws.co
 <div id="toast" class="toast"></div>
 <script src="ui.js?v=20260218g"></script>
 <script src="app.js"></script>
-<script src="fieldbook.js?v=20260218n"></script>
+<script src="fieldbook.js?v=20260219a"></script>
 <script src="adventure.js"></script>
 <link rel="stylesheet" href="adventure.css">
 </body>

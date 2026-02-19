@@ -13,6 +13,7 @@
     seq: 1,
     editingMemoryId: "",
     editingMemoryOwnerId: "",
+    editingMemoryIsShared: false,
     photos: [],
     photoDragId: "",
     photoTouchDrag: null,
@@ -99,10 +100,13 @@
   }
 
   function isMemoryOwner(memory) {
-    if (!memory || !memory.userId) return true;
-    const uid = currentUserId();
-    if (!uid) return true;
-    return String(memory.userId) === uid;
+    if (!memory) return true;
+    const me = normalizePersonId(currentUserId());
+    if (!me) return false;
+    const ownerId = normalizePersonId(memory.userId || memory.ownerId || memory.createdBy || "");
+    if (ownerId) return ownerId === me;
+    if (memory.isShared) return false;
+    return true;
   }
 
   function getCurrentYearView() {
@@ -175,6 +179,7 @@
     releaseLocalPhotoUrls(state.photos);
     state.editingMemoryId = "";
     state.editingMemoryOwnerId = "";
+    state.editingMemoryIsShared = false;
     state.photos = [];
     state.photoDragId = "";
     state.photoTouchDrag = null;
@@ -193,7 +198,8 @@
 
   function normalizePhoto(photo, index) {
     if (!photo) return null;
-    const ownerId = state.editingMemoryOwnerId || currentUserId();
+    const ownerId = normalizePersonId(state.editingMemoryOwnerId || "");
+    const fallbackContributorId = ownerId || normalizePersonId(state.editingMemoryIsShared ? "" : currentUserId());
     const ownerName = currentUserName();
     if (typeof photo === "string") {
       return {
@@ -202,7 +208,7 @@
         key: "",
         file: null,
         source: "remote",
-        contributorId: ownerId,
+        contributorId: fallbackContributorId,
         contributorName: ownerName
       };
     }
@@ -214,7 +220,7 @@
       key: photo.key || "",
       file: null,
       source: "remote",
-      contributorId: normalizePersonId(photo.contributorId || photo.authorId || ownerId),
+      contributorId: normalizePersonId(photo.contributorId || photo.authorId || fallbackContributorId),
       contributorName: photo.contributorName || photo.authorName || ownerName
     };
   }
@@ -270,7 +276,7 @@
     }
     const peopleMap = peopleByIdMap();
     node.innerHTML = state.photos.map(function (photo, index) {
-      const contributorId = normalizePersonId(photo.contributorId || state.editingMemoryOwnerId || currentUserId());
+      const contributorId = normalizePersonId(photo.contributorId || state.editingMemoryOwnerId || (state.editingMemoryIsShared ? "" : currentUserId()));
       const contributor = resolvePerson(contributorId, peopleMap);
       const contributorName = photo.contributorName || contributor.name || "Contributor";
       const canRemove = canRemovePhoto(photo);
@@ -289,9 +295,8 @@
     const ownerId = normalizePersonId(state.editingMemoryOwnerId || currentUserId());
     const me = normalizePersonId(currentUserId());
     const contributorId = normalizePersonId(photo && photo.contributorId);
-    if (!contributorId) return true;
-    if (me && contributorId === me) return true;
     if (me && ownerId && ownerId === me) return true;
+    if (me && contributorId && contributorId === me) return true;
     return false;
   }
 
@@ -1490,7 +1495,7 @@
   async function uploadEditorPhotos(memoryId) {
     const uploaded = [];
     for (const photo of state.photos) {
-      const contributorId = normalizePersonId(photo.contributorId || state.editingMemoryOwnerId || currentUserId());
+      const contributorId = normalizePersonId(photo.contributorId || state.editingMemoryOwnerId || (state.editingMemoryIsShared ? "" : currentUserId()));
       const contributorName = photo.contributorName || currentUserName();
       if (!photo.file) {
         uploaded.push({
@@ -1519,23 +1524,18 @@
           contributorName: contributorName
         });
       } catch (error) {
-        console.warn("Fieldbook photo upload fallback:", error);
-        let fallbackUrl = photo.url;
-        if (photo && photo.file && (!fallbackUrl || String(fallbackUrl).indexOf("blob:") === 0)) {
-          try {
-            fallbackUrl = await fileToDataUrl(photo.file);
-          } catch (readError) {
-            console.warn("Fieldbook photo local fallback read failed:", readError);
-          }
-        }
-        uploaded.push({
-          id: photo.id,
-          key: "",
-          url: fallbackUrl,
-          contributorId: contributorId,
-          contributorName: contributorName
-        });
+        console.error("Fieldbook photo upload failed:", error);
+        const name = (file && file.name) ? file.name : "photo";
+        throw new Error("Photo upload failed for " + name + ". Please retry.");
       }
+    }
+
+    const invalid = uploaded.find(function (item) {
+      const u = String(item && item.url ? item.url : "");
+      return !u || u.indexOf("blob:") === 0;
+    });
+    if (invalid) {
+      throw new Error("Photo upload did not return a shareable URL. Please retry.");
     }
     return uploaded;
   }
@@ -1563,6 +1563,71 @@
     if (hint) hint.classList.toggle("hidden", !locked);
   }
 
+  function linkedMemoryIds(memory) {
+    if (!memory || typeof memory !== "object") return [];
+    const rawIds = [
+      memory.id,
+      memory.memoryId,
+      memory.ownerMemoryId,
+      memory.ownerRecordId,
+      memory.originalMemoryId,
+      memory.originalId,
+      memory.sourceMemoryId,
+      memory.sourceId,
+      memory.parentMemoryId,
+      memory.rootMemoryId,
+      memory.sharedFromId,
+      memory.sharedMemoryId,
+      memory.masterMemoryId,
+      memory.canonicalMemoryId
+    ];
+    const unique = [];
+    rawIds.forEach(function (id) {
+      const normalized = normalizePersonId(id);
+      if (!normalized || unique.indexOf(normalized) >= 0) return;
+      unique.push(normalized);
+    });
+    return unique;
+  }
+
+  function resolveWriteTargetId(existing, fallbackId) {
+    const fallback = normalizePersonId(fallbackId);
+    if (!existing || typeof existing !== "object") return fallback;
+    const ids = linkedMemoryIds(existing);
+    const existingId = normalizePersonId(existing.id);
+    const preferred = ids.find(function (id) { return id && id !== existingId; });
+    return preferred || existingId || fallback;
+  }
+
+  function memoriesLinked(a, bSet) {
+    if (!a || !bSet || !bSet.size) return false;
+    const ids = linkedMemoryIds(a);
+    return ids.some(function (id) { return bSet.has(id); });
+  }
+
+  function mirrorFieldbookMemoryAcrossCopies(allMemories, savedMemory, relationSet) {
+    const next = safeArray(allMemories).slice();
+    const savedPhotos = safeArray(savedMemory && savedMemory.photos).map(function (photo) { return Object.assign({}, photo); });
+    const savedPeople = safeArray(savedMemory && savedMemory.people);
+    const savedTags = Array.from(new Set(safeArray(savedMemory && savedMemory.tags).concat(["fieldbook"])));
+    const savedLocation = savedMemory && savedMemory.location ? Object.assign({}, savedMemory.location) : null;
+    const savedUpdatedAt = savedMemory && savedMemory.updatedAt ? savedMemory.updatedAt : new Date().toISOString();
+
+    next.forEach(function (memory, index) {
+      if (!memory || !memoriesLinked(memory, relationSet)) return;
+      next[index] = Object.assign({}, memory, {
+        text: savedMemory && savedMemory.text !== undefined ? savedMemory.text : memory.text,
+        photos: savedPhotos,
+        people: savedPeople,
+        tags: savedTags,
+        location: savedLocation,
+        updatedAt: savedUpdatedAt
+      });
+    });
+
+    return next;
+  }
+
   async function saveEditor() {
     const title = byId("fieldbookTitle").value.trim();
     const occurredAt = byId("fieldbookDate").value;
@@ -1587,6 +1652,7 @@
       const yearOffset = String(occYear - birthYear);
 
       const existing = memoryId ? (getMemories().find(function (memory) { return memory.id === memoryId; }) || null) : null;
+      const writeTargetId = memoryId ? resolveWriteTargetId(existing, memoryId) : "";
       const canEditTitle = !existing || isMemoryOwner(existing);
       const effectiveTitle = canEditTitle ? title : String(existing.title || "").trim();
       if (!effectiveTitle || !occurredAt) {
@@ -1594,6 +1660,10 @@
         return;
       }
       const tags = Array.from(new Set(safeArray(existing && existing.tags).concat(["fieldbook"])));
+      const canEditContributors = !existing || isMemoryOwner(existing);
+      const existingPeople = safeArray(existing && existing.people).map(normalizePersonId).filter(Boolean);
+      const selectedPeople = state.selectedPeopleIds.map(normalizePersonId).filter(Boolean);
+      const payloadPeople = Array.from(new Set((canEditContributors ? selectedPeople : existingPeople)));
 
       const payload = {
         title: effectiveTitle,
@@ -1601,9 +1671,10 @@
         text: text,
         tags: tags,
         year: yearOffset,
+        ownerUserId: normalizePersonId((existing && (existing.userId || existing.ownerId || existing.createdBy)) || state.editingMemoryOwnerId || "") || null,
         planId: existing ? (existing.planId || null) : null,
         subActivity: existing ? (existing.subActivity || null) : null,
-        people: state.selectedPeopleIds.slice(),
+        people: payloadPeople,
         photos: uploadedPhotos.map(function (item) {
           return {
             key: item.key || "",
@@ -1620,7 +1691,7 @@
 
       if (memoryId) {
         if (tokens && tokens.idToken) {
-          const response = await fetch(CONFIG.API_URL + "/memories/" + memoryId, {
+          let response = await fetch(CONFIG.API_URL + "/memories/" + (writeTargetId || memoryId), {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
@@ -1628,6 +1699,16 @@
             },
             body: JSON.stringify(payload)
           });
+          if (!response.ok && writeTargetId && writeTargetId !== memoryId) {
+            response = await fetch(CONFIG.API_URL + "/memories/" + memoryId, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + tokens.idToken
+              },
+              body: JSON.stringify(payload)
+            });
+          }
           if (!response.ok) throw new Error("Update failed");
           savedMemory = await response.json();
         } else {
@@ -1660,7 +1741,7 @@
         ? photoMap[state.cover.photoId]
         : (currentCoverPhoto() ? currentCoverPhoto().url : "");
 
-      saveMeta(savedMemory.id, {
+      const metaPayload = {
         pages: serializePagesWithUploadedPhotos(photoMap),
         activePageId: state.activePageId,
         template: state.currentTemplate,
@@ -1672,14 +1753,29 @@
           zoom: state.cover.zoom
         },
         updatedAt: new Date().toISOString()
-      });
+      };
+      saveMeta(savedMemory.id, metaPayload);
 
       const allMemories = getMemories();
-      const index = allMemories.findIndex(function (memory) { return memory.id === savedMemory.id; });
-      if (index >= 0) allMemories[index] = savedMemory;
+      const relationSet = new Set();
+      linkedMemoryIds(savedMemory).forEach(function (id) { relationSet.add(id); });
+      linkedMemoryIds(existing).forEach(function (id) { relationSet.add(id); });
+      if (memoryId) relationSet.add(normalizePersonId(memoryId));
+      if (writeTargetId) relationSet.add(normalizePersonId(writeTargetId));
+
+      const savedId = normalizePersonId(savedMemory.id);
+      const savedIndex = allMemories.findIndex(function (memory) { return normalizePersonId(memory && memory.id) === savedId; });
+      if (savedIndex >= 0) allMemories[savedIndex] = savedMemory;
       else allMemories.push(savedMemory);
-      setMemories(allMemories);
-      localStorage.setItem("lifestack_memories", JSON.stringify(allMemories));
+
+      const mirroredMemories = mirrorFieldbookMemoryAcrossCopies(allMemories, savedMemory, relationSet);
+      mirroredMemories.forEach(function (memory) {
+        if (!memory || !memory.id || memory.id === savedMemory.id) return;
+        if (!memoriesLinked(memory, relationSet)) return;
+        saveMeta(memory.id, metaPayload);
+      });
+      setMemories(mirroredMemories);
+      localStorage.setItem("lifestack_memories", JSON.stringify(mirroredMemories));
 
       if (typeof renderDashboard === "function") renderDashboard();
       if (typeof renderYearMemories === "function") renderYearMemories(getCurrentYearView());
@@ -1687,11 +1783,15 @@
       renderFieldbookShelf();
 
       closeEditor();
-      openViewer(savedMemory.id, { fullscreen: true });
+      const viewerId = mirroredMemories.some(function (memory) { return memory && memory.id === savedMemory.id; })
+        ? savedMemory.id
+        : (memoryId || savedMemory.id);
+      openViewer(viewerId, { fullscreen: true });
       showToastSafe("Fieldbook memory saved");
     } catch (error) {
       console.error("Fieldbook save error:", error);
-      showErrorSafe("Could not save fieldbook memory");
+      const msg = error && error.message ? error.message : "Could not save fieldbook memory";
+      showErrorSafe(msg);
     } finally {
       if (saveBtn) {
         saveBtn.disabled = false;
@@ -1703,6 +1803,7 @@
   function resetEditorForm() {
     resetCoreState();
     state.editingMemoryOwnerId = currentUserId();
+    state.editingMemoryIsShared = false;
     ensurePages();
     byId("fieldbookMemoryId").value = "";
     byId("fieldbookEditorTitle").textContent = "Create Fieldbook Memory";
@@ -1736,7 +1837,8 @@
     state.currentTemplate = meta.template || "freeform";
 
     state.editingMemoryId = memory.id;
-    state.editingMemoryOwnerId = normalizePersonId(memory.userId || memory.ownerId || memory.createdBy || currentUserId());
+    state.editingMemoryOwnerId = normalizePersonId(memory.userId || memory.ownerId || memory.createdBy || "");
+    state.editingMemoryIsShared = !!memory.isShared;
     state.photos = safeArray(memory.photos).map(normalizePhoto).filter(Boolean);
     state.selectedPeopleIds = safeArray(memory.people).map(normalizePersonId).filter(Boolean);
     applyTitleLock(memory);
